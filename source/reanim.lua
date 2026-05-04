@@ -1423,13 +1423,19 @@ do
         NotifyText.Position = UDim2.new(0.5, 0, 0.5, 0)
         NotifyText.Size = UDim2.new(1, 0, 0, 20)
         NotifyText.BackgroundTransparency = 1
-        NotifyText.ClipsDescendants = true
+        NotifyText.ClipsDescendants = false
+        NotifyText.TextWrapped = true
         NotifyText.Font = Enum.Font.Code
         NotifyText.TextColor3 = Color3.new(1, 1, 1)
         NotifyText.TextSize = 18
         NotifyText.TextXAlignment = Enum.TextXAlignment.Center
         NotifyText.Text = ""
         RegisterTextLabel(NotifyText)
+        local _notifyPadX = 20
+        local _notifyPadY = 10
+        local _notifyMaxW = 520
+        local _notifyMinW = 200
+        local _notifyLastText = ""
         AddToRenderStep(function(t, dt)
                 if t - uinotif.LastNotif < 4 or uinotif.Progress < 1 then
                         uinotif.Animation = math.max(0, uinotif.Animation - dt * 2)
@@ -1438,6 +1444,15 @@ do
                 end
                 if uinotif.Animation < 1 then
                         UINotifyFrame.Visible = true
+                        if _notifyLastText ~= uinotif.Text then
+                                _notifyLastText = uinotif.Text
+                                local innerW = _notifyMaxW - _notifyPadX * 2
+                                local textBounds = TextService:GetTextSize(uinotif.Text, 18, Enum.Font.Code, Vector2.new(innerW, math.huge))
+                                local frameW = math.clamp(textBounds.X + _notifyPadX * 2, _notifyMinW, _notifyMaxW)
+                                local frameH = math.max(30, textBounds.Y + _notifyPadY)
+                                UINotifyFrame.Size = UDim2.new(0, frameW, 0, frameH)
+                                NotifyText.Size = UDim2.new(1, -_notifyPadX, 0, textBounds.Y)
+                        end
                         UINotifyFrame.Position = UIMainWindow.Position + UDim2.new(0, 0, 0, UIMainWindow.Size.Y.Offset / 2 + 10 + math.pow(uinotif.Animation, 3) * -40)
                         if uinotif.Progress >= 1 then
                                 Progress.BackgroundTransparency = math.min(t - uinotif.LastNotif, 0.5) * 2 * 0.3 + 0.7
