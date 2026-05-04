@@ -4944,9 +4944,15 @@ function LimbReanimator.Start()
                                         Humanoid:ChangeState(Enum.HumanoidStateType.Freefall)
                                         ReanimOkay = LimbReanimator.FlingTargets[1] == nil
                                 end
-                                if RootPart and LimbReanimator.Permadeath and Humanoid.Health > 0.001 then
-                                        Humanoid.Health = 0.001
-                                        pcall(replicatesignal, Humanoid.HealthChanged, 0.001)
+                                if RootPart and LimbReanimator.Permadeath then
+                                        if Humanoid.Health > 0.001 then
+                                                Humanoid.Health = 0.001
+                                                pcall(replicatesignal, Humanoid.HealthChanged, 0.001)
+                                        end
+                                        if Humanoid.MaxHealth > 0.001 then
+                                                Humanoid.MaxHealth = 0.001
+                                                pcall(replicatesignal, Humanoid.MaxHealthChanged, 0.001)
+                                        end
                                 end
                                 if LimbReanimator.PermanentRespawnShield and LimbReanimator._HadRespawnShield then
                                         local existingFF = Character:FindFirstChildOfClass("ForceField")
@@ -5053,6 +5059,10 @@ function LimbReanimator.Start()
                                         else
                                                 pcall(sethiddenproperty, Humanoid, "MoveDirectionInternal", Vector3.zero)
                                         end
+                                end
+                                if LimbReanimator.Permadeath then
+                                        pcall(sethiddenproperty, Humanoid, "NetworkHumanoidState", Enum.HumanoidStateType.Dead)
+                                elseif LimbReanimator.UseNaNFling then
                                         pcall(sethiddenproperty, Humanoid, "NetworkHumanoidState", Enum.HumanoidStateType.Freefall)
                                 else
                                         pcall(sethiddenproperty, Humanoid, "NetworkHumanoidState", Enum.HumanoidStateType[({"Running", "PlatformStanding", "Jumping", "Ragdoll", "Seated", "Physics"})[math.random(1, 6)]])
