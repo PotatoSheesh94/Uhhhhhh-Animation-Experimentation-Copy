@@ -5114,8 +5114,9 @@ function LimbReanimator.Start()
                                 if LimbReanimator.PermanentRespawnShield and LimbReanimator._HadRespawnShield then
                                         if not Character:FindFirstChildOfClass("ForceField") then
                                                 local ff = Instance.new("ForceField")
-                                                ff.Visible = false
+                                                ff.Visible = true
                                                 ff.Parent = Character
+                                                pcall(replicatesignal, Character.ChildAdded, ff)
                                         end
                                 end
                         end
