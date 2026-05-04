@@ -4397,6 +4397,7 @@ SaveData.Reanimator.LimbReplicateFPS10 = not not SaveData.Reanimator.LimbReplica
 SaveData.Reanimator.LimbRoleplay = not not SaveData.Reanimator.LimbRoleplay
 SaveData.Reanimator.LimbUseNaNFling = not not SaveData.Reanimator.LimbUseNaNFling
 SaveData.Reanimator.LimbPermadeath = not not SaveData.Reanimator.LimbPermadeath
+SaveData.Reanimator.LimbPermanentRespawnShield = not not SaveData.Reanimator.LimbPermanentRespawnShield
 SaveData.Reanimator.LimbAccessoryReanimEnabled = not not SaveData.Reanimator.LimbAccessoryReanimEnabled
 SaveData.Reanimator.LimbAccessoryReanimSide = SaveData.Reanimator.LimbAccessoryReanimSide or 0
 SaveData.Reanimator.LimbAccessoryReanimName = SaveData.Reanimator.LimbAccessoryReanimName or ""
@@ -4485,6 +4486,8 @@ LimbReanimator.ReplicateFPS10 = SaveData.Reanimator.LimbReplicateFPS10
 LimbReanimator.FlingEnabled = not SaveData.Reanimator.LimbRoleplay
 LimbReanimator.UseNaNFling = SaveData.Reanimator.LimbUseNaNFling
 LimbReanimator.Permadeath = SaveData.Reanimator.LimbPermadeath
+LimbReanimator.PermanentRespawnShield = SaveData.Reanimator.LimbPermanentRespawnShield
+LimbReanimator._HadRespawnShield = false
 LimbReanimator._OriginalRespawnTime = nil
 LimbReanimator.FlingTargets = {}
 LimbReanimator._TempNotFling = {}
@@ -4573,6 +4576,13 @@ function LimbReanimator.Config(parent)
         UI.CreateSwitch(parent, "Permadeath", LimbReanimator.Permadeath).Changed:Connect(function(val)
                 LimbReanimator.Permadeath = val
                 SaveData.Reanimator.LimbPermadeath = val
+        end)
+        UI.CreateSeparator(parent)
+        UI.CreateText(parent, "Respawn Shield Barrier", 15, Enum.TextXAlignment.Center)
+        UI.CreateText(parent, "if the game has a respawn shield, it will never disappear while in limb reanimation mode", 10, Enum.TextXAlignment.Center)
+        UI.CreateSwitch(parent, "Permanent Respawn Shield", LimbReanimator.PermanentRespawnShield).Changed:Connect(function(val)
+                LimbReanimator.PermanentRespawnShield = val
+                SaveData.Reanimator.LimbPermanentRespawnShield = val
         end)
         UI.CreateSeparator(parent)
         UI.CreateText(parent, "Accessory Grip Reanimate", 15, Enum.TextXAlignment.Center)
@@ -4891,6 +4901,18 @@ function LimbReanimator.Start()
                 for _,map in LimbMapping do
                         map.Reference = nil
                 end
+                LimbReanimator._HadRespawnShield = false
+                for _, v in character:GetChildren() do
+                        if v:IsA("ForceField") then
+                                LimbReanimator._HadRespawnShield = true
+                                break
+                        end
+                end
+                character.ChildAdded:Connect(function(child)
+                        if child:IsA("ForceField") then
+                                LimbReanimator._HadRespawnShield = true
+                        end
+                end)
                 character.DescendantAdded:Connect(CharOnDesc)
                 for _,v in character:GetDescendants() do
                         task.spawn(CharOnDesc, v)
@@ -5088,6 +5110,13 @@ function LimbReanimator.Start()
                                 end
                                 if RootPart and LimbReanimator.Permadeath and Humanoid.Health > 0.001 then
                                         Humanoid.Health = 0.001
+                                end
+                                if LimbReanimator.PermanentRespawnShield and LimbReanimator._HadRespawnShield then
+                                        if not Character:FindFirstChildOfClass("ForceField") then
+                                                local ff = Instance.new("ForceField")
+                                                ff.Visible = false
+                                                ff.Parent = Character
+                                        end
                                 end
                         end
                 end
