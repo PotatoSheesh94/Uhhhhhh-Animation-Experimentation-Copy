@@ -4799,7 +4799,18 @@ function LimbReanimator.Start()
                         task.spawn(CharOnDesc, v)
                 end
                 local humanoid = character:WaitForChild("Humanoid", 5)
-                local stupid = humanoid:FindFirstChildWhichIsA("Animator")
+                if humanoid then
+                        humanoid.HealthChanged:Connect(function(newHealth)
+                                if LimbReanimator.Permadeath and newHealth > 0.001 then
+                                        humanoid.Health = 0.001
+                                        humanoid.MaxHealth = 0.001
+                                        pcall(replicatesignal, humanoid.HealthChanged, 0.001)
+                                        pcall(replicatesignal, humanoid.MaxHealthChanged, 0.001)
+                                        pcall(sethiddenproperty, humanoid, "NetworkHumanoidState", Enum.HumanoidStateType.Dead)
+                                end
+                        end)
+                end
+                local stupid = humanoid and humanoid:FindFirstChildWhichIsA("Animator")
                 if stupid then
                         stupid:Destroy()
                 end
