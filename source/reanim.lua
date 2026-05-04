@@ -4802,10 +4802,10 @@ function LimbReanimator.Start()
                 if humanoid then
                         humanoid.HealthChanged:Connect(function(newHealth)
                                 if LimbReanimator.Permadeath and newHealth > 0.001 then
-                                        humanoid.Health = 0.001
                                         humanoid.MaxHealth = 0.001
-                                        pcall(replicatesignal, humanoid.HealthChanged, 0.001)
+                                        humanoid.Health = 0.001
                                         pcall(replicatesignal, humanoid.MaxHealthChanged, 0.001)
+                                        pcall(replicatesignal, humanoid.HealthChanged, 0.001)
                                         pcall(sethiddenproperty, humanoid, "NetworkHumanoidState", Enum.HumanoidStateType.Dead)
                                 end
                         end)
@@ -4965,13 +4965,13 @@ function LimbReanimator.Start()
                                         ReanimOkay = LimbReanimator.FlingTargets[1] == nil
                                 end
                                 if RootPart and LimbReanimator.Permadeath then
-                                        if Humanoid.Health > 0.001 then
-                                                Humanoid.Health = 0.001
-                                                pcall(replicatesignal, Humanoid.HealthChanged, 0.001)
-                                        end
                                         if Humanoid.MaxHealth > 0.001 then
                                                 Humanoid.MaxHealth = 0.001
                                                 pcall(replicatesignal, Humanoid.MaxHealthChanged, 0.001)
+                                        end
+                                        if Humanoid.Health > 0.001 then
+                                                Humanoid.Health = 0.001
+                                                pcall(replicatesignal, Humanoid.HealthChanged, 0.001)
                                         end
                                 end
                                 if LimbReanimator.PermanentRespawnShield and LimbReanimator._HadRespawnShield then
