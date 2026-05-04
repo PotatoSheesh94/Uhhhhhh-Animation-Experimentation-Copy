@@ -4399,7 +4399,6 @@ SaveData.Reanimator.LimbUseNaNFling = not not SaveData.Reanimator.LimbUseNaNFlin
 SaveData.Reanimator.LimbPermadeath = not not SaveData.Reanimator.LimbPermadeath
 SaveData.Reanimator.LimbPermanentRespawnShield = not not SaveData.Reanimator.LimbPermanentRespawnShield
 SaveData.Reanimator.LimbCurrentAngleSmoothSpeed = SaveData.Reanimator.LimbCurrentAngleSmoothSpeed or 12
-SaveData.Reanimator.LimbCurrentAngleDamping = SaveData.Reanimator.LimbCurrentAngleDamping or 0.95
 SaveData.Reanimator.LimbAccessoryReanimEnabled = not not SaveData.Reanimator.LimbAccessoryReanimEnabled
 SaveData.Reanimator.LimbAccessoryReanimSide = SaveData.Reanimator.LimbAccessoryReanimSide or 0
 SaveData.Reanimator.LimbAccessoryReanimName = SaveData.Reanimator.LimbAccessoryReanimName or ""
@@ -4490,7 +4489,6 @@ LimbReanimator.UseNaNFling = SaveData.Reanimator.LimbUseNaNFling
 LimbReanimator.Permadeath = SaveData.Reanimator.LimbPermadeath
 LimbReanimator.PermanentRespawnShield = SaveData.Reanimator.LimbPermanentRespawnShield
 LimbReanimator.CurrentAngleSmoothSpeed = SaveData.Reanimator.LimbCurrentAngleSmoothSpeed
-LimbReanimator.CurrentAngleDamping = SaveData.Reanimator.LimbCurrentAngleDamping
 LimbReanimator._HadRespawnShield = false
 LimbReanimator._OriginalRespawnTime = nil
 LimbReanimator.FlingTargets = {}
@@ -4568,17 +4566,6 @@ function LimbReanimator.Config(parent)
         speedSlider.Changed:Connect(function(val)
                 LimbReanimator.CurrentAngleSmoothSpeed = val
                 SaveData.Reanimator.LimbCurrentAngleSmoothSpeed = val
-        end)
-        local dampingSlider = UI.CreateSlider(parent, "Spring Damping", LimbReanimator.CurrentAngleDamping, 0.2, 2.5, 0)
-        dampingSlider.Changed:Connect(function(val)
-                LimbReanimator.CurrentAngleDamping = val
-                SaveData.Reanimator.LimbCurrentAngleDamping = val
-        end)
-        UI.CreateText(parent, "0.2 = very bouncy  |  ~0.95 = natural  |  1.2+ = rigid/no bounce", 10, Enum.TextXAlignment.Center)
-        local resetBtn = UI.CreateButton(parent, "Reset to Defaults", 18)
-        resetBtn.MouseButton1Click:Connect(function()
-                speedSlider.Value = 12
-                dampingSlider.Value = 0.95
         end)
         UI.CreateSeparator(parent)
         UI.CreateSwitch(parent, "Show me how I look!", LimbReanimator.ReplicateFPS10).Changed:Connect(function(val)
@@ -4985,11 +4972,11 @@ function LimbReanimator.Start()
         local smoothedRootVel = Vector3.zero
         local jointSpeedMult = {
                 ["Torso"]     = 1.00,
-                ["Head"]      = 0.58,
-                ["Left Arm"]  = 0.80,
-                ["Right Arm"] = 0.80,
-                ["Left Leg"]  = 1.18,
-                ["Right Leg"] = 1.18,
+                ["Head"]      = 0.40,
+                ["Left Arm"]  = 0.55,
+                ["Right Arm"] = 0.55,
+                ["Left Leg"]  = 1.40,
+                ["Right Leg"] = 1.40,
         }
         local function UpdateTransforms(ReanimCharacter, RootPart, rootcf, rootvel, flingtarget, flingcf, dt)
                 if not RootPart:IsGrounded() then
@@ -5007,15 +4994,15 @@ function LimbReanimator.Start()
                                 local appliedCF
                                 if LimbReanimator.Mode == 3 and dt and dt > 0 then
                                         local speed = LimbReanimator.CurrentAngleSmoothSpeed
-                                        local stiffness = speed * speed * 0.35
-                                        local dampingCoeff = speed * LimbReanimator.CurrentAngleDamping
+                                        local stiffness = speed * speed * 0.18
+                                        local dampingCoeff = speed * 0.60
                                         if smoothedRootCF then
                                                 local targetPos = rootcf.Position
                                                 local currentPos = smoothedRootCF.Position
                                                 local posForce = (targetPos - currentPos) * stiffness - smoothedRootVel * dampingCoeff
                                                 smoothedRootVel = smoothedRootVel + posForce * dt
                                                 local newPos = currentPos + smoothedRootVel * dt
-                                                local rotAlpha = 1 - math.exp(-speed * 1.5 * dt)
+                                                local rotAlpha = 1 - math.exp(-speed * 2.2 * dt)
                                                 local rotCurrent = smoothedRootCF - smoothedRootCF.Position
                                                 local rotTarget = rootcf - rootcf.Position
                                                 local rotLerped = rotCurrent:Lerp(rotTarget, rotAlpha)
@@ -5076,8 +5063,8 @@ function LimbReanimator.Start()
                                                         if LimbReanimator.Mode == 3 then
                                                                 local mult = jointSpeedMult[map.RPart1] or 1.0
                                                                 local speed = LimbReanimator.CurrentAngleSmoothSpeed * mult
-                                                                local stiffness = speed * speed * 0.35
-                                                                local dampingCoeff = speed * LimbReanimator.CurrentAngleDamping
+                                                                local stiffness = speed * speed * 0.18
+                                                                local dampingCoeff = speed * 0.60
                                                                 if not map.PosVelocity then
                                                                         map.PosVelocity = Vector3.zero
                                                                 end
@@ -5086,7 +5073,7 @@ function LimbReanimator.Start()
                                                                 local posForce = (targetPos - currentPos) * stiffness - map.PosVelocity * dampingCoeff
                                                                 map.PosVelocity = map.PosVelocity + posForce * dt
                                                                 local newPos = currentPos + map.PosVelocity * dt
-                                                                local rotAlpha = 1 - math.exp(-speed * 1.5 * dt)
+                                                                local rotAlpha = 1 - math.exp(-speed * 2.2 * dt)
                                                                 local rotCurrent = map.CFrame - map.CFrame.Position
                                                                 local rotTarget = cf - cf.Position
                                                                 local rotLerped = rotCurrent:Lerp(rotTarget, rotAlpha)
