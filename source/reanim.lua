@@ -4427,6 +4427,7 @@ LimbReanimator.AccessoryReanim = {
         GripOriginalC1 = nil,
         GripOriginalRelCFrame = nil,
         GripIsWeldConstraint = false,
+        GripLastFullCF = nil,
 }
 function LimbReanimator.RestoreAccessoryGrip(Character)
         local accReanim = LimbReanimator.AccessoryReanim
@@ -4443,9 +4444,14 @@ function LimbReanimator.RestoreAccessoryGrip(Character)
                         weld.Part0 = op0
                         weld.Enabled = true
                 else
-                        weld.Part0 = accReanim.GripOriginalPart0
+                        local op0 = accReanim.GripOriginalPart0
+                        local handle = accReanim.GripOriginalHandle
+                        weld.Part0 = op0
                         weld.C0 = accReanim.GripOriginalC0
                         weld.C1 = accReanim.GripOriginalC1
+                        if op0 and op0.Parent and handle and handle.Parent then
+                                handle.CFrame = op0.CFrame * accReanim.GripOriginalC0 * accReanim.GripOriginalC1:Inverse()
+                        end
                 end
         end
         accReanim.GripOriginalWeld = nil
@@ -4455,6 +4461,7 @@ function LimbReanimator.RestoreAccessoryGrip(Character)
         accReanim.GripOriginalRelCFrame = nil
         accReanim.GripIsWeldConstraint = false
         accReanim.GripOriginalHandle = nil
+        accReanim.GripLastFullCF = nil
         accReanim.GripActive = false
 end
 LimbReanimator.Mode = SaveData.Reanimator.LimbMode
@@ -4862,6 +4869,7 @@ function LimbReanimator.Start()
                 accReanim.GripOriginalRelCFrame = nil
                 accReanim.GripIsWeldConstraint = false
                 accReanim.GripOriginalHandle = nil
+                accReanim.GripLastFullCF = nil
                 table.clear(BaseParts)
                 table.clear(UnknownMotor6Ds)
                 for _,map in LimbMapping do
@@ -5004,18 +5012,26 @@ function LimbReanimator.Start()
                                 accHandle.CFrame = actualArm.CFrame * fullGripCF
                         end
                         accReanim.GripActive = true
+                        accReanim.GripLastFullCF = fullGripCF
                 else
                         local weld = accReanim.GripOriginalWeld
                         if weld and weld.Parent then
+                                local cfChanged = accReanim.GripLastFullCF ~= fullGripCF
                                 if accReanim.GripIsWeldConstraint then
-                                        weld.Enabled = false
-                                        accHandle.CFrame = actualArm.CFrame * fullGripCF
-                                        weld.Part0 = actualArm
-                                        weld.Enabled = true
+                                        if cfChanged then
+                                                weld.Enabled = false
+                                                accHandle.CFrame = actualArm.CFrame * fullGripCF
+                                                weld.Part0 = actualArm
+                                                weld.Enabled = true
+                                                accReanim.GripLastFullCF = fullGripCF
+                                        end
                                 else
                                         weld.Part0 = actualArm
                                         weld.C0 = fullGripCF
                                         accHandle.CFrame = actualArm.CFrame * fullGripCF
+                                        if cfChanged then
+                                                accReanim.GripLastFullCF = fullGripCF
+                                        end
                                 end
                         end
                 end
