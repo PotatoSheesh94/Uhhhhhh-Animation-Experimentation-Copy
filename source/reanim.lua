@@ -4953,9 +4953,11 @@ function LimbReanimator.Start()
         Reanimate.CreateCharacter(InitCFrame)
 
         local lastrep = 0
+        local smoothedRootCF = nil
         local function UpdateTransforms(ReanimCharacter, RootPart, rootcf, rootvel, flingtarget, flingcf, dt)
                 if not RootPart:IsGrounded() then
                         if flingtarget then
+                                smoothedRootCF = nil
                                 if LimbReanimator.UseNaNFling then
                                         RootPart.CFrame = CFrame.new(flingcf.Position + Vector3.new(0, 0, math.random(0, 1) * 0.005)) * CFrame.Angles(0, os.clock() * 15, 0)
                                         RootPart.Velocity, RootPart.RotVelocity = Vector3.zero, Vector3.zero
@@ -4965,7 +4967,20 @@ function LimbReanimator.Start()
                                 end
                                 pcall(sethiddenproperty, RootPart, "PhysicsRepRootPart", Reanimate.UsePhysicsRepRootPart and Util.PredictionFlingPart(flingtarget.Target) or nil)
                         else
-                                RootPart.CFrame = rootcf + Vector3.new(0, 0, math.random(0, 1) * 0.005)
+                                local appliedCF
+                                if LimbReanimator.Mode == 3 and dt and dt > 0 then
+                                        local alpha = 1 - math.exp(-14 * dt)
+                                        if smoothedRootCF then
+                                                smoothedRootCF = smoothedRootCF:Lerp(rootcf, alpha)
+                                        else
+                                                smoothedRootCF = rootcf
+                                        end
+                                        appliedCF = smoothedRootCF
+                                else
+                                        smoothedRootCF = nil
+                                        appliedCF = rootcf
+                                end
+                                RootPart.CFrame = appliedCF + Vector3.new(0, 0, math.random(0, 1) * 0.005)
                                 RootPart.Velocity, RootPart.RotVelocity = rootvel, Vector3.zero
                                 pcall(sethiddenproperty, RootPart, "PhysicsRepRootPart", nil)
                         end
@@ -5008,7 +5023,8 @@ function LimbReanimator.Start()
                                         end
                                         if dorep or not map.CFrame then
                                                 if map.CFrame and dt and dt > 0 then
-                                                        local alpha = 1 - math.exp(-60 * dt)
+                                                        local lerpSpeed = (LimbReanimator.Mode == 3) and 12 or 60
+                                                        local alpha = 1 - math.exp(-lerpSpeed * dt)
                                                         map.CFrame = map.CFrame:Lerp(cf, alpha)
                                                 else
                                                         map.CFrame = cf
