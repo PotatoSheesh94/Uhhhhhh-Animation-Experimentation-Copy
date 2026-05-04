@@ -4435,6 +4435,12 @@ LimbReanimator.AccessoryReanim = {
 function LimbReanimator.RestoreAccessoryGrip(Character)
         local accReanim = LimbReanimator.AccessoryReanim
         if not accReanim.GripActive then return end
+        -- Destroy the Motor6D we created for currentAngle-style replication
+        if accReanim.GripCreatedWeld and accReanim.GripCreatedWeld.Parent then
+                accReanim.GripCreatedWeld:Destroy()
+        end
+        accReanim.GripCreatedWeld = nil
+        -- Re-enable the original weld
         local weld = accReanim.GripOriginalWeld
         if weld and weld.Parent then
                 if accReanim.GripIsWeldConstraint then
@@ -4462,7 +4468,6 @@ function LimbReanimator.RestoreAccessoryGrip(Character)
         accReanim.GripIsWeldConstraint = false
         accReanim.GripOriginalHandle = nil
         accReanim.GripLastFullCF = nil
-        accReanim.GripCreatedWeld = nil
         accReanim.GripActive = false
 end
 LimbReanimator.Mode = SaveData.Reanimator.LimbMode
@@ -5086,12 +5091,11 @@ function LimbReanimator.Start()
                 local rotCF = CFrame.Angles(math.rad(rot.X), math.rad(rot.Y), math.rad(rot.Z))
                 local fullGripCF = gripCF * CFrame.new(accReanim.GripOffset) * rotCF
                 -- ── Setup (first activation or accessory changed) ───────────────
-                -- Detach the handle from its weld so it becomes a free-floating
-                -- part. A free-floating part has NO weld back to the arm assembly,
-                -- so setting its CFrame every frame does NOT back-propagate forces
-                -- into the arm, and does NOT reset the Motor6D replication buffers.
-                -- The CFrame write still replicates to the server via client
-                -- network ownership, so other players see the grip too.
+                -- currentAngle style: sever the original weld so the handle is
+                -- free, then create a Motor6D (Part0=arm, Part1=handle) whose
+                -- transform we drive via ReplicateCurrentOffset6D /
+                -- ReplicateCurrentAngle6D every frame — exactly the same path used
+                -- by limb reanimation, so other players reliably see the grip.
                 if not accReanim.GripActive or accReanim.GripOriginalHandle ~= accHandle then
                         if accReanim.GripActive then
                                 LimbReanimator.RestoreAccessoryGrip(Character)
@@ -5116,13 +5120,26 @@ function LimbReanimator.Start()
                                 -- Detach: sever the Weld by clearing Part0 → handle floats freely
                                 accWeld.Part0 = nil
                         end
-                        accReanim.GripActive     = true
-                        accReanim.GripLastFullCF = fullGripCF
+                        -- Create the Motor6D that drives the handle via currentAngle replication
+                        local m6d = Instance.new("Motor6D")
+                        m6d.Name = "AccessoryGripMotor6D"
+                        m6d.MaxVelocity = 9e9
+                        m6d.C0 = CFrame.identity
+                        m6d.C1 = CFrame.identity
+                        m6d.Part0 = actualArm
+                        m6d.Part1 = accHandle
+                        m6d.Parent = actualArm
+                        accReanim.GripCreatedWeld = m6d
+                        accReanim.GripActive      = true
+                        accReanim.GripLastFullCF  = fullGripCF
                 end
-                -- ── Every frame: move the free-floating handle to the grip pose ──
-                -- No weld links the handle to the arm, so this CFrame write is
-                -- isolated from the character assembly and the Motor6D pipeline.
-                accHandle.CFrame = actualArm.CFrame * fullGripCF
+                -- ── Every frame: drive the Motor6D via currentAngle-style replication ──
+                -- This uses the same sethiddenproperty path as limb reanimation, so
+                -- the grip pose is visible to other players on the server side.
+                local m6d = accReanim.GripCreatedWeld
+                if m6d and m6d.Parent then
+                        Util.SetMotor6DOffset(m6d, fullGripCF)
+                end
         end
 
         Reanimate.Starting = false
