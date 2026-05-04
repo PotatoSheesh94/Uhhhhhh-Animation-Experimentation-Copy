@@ -4396,6 +4396,7 @@ SaveData.Reanimator.LimbInitMode = SaveData.Reanimator.LimbInitMode or 2
 SaveData.Reanimator.LimbReplicateFPS10 = not not SaveData.Reanimator.LimbReplicateFPS10
 SaveData.Reanimator.LimbRoleplay = not not SaveData.Reanimator.LimbRoleplay
 SaveData.Reanimator.LimbUseNaNFling = not not SaveData.Reanimator.LimbUseNaNFling
+SaveData.Reanimator.LimbPermadeath = not not SaveData.Reanimator.LimbPermadeath
 SaveData.Reanimator.LimbAccessoryReanimEnabled = not not SaveData.Reanimator.LimbAccessoryReanimEnabled
 SaveData.Reanimator.LimbAccessoryReanimSide = SaveData.Reanimator.LimbAccessoryReanimSide or 0
 SaveData.Reanimator.LimbAccessoryReanimName = SaveData.Reanimator.LimbAccessoryReanimName or ""
@@ -4483,6 +4484,8 @@ LimbReanimator.InitMode = SaveData.Reanimator.LimbInitMode
 LimbReanimator.ReplicateFPS10 = SaveData.Reanimator.LimbReplicateFPS10
 LimbReanimator.FlingEnabled = not SaveData.Reanimator.LimbRoleplay
 LimbReanimator.UseNaNFling = SaveData.Reanimator.LimbUseNaNFling
+LimbReanimator.Permadeath = SaveData.Reanimator.LimbPermadeath
+LimbReanimator._OriginalRespawnTime = nil
 LimbReanimator.FlingTargets = {}
 LimbReanimator._TempNotFling = {}
 function LimbReanimator.ShowHitboxes()
@@ -4563,6 +4566,16 @@ function LimbReanimator.Config(parent)
         UI.CreateSwitch(parent, "Use NaN State Fling", LimbReanimator.UseNaNFling).Changed:Connect(function(val)
                 LimbReanimator.UseNaNFling = val
                 SaveData.Reanimator.LimbUseNaNFling = val
+        end)
+        UI.CreateSeparator(parent)
+        UI.CreateText(parent, "Permadeath Limb Reanimation", 15, Enum.TextXAlignment.Center)
+        UI.CreateText(parent, "keeps health at 0 while reanimating so you never respawn", 10, Enum.TextXAlignment.Center)
+        UI.CreateSwitch(parent, "Permadeath", LimbReanimator.Permadeath).Changed:Connect(function(val)
+                LimbReanimator.Permadeath = val
+                SaveData.Reanimator.LimbPermadeath = val
+                if LimbReanimator._OriginalRespawnTime then
+                        Player.RespawnTime = val and math.huge or LimbReanimator._OriginalRespawnTime
+                end
         end)
         UI.CreateSeparator(parent)
         UI.CreateText(parent, "Accessory Grip Reanimate", 15, Enum.TextXAlignment.Center)
@@ -4898,8 +4911,23 @@ function LimbReanimator.Start()
                         end
                         stupid:Destroy()
                 end
+                if LimbReanimator.Permadeath then
+                        Player.RespawnTime = math.huge
+                        task.defer(function()
+                                local h = character:FindFirstChildOfClass("Humanoid")
+                                if h then
+                                        h:SetStateEnabled(Enum.HumanoidStateType.Dead, true)
+                                        h.Health = 0
+                                end
+                        end)
+                end
         end)
         Player.CharacterAdded:Wait()
+        local OriginalRespawnTime = Player.RespawnTime
+        LimbReanimator._OriginalRespawnTime = OriginalRespawnTime
+        if LimbReanimator.Permadeath then
+                Player.RespawnTime = math.huge
+        end
         Reanimate.CreateCharacter(InitCFrame)
 
         local lastrep = 0
@@ -5072,9 +5100,17 @@ function LimbReanimator.Start()
                                         Humanoid.JumpPower = 50
                                 end
                                 RootPart = Humanoid.RootPart
-                                if RootPart and Humanoid:GetState() ~= Enum.HumanoidStateType.Dead then
-                                        Humanoid:ChangeState(Enum.HumanoidStateType.Freefall)
-                                        ReanimOkay = LimbReanimator.FlingTargets[1] == nil
+                                if RootPart then
+                                        if Humanoid:GetState() ~= Enum.HumanoidStateType.Dead then
+                                                Humanoid:ChangeState(Enum.HumanoidStateType.Freefall)
+                                                ReanimOkay = LimbReanimator.FlingTargets[1] == nil
+                                        elseif LimbReanimator.Permadeath then
+                                                ReanimOkay = LimbReanimator.FlingTargets[1] == nil
+                                        end
+                                        if LimbReanimator.Permadeath then
+                                                Humanoid:SetStateEnabled(Enum.HumanoidStateType.Dead, true)
+                                                Humanoid.Health = 0
+                                        end
                                 end
                         end
                 end
@@ -5179,6 +5215,8 @@ function LimbReanimator.Start()
                 end
         end
         LimbReanimator.RestoreAccessoryGrip(Player.Character)
+        Player.RespawnTime = OriginalRespawnTime
+        LimbReanimator._OriginalRespawnTime = nil
         CharConn:Disconnect()
         if Player.Character then
                 local h = Player.Character:FindFirstChild("Humanoid")
