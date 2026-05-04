@@ -5136,6 +5136,14 @@ function LimbReanimator.Start()
                                                 ff.Parent = Character
                                                 pcall(replicatesignal, Character.ChildAdded, ff)
                                         end
+                                        if not LimbReanimator.Permadeath then
+                                                if Humanoid.MaxHealth > 0 and Humanoid.Health < Humanoid.MaxHealth then
+                                                        Humanoid.Health = Humanoid.MaxHealth
+                                                end
+                                                pcall(function()
+                                                        Humanoid:SetStateEnabled(Enum.HumanoidStateType.Dead, false)
+                                                end)
+                                        end
                                 end
                         end
                 end
