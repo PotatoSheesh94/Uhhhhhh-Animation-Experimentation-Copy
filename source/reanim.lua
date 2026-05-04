@@ -4955,8 +4955,6 @@ function LimbReanimator.Start()
                                                 ff.Visible = true
                                                 ff.Parent = Character
                                                 pcall(replicatesignal, Character.ChildAdded, ff)
-                                        elseif existingFF.ReceiveAge == 0 then
-                                                pcall(replicatesignal, Character.ChildAdded, existingFF)
                                         end
                                         if not LimbReanimator.Permadeath then
                                                 if Humanoid.MaxHealth > 0 and Humanoid.Health < Humanoid.MaxHealth then
