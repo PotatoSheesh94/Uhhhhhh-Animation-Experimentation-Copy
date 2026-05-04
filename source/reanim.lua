@@ -5136,6 +5136,7 @@ function LimbReanimator.Start()
                                                 newWeld.C0 = fullGripCF
                                                 accReanim.GripLastFullCF = fullGripCF
                                         end
+                                        accHandle.CFrame = actualArm.CFrame * fullGripCF
                                 end
                         else
                                 local weld = accReanim.GripOriginalWeld
@@ -5147,6 +5148,7 @@ function LimbReanimator.Start()
                                                 weld.C0 = fullGripCF
                                                 accReanim.GripLastFullCF = fullGripCF
                                         end
+                                        accHandle.CFrame = actualArm.CFrame * fullGripCF
                                 end
                         end
                 end
@@ -5273,8 +5275,8 @@ function LimbReanimator.Start()
                                                 flingtarget = nil
                                         end
                                 end
-                                UpdateTransforms(ReanimCharacter, RootPart, rootcf, rootvel, flingtarget, flingcf, heartbeatDt)
                                 ApplyAccessoryGrip(ReanimCharacter, Character, ltm, flingtarget)
+                                UpdateTransforms(ReanimCharacter, RootPart, rootcf, rootvel, flingtarget, flingcf, heartbeatDt)
                                 if LimbReanimator.UseNaNFling then
                                         if os.clock() - lastspawn > 0.1 then
                                                 pcall(sethiddenproperty, Humanoid, "MoveDirectionInternal", Vector3.new(0/0, 0/0, 0/0))
@@ -5289,8 +5291,8 @@ function LimbReanimator.Start()
                                 if Reanimate:ShouldRotationType() then
                                         Reanimate:CameraLockCharacter()
                                 end
-                                UpdateTransforms(ReanimCharacter, RootPart, rootcf, rootvel, flingtarget, flingcf, heartbeatDt)
                                 ApplyAccessoryGrip(ReanimCharacter, Character, ltm, flingtarget)
+                                UpdateTransforms(ReanimCharacter, RootPart, rootcf, rootvel, flingtarget, flingcf, heartbeatDt)
                         end
                 end
         end
