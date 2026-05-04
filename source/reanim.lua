@@ -4584,6 +4584,7 @@ function LimbReanimator.Config(parent)
                 LimbReanimator.PermanentRespawnShield = val
                 SaveData.Reanimator.LimbPermanentRespawnShield = val
         end)
+        local shieldStatusText = UI.CreateText(parent, "Shield Status: OFF", 12, Enum.TextXAlignment.Center)
         UI.CreateSeparator(parent)
         UI.CreateText(parent, "Accessory Grip Reanimate", 15, Enum.TextXAlignment.Center)
         UI.CreateText(parent, "teleports a worn accessory to your chosen hand while reanimating", 10, Enum.TextXAlignment.Center)
@@ -4733,6 +4734,23 @@ function LimbReanimator.Config(parent)
                 dmode.Value = LimbReanimator.Mode + 1
                 dvel.Value = LimbReanimator.Velocity + 1
                 dinit.Value = LimbReanimator.InitMode + 1
+                if not LimbReanimator.PermanentRespawnShield then
+                        shieldStatusText.Text = "Shield Status: OFF"
+                        shieldStatusText.TextColor3 = Color3.fromRGB(180, 180, 180)
+                elseif not LimbReanimator._HadRespawnShield then
+                        shieldStatusText.Text = "Shield Status: WAITING (game has no shield yet)"
+                        shieldStatusText.TextColor3 = Color3.fromRGB(255, 200, 50)
+                else
+                        local char = Player.Character
+                        local hasFF = char and char:FindFirstChildOfClass("ForceField") ~= nil
+                        if hasFF then
+                                shieldStatusText.Text = "Shield Status: ACTIVE"
+                                shieldStatusText.TextColor3 = Color3.fromRGB(80, 255, 100)
+                        else
+                                shieldStatusText.Text = "Shield Status: APPLYING..."
+                                shieldStatusText.TextColor3 = Color3.fromRGB(255, 200, 50)
+                        end
+                end
         end))
 end
 function LimbReanimator.Start()
