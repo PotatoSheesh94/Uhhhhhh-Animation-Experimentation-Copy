@@ -4926,8 +4926,12 @@ function LimbReanimator.Start()
                 end
                 table.clear(BaseParts)
                 table.clear(UnknownMotor6Ds)
+                smoothedRootCF = nil
+                smoothedRootVel = Vector3.zero
                 for _,map in LimbMapping do
                         map.Reference = nil
+                        map.CFrame = nil
+                        map.PosVelocity = nil
                 end
                 LimbReanimator._HadRespawnShield = false
                 for _, v in character:GetChildren() do
@@ -4964,6 +4968,15 @@ function LimbReanimator.Start()
 
         local lastrep = 0
         local smoothedRootCF = nil
+        local smoothedRootVel = Vector3.zero
+        local jointSpeedMult = {
+                ["Torso"]     = 1.00,
+                ["Head"]      = 0.58,
+                ["Left Arm"]  = 0.80,
+                ["Right Arm"] = 0.80,
+                ["Left Leg"]  = 1.18,
+                ["Right Leg"] = 1.18,
+        }
         local function UpdateTransforms(ReanimCharacter, RootPart, rootcf, rootvel, flingtarget, flingcf, dt)
                 if not RootPart:IsGrounded() then
                         if flingtarget then
@@ -4979,15 +4992,28 @@ function LimbReanimator.Start()
                         else
                                 local appliedCF
                                 if LimbReanimator.Mode == 3 and dt and dt > 0 then
-                                        local alpha = 1 - math.exp(-LimbReanimator.CurrentAngleSmoothSpeed * dt)
+                                        local speed = LimbReanimator.CurrentAngleSmoothSpeed
+                                        local stiffness = speed * speed * 0.35
+                                        local dampingCoeff = speed * 0.95
                                         if smoothedRootCF then
-                                                smoothedRootCF = smoothedRootCF:Lerp(rootcf, alpha)
+                                                local targetPos = rootcf.Position
+                                                local currentPos = smoothedRootCF.Position
+                                                local posForce = (targetPos - currentPos) * stiffness - smoothedRootVel * dampingCoeff
+                                                smoothedRootVel = smoothedRootVel + posForce * dt
+                                                local newPos = currentPos + smoothedRootVel * dt
+                                                local rotAlpha = 1 - math.exp(-speed * 1.5 * dt)
+                                                local rotCurrent = smoothedRootCF - smoothedRootCF.Position
+                                                local rotTarget = rootcf - rootcf.Position
+                                                local rotLerped = rotCurrent:Lerp(rotTarget, rotAlpha)
+                                                smoothedRootCF = CFrame.new(newPos) * rotLerped
                                         else
                                                 smoothedRootCF = rootcf
+                                                smoothedRootVel = Vector3.zero
                                         end
                                         appliedCF = smoothedRootCF
                                 else
                                         smoothedRootCF = nil
+                                        smoothedRootVel = Vector3.zero
                                         appliedCF = rootcf
                                 end
                                 RootPart.CFrame = appliedCF + Vector3.new(0, 0, math.random(0, 1) * 0.005)
@@ -5033,11 +5059,31 @@ function LimbReanimator.Start()
                                         end
                                         if dorep or not map.CFrame then
                                                 if map.CFrame and dt and dt > 0 then
-                                                        local lerpSpeed = (LimbReanimator.Mode == 3) and LimbReanimator.CurrentAngleSmoothSpeed or 60
-                                                        local alpha = 1 - math.exp(-lerpSpeed * dt)
-                                                        map.CFrame = map.CFrame:Lerp(cf, alpha)
+                                                        if LimbReanimator.Mode == 3 then
+                                                                local mult = jointSpeedMult[map.RPart1] or 1.0
+                                                                local speed = LimbReanimator.CurrentAngleSmoothSpeed * mult
+                                                                local stiffness = speed * speed * 0.35
+                                                                local dampingCoeff = speed * 0.95
+                                                                if not map.PosVelocity then
+                                                                        map.PosVelocity = Vector3.zero
+                                                                end
+                                                                local targetPos = cf.Position
+                                                                local currentPos = map.CFrame.Position
+                                                                local posForce = (targetPos - currentPos) * stiffness - map.PosVelocity * dampingCoeff
+                                                                map.PosVelocity = map.PosVelocity + posForce * dt
+                                                                local newPos = currentPos + map.PosVelocity * dt
+                                                                local rotAlpha = 1 - math.exp(-speed * 1.5 * dt)
+                                                                local rotCurrent = map.CFrame - map.CFrame.Position
+                                                                local rotTarget = cf - cf.Position
+                                                                local rotLerped = rotCurrent:Lerp(rotTarget, rotAlpha)
+                                                                map.CFrame = CFrame.new(newPos) * rotLerped
+                                                        else
+                                                                local alpha = 1 - math.exp(-60 * dt)
+                                                                map.CFrame = map.CFrame:Lerp(cf, alpha)
+                                                        end
                                                 else
                                                         map.CFrame = cf
+                                                        map.PosVelocity = nil
                                                 end
                                         end
                                         Util.SetMotor6DOffset(v, map.CFrame)
