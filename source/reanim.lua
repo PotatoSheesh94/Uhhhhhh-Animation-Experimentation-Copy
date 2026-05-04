@@ -4782,6 +4782,18 @@ function LimbReanimator.Start()
                                 LimbReanimator._HadRespawnShield = true
                         end
                 end)
+                character.ChildRemoved:Connect(function(child)
+                        if child:IsA("ForceField") and LimbReanimator.PermanentRespawnShield and LimbReanimator._HadRespawnShield then
+                                task.defer(function()
+                                        if character:IsDescendantOf(workspace) and not character:FindFirstChildOfClass("ForceField") then
+                                                local ff = Instance.new("ForceField")
+                                                ff.Visible = true
+                                                ff.Parent = character
+                                                pcall(replicatesignal, character.ChildAdded, ff)
+                                        end
+                                end)
+                        end
+                end)
                 character.DescendantAdded:Connect(CharOnDesc)
                 for _,v in character:GetDescendants() do
                         task.spawn(CharOnDesc, v)
