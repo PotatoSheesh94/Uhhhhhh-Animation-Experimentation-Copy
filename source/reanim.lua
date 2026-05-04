@@ -4564,15 +4564,22 @@ function LimbReanimator.Config(parent)
         UI.CreateSeparator(parent)
         UI.CreateText(parent, "CurrentAngle Style Smoothing", 15, Enum.TextXAlignment.Center)
         UI.CreateText(parent, "lower = smoother / floatier, higher = snappier (applies to CurrentAngle Style only)", 10, Enum.TextXAlignment.Center)
-        UI.CreateSlider(parent, "Smooth Speed", LimbReanimator.CurrentAngleSmoothSpeed, 1, 30, 1).Changed:Connect(function(val)
+        local speedSlider = UI.CreateSlider(parent, "Smooth Speed", LimbReanimator.CurrentAngleSmoothSpeed, 1, 30, 1)
+        speedSlider.Changed:Connect(function(val)
                 LimbReanimator.CurrentAngleSmoothSpeed = val
                 SaveData.Reanimator.LimbCurrentAngleSmoothSpeed = val
         end)
-        UI.CreateSlider(parent, "Spring Damping", LimbReanimator.CurrentAngleDamping, 0.2, 2.5, 0).Changed:Connect(function(val)
+        local dampingSlider = UI.CreateSlider(parent, "Spring Damping", LimbReanimator.CurrentAngleDamping, 0.2, 2.5, 0)
+        dampingSlider.Changed:Connect(function(val)
                 LimbReanimator.CurrentAngleDamping = val
                 SaveData.Reanimator.LimbCurrentAngleDamping = val
         end)
         UI.CreateText(parent, "0.2 = very bouncy  |  ~0.95 = natural  |  1.2+ = rigid/no bounce", 10, Enum.TextXAlignment.Center)
+        local resetBtn = UI.CreateButton(parent, "Reset to Defaults", 18)
+        resetBtn.MouseButton1Click:Connect(function()
+                speedSlider.Value = 12
+                dampingSlider.Value = 0.95
+        end)
         UI.CreateSeparator(parent)
         UI.CreateSwitch(parent, "Show me how I look!", LimbReanimator.ReplicateFPS10).Changed:Connect(function(val)
                 LimbReanimator.ReplicateFPS10 = val
