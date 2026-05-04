@@ -4808,11 +4808,11 @@ function LimbReanimator.Start()
         local smoothedRootVel = Vector3.zero
         local jointSpeedMult = {
                 ["Torso"]     = 1.00,
-                ["Head"]      = 0.68,
-                ["Left Arm"]  = 0.76,
-                ["Right Arm"] = 0.76,
-                ["Left Leg"]  = 0.90,
-                ["Right Leg"] = 0.90,
+                ["Head"]      = 0.86,
+                ["Left Arm"]  = 0.89,
+                ["Right Arm"] = 0.89,
+                ["Left Leg"]  = 0.96,
+                ["Right Leg"] = 0.96,
         }
         local function UpdateTransforms(ReanimCharacter, RootPart, rootcf, rootvel, flingtarget, flingcf, dt)
                 if not RootPart:IsGrounded() then
@@ -4829,7 +4829,7 @@ function LimbReanimator.Start()
                         else
                                 local appliedCF
                                 if LimbReanimator.Mode == 3 and dt and dt > 0 then
-                                        local omega = 38
+                                        local omega = 70
                                         if smoothedRootCF then
                                                 local disp = smoothedRootCF.Position - rootcf.Position
                                                 local vel  = smoothedRootVel
@@ -4897,7 +4897,7 @@ function LimbReanimator.Start()
                                                 if map.CFrame and dt and dt > 0 then
                                                         if LimbReanimator.Mode == 3 then
                                                                 local mult  = jointSpeedMult[map.RPart1] or 1.0
-                                                                local omega = 38 * mult
+                                                                local omega = 70 * mult
                                                                 local disp  = map.CFrame.Position - cf.Position
                                                                 local vel   = map.PosVelocity or Vector3.zero
                                                                 local decay = math.exp(-omega * dt)
