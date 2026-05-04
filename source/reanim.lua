@@ -6582,7 +6582,7 @@ function HatReanimator.Start()
                 local cdsbeffect = os.clock()
                 local cdsbtime = os.clock()
                 if perma then
-                        --replicatesignal(Player.ConnectDiedSignalBackend)
+                        pcall(replicatesignal, Player.ConnectDiedSignalBackend)
                         HatReanimator.Status.Permadeath = "Fired CDSB Signal."
                         cdsbeffect += Players.RespawnTime
                 end
