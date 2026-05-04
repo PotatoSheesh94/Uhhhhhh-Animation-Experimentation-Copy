@@ -5178,6 +5178,10 @@ function HatReanimator.Config(parent)
         UI.CreateSwitch(parent, "Permadeath", HatReanimator.Permadeath).Changed:Connect(function(val)
                 HatReanimator.Permadeath = val
                 SaveData.Reanimator.HatsPatchmahub = not val
+                if not val then
+                        PermaDeathLatched = false
+                        pcall(function() Players.RespawnTime = OriginalRespawnTime end)
+                end
         end)
         UI.CreateDropdown(parent, "respawntp", {
                 "The Void",
@@ -5957,6 +5961,8 @@ function HatReanimator.Start()
         end
 
         local IsRespawning = false
+        local PermaDeathLatched = false
+        local OriginalRespawnTime = Players.RespawnTime
         local function Respawn()
                 if IsRespawning then return end
                 IsRespawning = true
@@ -6469,6 +6475,15 @@ function HatReanimator.Start()
         local NumHats = 0
         local function OnCharacter(character)
                 if HatReanimator.DontFireCharAddOnThisChar == character then return end
+                if PermaDeathLatched then
+                        local h = character:FindFirstChildOfClass("Humanoid")
+                        if h then
+                                pcall(replicatesignal, h.ServerBreakJoints)
+                                h.Health = 0
+                                h:ChangeState(Enum.HumanoidStateType.Dead)
+                        end
+                        return
+                end
                 currentping = Player:GetNetworkPing()
                 local toolnames = {}
                 for _,v in CharTools do table.insert(toolnames, v.Name) end
@@ -6582,8 +6597,7 @@ function HatReanimator.Start()
                 local cdsbeffect = os.clock()
                 local cdsbtime = os.clock()
                 if perma then
-                        pcall(replicatesignal, Player.ConnectDiedSignalBackend)
-                        HatReanimator.Status.Permadeath = "Fired CDSB Signal."
+                        HatReanimator.Status.Permadeath = "Blocking respawn..."
                         cdsbeffect += Players.RespawnTime
                 end
                 HatReanimator.Status.RespawnFling = "Flinging targets..."
@@ -6713,6 +6727,11 @@ function HatReanimator.Start()
                                 c:Disconnect()
                         end
                         return
+                end
+                if perma then
+                        PermaDeathLatched = true
+                        pcall(function() Players.RespawnTime = math.huge end)
+                        HatReanimator.Status.Permadeath = "Permadeath active. Respawn blocked."
                 end
                 pcall(replicatesignal, Humanoid.ServerBreakJoints)
                 Humanoid.EvaluateStateMachine = true
