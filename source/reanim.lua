@@ -4937,11 +4937,14 @@ function LimbReanimator.Start()
                                         pcall(replicatesignal, Humanoid.HealthChanged, 0.001)
                                 end
                                 if LimbReanimator.PermanentRespawnShield and LimbReanimator._HadRespawnShield then
-                                        if not Character:FindFirstChildOfClass("ForceField") then
+                                        local existingFF = Character:FindFirstChildOfClass("ForceField")
+                                        if not existingFF then
                                                 local ff = Instance.new("ForceField")
                                                 ff.Visible = true
                                                 ff.Parent = Character
                                                 pcall(replicatesignal, Character.ChildAdded, ff)
+                                        elseif existingFF.ReceiveAge == 0 then
+                                                pcall(replicatesignal, Character.ChildAdded, existingFF)
                                         end
                                         if not LimbReanimator.Permadeath then
                                                 if Humanoid.MaxHealth > 0 and Humanoid.Health < Humanoid.MaxHealth then
