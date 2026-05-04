@@ -5467,6 +5467,7 @@ function HatReanimator.Config(parent)
         UI.CreateDropdown(parent, "toolanim Method", {
                 "Disabled",
                 "Sword",
+                "Motor6D",
         }, HatReanimator.ToolAnimMethod + 1).Changed:Connect(function(val)
                 HatReanimator.ToolAnimMethod = val - 1
                 SaveData.Reanimator.HatsToolAnim = val - 1
@@ -7358,8 +7359,31 @@ function HatReanimator.Start()
                                 end
                                 for handle, cf in handlethese do
                                         if not blacklist[handle] then
-                                                if SetUACFrameNetless(handle, dt, cf, rightarm.Velocity, HatReanimator.HatFling, HatReanimator.HatSpin) then
-                                                        table.insert(slocked, handle)
+                                                if HatReanimator.ToolAnimMethod == 2 then
+                                                        -- Motor6D method: use ReplicateCurrentOffset6D/Angle6D on the
+                                                        -- real RightGrip Motor6D — same technique as limb reanimation.
+                                                        -- The motor's C0 (grip attach on arm) and C1 (tool grip offset)
+                                                        -- already encode the exact grip pose, so CFrame.identity = grip.
+                                                        -- No physics back-propagation, correct server replication.
+                                                        local realGrip = handle:FindFirstChild("RightGrip")
+                                                        if realGrip and realGrip:IsA("Motor6D") then
+                                                                -- Keep C0 scale-correct
+                                                                if realGrip.C0 ~= rightgrip then
+                                                                        realGrip.C0 = rightgrip
+                                                                end
+                                                                -- CFrame.identity = sit exactly at the grip pose encoded by C0/C1
+                                                                Util.SetMotor6DTransform(realGrip, CFrame.identity)
+                                                                table.insert(slocked, handle)
+                                                        else
+                                                                -- No Motor6D found — fall back to physics push
+                                                                if SetUACFrameNetless(handle, dt, cf, rightarm.Velocity, HatReanimator.HatFling, HatReanimator.HatSpin) then
+                                                                        table.insert(slocked, handle)
+                                                                end
+                                                        end
+                                                else
+                                                        if SetUACFrameNetless(handle, dt, cf, rightarm.Velocity, HatReanimator.HatFling, HatReanimator.HatSpin) then
+                                                                table.insert(slocked, handle)
+                                                        end
                                                 end
                                         end
                                 end
