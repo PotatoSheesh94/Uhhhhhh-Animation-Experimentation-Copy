@@ -1135,7 +1135,7 @@ local UIMainWindow, WindowContent do
         
         local TopBarFrame = Util.Instance("Frame", UIMainWindow)
         TopBarFrame.Position = UDim2.new(0, 0, 0, 0)
-        TopBarFrame.Size = UDim2.new(1, 0, 0, 30)
+        TopBarFrame.Size = UDim2.new(1, 0, 0, 34)
         TopBarFrame.BackgroundTransparency = 0
         TopBarFrame.BackgroundColor3 = Color3.new(1, 1, 1)
         TopBarFrame.BorderSizePixel = 0
@@ -1261,8 +1261,8 @@ local UIMainWindow, WindowContent do
         end
         
         WindowContent = Util.Instance("Frame", UIMainWindow)
-        WindowContent.Position = UDim2.new(0, 0, 0, 30)
-        WindowContent.Size = UDim2.new(1, 0, 1, -35)
+        WindowContent.Position = UDim2.new(0, 0, 0, 34)
+        WindowContent.Size = UDim2.new(1, 0, 1, -39)
         WindowContent.BackgroundTransparency = 1
         WindowContent.ClipsDescendants = true
         WindowContent.ZIndex = 0
@@ -1282,7 +1282,7 @@ local UIMainWindow, WindowContent do
                         MainWindowPosOpen = UIMainWindow.Position
                         TweenService:Create(UIMainWindow, TweenInfo.new(0.5, Enum.EasingStyle.Cubic, Enum.EasingDirection.Out), {
                                 Position = MainWindowPosClose,
-                                Size = UDim2.fromOffset(112, 30)
+                                Size = UDim2.fromOffset(180, 34)
                         }):Play()
                         TweenService:Create(TopBarClose.A, TweenInfo.new(0.5, Enum.EasingStyle.Cubic, Enum.EasingDirection.Out), {
                                 Rotation = 180
@@ -1366,7 +1366,7 @@ local _totalrendertime = 0
 RunService:BindToRenderStep("Uhhhhhh_Render" .. Util.RandomString(), Enum.RenderPriority.Last.Value - 69, function(dt)
         _totalrendertime += dt
         UpdateGrads(_totalrendertime)
-        WindowContent.Visible = UIMainWindow.Size.Y.Offset > 35
+        WindowContent.Visible = UIMainWindow.Size.Y.Offset > 39
         for _,func in _funcrefreshes do
                 local s, e = pcall(func, _totalrendertime, dt)
                 if not s then warn(e) end
@@ -1408,17 +1408,19 @@ do
         local ProgressTop = Instance.new("Frame", Progress)
         ProgressTop.AnchorPoint = Vector2.new(0.5, 0)
         ProgressTop.Position = UDim2.new(0.5, 0, 0, 0)
-        ProgressTop.Size = UDim2.new(0, 0, 0, 4)
+        ProgressTop.Size = UDim2.new(0, 0, 0, 3)
         ProgressTop.BackgroundTransparency = 0
         ProgressTop.BackgroundColor3 = Color3.new(1, 1, 1)
         ProgressTop.BorderSizePixel = 0
+        Instance.new("UICorner", ProgressTop).CornerRadius = UDim.new(1, 0)
         local ProgressBot = Instance.new("Frame", Progress)
         ProgressBot.AnchorPoint = Vector2.new(0.5, 1)
         ProgressBot.Position = UDim2.new(0.5, 0, 1, 0)
-        ProgressBot.Size = UDim2.new(0, 0, 0, 4)
+        ProgressBot.Size = UDim2.new(0, 0, 0, 3)
         ProgressBot.BackgroundTransparency = 0
         ProgressBot.BackgroundColor3 = Color3.new(1, 1, 1)
         ProgressBot.BorderSizePixel = 0
+        Instance.new("UICorner", ProgressBot).CornerRadius = UDim.new(1, 0)
         local NotifyText = Util.Instance("TextLabel", UINotifyFrame)
         NotifyText.AnchorPoint = Vector2.new(0.5, 0.5)
         NotifyText.Position = UDim2.new(0.5, 0, 0.5, 0)
@@ -1498,12 +1500,17 @@ CracktroFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
 CracktroFrame.Size = UDim2.new(0, 360, 0, 205)
 CracktroFrame.BackgroundTransparency = 0
 CracktroFrame.BackgroundColor3 = Color3.new(0, 0, 0)
-CracktroFrame.BorderSizePixel = 1
-CracktroFrame.BorderColor3 = Color3.new(1, 1, 1)
+CracktroFrame.BorderSizePixel = 0
 CracktroFrame.ZIndex = 10
 CracktroFrame.ClipsDescendants = true
+local CracktroStroke = Util.Instance("UIStroke", CracktroFrame)
+CracktroStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+CracktroStroke.Color = Color3.new(1, 1, 1)
+CracktroStroke.LineJoinMode = Enum.LineJoinMode.Round
+CracktroStroke.Thickness = 1.5
+CracktroStroke.Transparency = 0
 AddToRenderStep(function(t)
-        CracktroFrame.BorderColor3 = GetUIColor(t)
+        CracktroStroke.Color = GetUIColor(t)
         CracktroFrame.BackgroundColor3 = GetUIBGColor(t)
 end, CracktroFrame)
 
@@ -1767,24 +1774,29 @@ function UI.CreatePage()
         Frame.Size = UDim2.new(0, 360, 0, 205)
         Frame.BackgroundTransparency = 0
         Frame.BackgroundColor3 = Color3.new(0, 0, 0)
-        Frame.BorderSizePixel = 1
-        Frame.BorderColor3 = Color3.new(1, 1, 1)
+        Frame.BorderSizePixel = 0
         Frame.Visible = true
         Frame.ZIndex = 0
         Frame.AutomaticCanvasSize = Enum.AutomaticSize.Y
         Frame.CanvasSize = UDim2.new(0, 0, 0, 0)
         Frame.ClipsDescendants = true
+        local PageStroke = Util.Instance("UIStroke", Frame)
+        PageStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+        PageStroke.Color = Color3.new(1, 1, 1)
+        PageStroke.LineJoinMode = Enum.LineJoinMode.Round
+        PageStroke.Thickness = 1.5
+        PageStroke.Transparency = 0
         AddToRenderStep(function(t)
-                Frame.BorderColor3 = GetUIColor(t)
+                PageStroke.Color = GetUIColor(t)
                 Frame.BackgroundColor3 = GetUIBGColor(t)
         end, Frame)
         Frame.ScrollingDirection = Enum.ScrollingDirection.Y
-        Frame.ScrollBarThickness = 3
+        Frame.ScrollBarThickness = 4
         Frame.ElasticBehavior = Enum.ElasticBehavior.Always
         Frame.TopImage = "rbxasset://textures/ui/Scroll/scroll-middle.png"
         Frame.MidImage = "rbxasset://textures/ui/Scroll/scroll-middle.png"
         Frame.BottomImage = "rbxasset://textures/ui/Scroll/scroll-middle.png"
-        Frame.ScrollBarImageTransparency = 0.5
+        Frame.ScrollBarImageTransparency = 0.3
         Frame.ScrollBarImageColor3 = UITextColor.Value
         Util.LinkDestroyI2C(Frame, UITextColor.Changed:Connect(function(val)
                 Frame.ScrollBarImageColor3 = val
@@ -1886,6 +1898,13 @@ function UI.CreateButton(parent, text, size)
         ButtonText.TextSize = size
         RegisterTextLabel(ButtonText)
         Stylize(Button)
+        local _btnTI = TweenInfo.new(0.12, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+        Button.MouseEnter:Connect(function()
+                TweenService:Create(Button, _btnTI, { BackgroundTransparency = 0.18 }):Play()
+        end)
+        Button.MouseLeave:Connect(function()
+                TweenService:Create(Button, _btnTI, { BackgroundTransparency = 0 }):Play()
+        end)
         local function update()
                 local x = parent.AbsoluteSize.X
                 local size = TextService:GetTextSize(ButtonText.ContentText, ButtonText.TextSize, ButtonText.Font, Vector2.new(x - margin * 2, math.huge))
@@ -2116,6 +2135,18 @@ function UI.CreateSlider(parent, text, value, min, max, step)
                 Depthed = true,
         })
         Stylize(SliderB)
+        local SliderFill = Util.Instance("Frame", SliderR)
+        SliderFill.AnchorPoint = Vector2.new(0, 0.5)
+        SliderFill.Position = UDim2.new(0, 0, 0.5, 0)
+        SliderFill.Size = UDim2.new(0, 0, 1, 0)
+        SliderFill.BackgroundTransparency = 0.25
+        SliderFill.BackgroundColor3 = UITextColor.Value
+        SliderFill.BorderSizePixel = 0
+        SliderFill.ZIndex = 1
+        Util.Instance("UICorner", SliderFill).CornerRadius = UDim.new(1, 0)
+        Util.LinkDestroyI2C(SliderFill, UITextColor.Changed:Connect(function(val)
+                SliderFill.BackgroundColor3 = val
+        end))
         local range = max - min
         if step > 0 then
                 if range / step < 20 then
@@ -2145,7 +2176,9 @@ function UI.CreateSlider(parent, text, value, min, max, step)
                         end
                 end
                 BoxText.Text = str
-                SliderB.Position = UDim2.new(math.clamp((Select.Value - min) / (max - min), 0, 1), 0, 0.5, 0)
+                local _slPct = math.clamp((Select.Value - min) / (max - min), 0, 1)
+                SliderB.Position = UDim2.new(_slPct, 0, 0.5, 0)
+                SliderFill.Size = UDim2.new(_slPct, 0, 1, 0)
                 if math.random(4) == 1 then
                         if str:find("67") or str:find("6.7") then
                                 Util.UINotify("SIX SEVENNNN 67 67 67 67 OMG")
@@ -2299,11 +2332,18 @@ function UI.CreateDropdown(parent, text, array, value)
         Util.LinkDestroyI2I(Dropdown, Droplist)
         for i,itemname in array do
                 local Item = Util.Instance("TextButton", Droplist)
-                Item.Size = UDim2.new(1, 0, 0, 20)
-                Item.BackgroundTransparency = 0
+                Item.Size = UDim2.new(1, 0, 0, 26)
+                Item.BackgroundTransparency = 0.08
                 Item.BackgroundColor3 = Color3.new(0, 0, 0)
                 Item.BorderSizePixel = 0
-                Item.AutoButtonColor = true
+                Item.AutoButtonColor = false
+                local _ddTI = TweenInfo.new(0.08, Enum.EasingStyle.Quad)
+                Item.MouseEnter:Connect(function()
+                        TweenService:Create(Item, _ddTI, { BackgroundTransparency = 0 }):Play()
+                end)
+                Item.MouseLeave:Connect(function()
+                        TweenService:Create(Item, _ddTI, { BackgroundTransparency = 0.08 }):Play()
+                end)
                 Item.LayoutOrder = i
                 Item.Text = itemname
                 Item.TextSize = 13
@@ -2441,12 +2481,12 @@ function UI.CreateScrollCanvas(parent, height)
         ListBox.CanvasSize = UDim2.new(0, 0, 0, 0)
         ListBox.ClipsDescendants = true
         ListBox.ScrollingDirection = Enum.ScrollingDirection.Y
-        ListBox.ScrollBarThickness = 3
+        ListBox.ScrollBarThickness = 4
         ListBox.ElasticBehavior = Enum.ElasticBehavior.Always
         ListBox.TopImage = "rbxasset://textures/ui/Scroll/scroll-middle.png"
         ListBox.MidImage = "rbxasset://textures/ui/Scroll/scroll-middle.png"
         ListBox.BottomImage = "rbxasset://textures/ui/Scroll/scroll-middle.png"
-        ListBox.ScrollBarImageTransparency = 0.5
+        ListBox.ScrollBarImageTransparency = 0.3
         ListBox.ScrollBarImageColor3 = UITextColor.Value
         Util.LinkDestroyI2C(ListBox, UITextColor.Changed:Connect(function(val)
                 ListBox.ScrollBarImageColor3 = val
@@ -2476,13 +2516,18 @@ function UI.CreateItemListPage()
         Frame.Size = UDim2.new(0, 360, 0, 205)
         Frame.BackgroundTransparency = 0
         Frame.BackgroundColor3 = Color3.new(0, 0, 0)
-        Frame.BorderSizePixel = 1
-        Frame.BorderColor3 = Color3.new(1, 1, 1)
+        Frame.BorderSizePixel = 0
         Frame.Visible = true
         Frame.ZIndex = 0
         Frame.ClipsDescendants = true
+        local ILPStroke = Util.Instance("UIStroke", Frame)
+        ILPStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+        ILPStroke.Color = Color3.new(1, 1, 1)
+        ILPStroke.LineJoinMode = Enum.LineJoinMode.Round
+        ILPStroke.Thickness = 1.5
+        ILPStroke.Transparency = 0
         AddToRenderStep(function(t)
-                Frame.BorderColor3 = GetUIColor(t)
+                ILPStroke.Color = GetUIColor(t)
                 Frame.BackgroundColor3 = GetUIBGColor(t)
         end, Frame)
         local Padding = Util.Instance("UIPadding", Frame)
@@ -2555,12 +2600,12 @@ function UI.CreateItemListPage()
         ListBox.CanvasSize = UDim2.new(0, 0, 0, 0)
         ListBox.ClipsDescendants = true
         ListBox.ScrollingDirection = Enum.ScrollingDirection.Y
-        ListBox.ScrollBarThickness = 3
+        ListBox.ScrollBarThickness = 4
         ListBox.ElasticBehavior = Enum.ElasticBehavior.Always
         ListBox.TopImage = "rbxasset://textures/ui/Scroll/scroll-middle.png"
         ListBox.MidImage = "rbxasset://textures/ui/Scroll/scroll-middle.png"
         ListBox.BottomImage = "rbxasset://textures/ui/Scroll/scroll-middle.png"
-        ListBox.ScrollBarImageTransparency = 0.5
+        ListBox.ScrollBarImageTransparency = 0.3
         ListBox.ScrollBarImageColor3 = UITextColor.Value
         Util.LinkDestroyI2C(ListBox, UITextColor.Changed:Connect(function(val)
                 ListBox.ScrollBarImageColor3 = val
@@ -2616,6 +2661,13 @@ function UI.CreateItemListItem(parent)
         ListBox.AutomaticSize = Enum.AutomaticSize.Y
         ListBox.Text = ""
         Stylize(ListBox)
+        local _ilTI = TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+        ListBox.MouseEnter:Connect(function()
+                TweenService:Create(ListBox, _ilTI, { BackgroundTransparency = 0.18 }):Play()
+        end)
+        ListBox.MouseLeave:Connect(function()
+                TweenService:Create(ListBox, _ilTI, { BackgroundTransparency = 0 }):Play()
+        end)
         Padding = Util.Instance("UIPadding", ListBox)
         Padding.PaddingTop = UDim.new(0, 5)
         Padding.PaddingBottom = UDim.new(0, 5)
