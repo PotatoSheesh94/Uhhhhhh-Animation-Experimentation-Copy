@@ -4774,6 +4774,15 @@ function LimbReanimator.Start()
                         Camera.CFrame = camcfr
                 end)
                 lastspawn = os.clock()
+                local accReanim = LimbReanimator.AccessoryReanim
+                accReanim.GripActive = false
+                accReanim.GripOriginalWeld = nil
+                accReanim.GripOriginalPart0 = nil
+                accReanim.GripOriginalC0 = nil
+                accReanim.GripOriginalC1 = nil
+                accReanim.GripOriginalRelCFrame = nil
+                accReanim.GripIsWeldConstraint = false
+                accReanim.GripOriginalHandle = nil
                 table.clear(BaseParts)
                 table.clear(UnknownMotor6Ds)
                 for _,map in LimbMapping do
@@ -4913,6 +4922,7 @@ function LimbReanimator.Start()
                                 accWeld.Part0 = actualArm
                                 accWeld.C0 = fullGripCF
                                 accWeld.C1 = CFrame.identity
+                                accHandle.CFrame = actualArm.CFrame * fullGripCF
                         end
                         accReanim.GripActive = true
                 else
@@ -4926,6 +4936,7 @@ function LimbReanimator.Start()
                                 else
                                         weld.Part0 = actualArm
                                         weld.C0 = fullGripCF
+                                        accHandle.CFrame = actualArm.CFrame * fullGripCF
                                 end
                         end
                 end
