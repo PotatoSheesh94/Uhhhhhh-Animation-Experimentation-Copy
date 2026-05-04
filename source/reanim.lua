@@ -4621,6 +4621,62 @@ function LimbReanimator.Config(parent)
                 end
                 BuildAccDrop()
         end)
+        UI.CreateButton(parent, "Re-apply Grip", 18).Activated:Connect(function()
+                local accReanim = LimbReanimator.AccessoryReanim
+                accReanim.GripActive = false
+                accReanim.GripOriginalWeld = nil
+                accReanim.GripOriginalPart0 = nil
+                accReanim.GripOriginalC0 = nil
+                accReanim.GripOriginalC1 = nil
+                accReanim.GripOriginalRelCFrame = nil
+                accReanim.GripIsWeldConstraint = false
+                accReanim.GripOriginalHandle = nil
+                Util.UINotify("Grip will re-apply next frame")
+        end)
+        UI.CreateButton(parent, "Check Server State", 18).Activated:Connect(function()
+                local accReanim = LimbReanimator.AccessoryReanim
+                if not accReanim.Enabled then
+                        Util.UINotify("Accessory Grip is disabled")
+                        return
+                end
+                if accReanim.SelectedName == "" then
+                        Util.UINotify("No accessory selected")
+                        return
+                end
+                if not accReanim.GripActive then
+                        Util.UINotify("Grip not active (not reanimating?)")
+                        return
+                end
+                local weld = accReanim.GripOriginalWeld
+                local handle = accReanim.GripOriginalHandle
+                local armName = accReanim.GripSide == 0 and "Right Arm" or "Left Arm"
+                local Character = Player.Character
+                local actualArm = Character and Character:FindFirstChild(armName)
+                if weld and weld.Parent then
+                        local p0name = (weld.Part0 and weld.Part0.Name) or "(nil)"
+                        local isOnArm = weld.Part0 == actualArm
+                        if isOnArm then
+                                Util.UINotify("Server: HOLDING - " .. accReanim.SelectedName .. " is on " .. armName)
+                        else
+                                Util.UINotify("Server: NOT holding - weld Part0 is " .. p0name)
+                        end
+                elseif handle and handle.Parent then
+                        local accWeld = handle:FindFirstChildWhichIsA("Weld") or handle:FindFirstChildWhichIsA("WeldConstraint")
+                        if accWeld then
+                                local p0name = (accWeld.Part0 and accWeld.Part0.Name) or "(nil)"
+                                local isOnArm = accWeld.Part0 == actualArm
+                                if isOnArm then
+                                        Util.UINotify("Server: HOLDING - " .. accReanim.SelectedName .. " is on " .. armName)
+                                else
+                                        Util.UINotify("Server: NOT holding - weld Part0 is " .. p0name)
+                                end
+                        else
+                                Util.UINotify("Server: no weld found on " .. accReanim.SelectedName)
+                        end
+                else
+                        Util.UINotify("Grip state lost - try Re-apply Grip")
+                end
+        end)
         Util.LinkDestroyI2C(dmode, RunService.Heartbeat:Connect(function()
                 dmode.Value = LimbReanimator.Mode + 1
                 dvel.Value = LimbReanimator.Velocity + 1
