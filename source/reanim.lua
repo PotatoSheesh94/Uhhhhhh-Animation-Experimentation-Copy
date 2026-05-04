@@ -4398,7 +4398,6 @@ SaveData.Reanimator.LimbRoleplay = not not SaveData.Reanimator.LimbRoleplay
 SaveData.Reanimator.LimbUseNaNFling = not not SaveData.Reanimator.LimbUseNaNFling
 SaveData.Reanimator.LimbPermadeath = not not SaveData.Reanimator.LimbPermadeath
 SaveData.Reanimator.LimbPermanentRespawnShield = not not SaveData.Reanimator.LimbPermanentRespawnShield
-SaveData.Reanimator.LimbCurrentAngleSmoothSpeed = SaveData.Reanimator.LimbCurrentAngleSmoothSpeed or 12
 SaveData.Reanimator.LimbAccessoryReanimEnabled = not not SaveData.Reanimator.LimbAccessoryReanimEnabled
 SaveData.Reanimator.LimbAccessoryReanimSide = SaveData.Reanimator.LimbAccessoryReanimSide or 0
 SaveData.Reanimator.LimbAccessoryReanimName = SaveData.Reanimator.LimbAccessoryReanimName or ""
@@ -4488,7 +4487,6 @@ LimbReanimator.FlingEnabled = not SaveData.Reanimator.LimbRoleplay
 LimbReanimator.UseNaNFling = SaveData.Reanimator.LimbUseNaNFling
 LimbReanimator.Permadeath = SaveData.Reanimator.LimbPermadeath
 LimbReanimator.PermanentRespawnShield = SaveData.Reanimator.LimbPermanentRespawnShield
-LimbReanimator.CurrentAngleSmoothSpeed = SaveData.Reanimator.LimbCurrentAngleSmoothSpeed
 LimbReanimator._HadRespawnShield = false
 LimbReanimator._OriginalRespawnTime = nil
 LimbReanimator.FlingTargets = {}
@@ -4558,14 +4556,6 @@ function LimbReanimator.Config(parent)
         dinit.Changed:Connect(function(val)
                 LimbReanimator.InitMode = val - 1
                 SaveData.Reanimator.LimbInitMode = val - 1
-        end)
-        UI.CreateSeparator(parent)
-        UI.CreateText(parent, "CurrentAngle Style Smoothing", 15, Enum.TextXAlignment.Center)
-        UI.CreateText(parent, "lower = smoother / floatier, higher = snappier (applies to CurrentAngle Style only)", 10, Enum.TextXAlignment.Center)
-        local speedSlider = UI.CreateSlider(parent, "Smooth Speed", LimbReanimator.CurrentAngleSmoothSpeed, 1, 30, 1)
-        speedSlider.Changed:Connect(function(val)
-                LimbReanimator.CurrentAngleSmoothSpeed = val
-                SaveData.Reanimator.LimbCurrentAngleSmoothSpeed = val
         end)
         UI.CreateSeparator(parent)
         UI.CreateSwitch(parent, "Show me how I look!", LimbReanimator.ReplicateFPS10).Changed:Connect(function(val)
@@ -4993,7 +4983,7 @@ function LimbReanimator.Start()
                         else
                                 local appliedCF
                                 if LimbReanimator.Mode == 3 and dt and dt > 0 then
-                                        local speed = LimbReanimator.CurrentAngleSmoothSpeed
+                                        local speed = 8
                                         local stiffness = speed * speed * 0.18
                                         local dampingCoeff = speed * 0.60
                                         if smoothedRootCF then
@@ -5062,7 +5052,7 @@ function LimbReanimator.Start()
                                                 if map.CFrame and dt and dt > 0 then
                                                         if LimbReanimator.Mode == 3 then
                                                                 local mult = jointSpeedMult[map.RPart1] or 1.0
-                                                                local speed = LimbReanimator.CurrentAngleSmoothSpeed * mult
+                                                                local speed = 8 * mult
                                                                 local stiffness = speed * speed * 0.18
                                                                 local dampingCoeff = speed * 0.60
                                                                 if not map.PosVelocity then
