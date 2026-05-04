@@ -9015,6 +9015,279 @@ task.spawn(function()
                 end
         end, dt) end
 end)
+
+-- ===================================================================
+-- UHHHHHH P2P SOCIAL FEATURES
+-- 1) Player detection & notification list
+-- 2) Sync dance broadcast
+-- 3) No-collision with other Uhhhhhh users
+-- ===================================================================
+-- Communication uses an invisible U+2800 Braille-blank prefix so the
+-- heartbeat messages are visually empty in the chat window.
+local _UH_PREFIX       = "\226\160\128"           -- U+2800, 3 bytes
+local _UH_SYNC_PREFIX  = _UH_PREFIX .. "SYNC:"   -- 8 bytes total
+local _UH_INTERVAL     = 45                       -- heartbeat every 45 s
+
+-- Table of detected Uhhhhhh users: { [Player] = {lastSeen = clock} }
+local _UH_Users = {}
+
+-- Send our presence heartbeat (invisible in chat)
+local function _UH_SendPresence()
+        pcall(ProtectedChat, _UH_PREFIX)
+end
+
+-- Broadcast the current dance to all Uhhhhhh users
+local function _UH_SendSyncDance(internalName)
+        pcall(ProtectedChat, _UH_SYNC_PREFIX .. tostring(internalName))
+end
+
+-- Tag our own character so attribute-scanning peers can detect us
+local function _UH_MarkCharacter(character)
+        if not character then return end
+        local hum = character:FindFirstChildOfClass("Humanoid")
+        if hum then pcall(function() hum:SetAttribute("_UH6", true) end) end
+        local root = character:FindFirstChild("HumanoidRootPart")
+        if root then pcall(function() root:SetAttribute("_UH6", true) end) end
+end
+
+-- ── Player List UI Page ──────────────────────────────────────────────
+local _UH_PlayersPage = UI.CreateItemListPage()
+_UH_PlayersPage.ZIndex       = 1
+_UH_PlayersPage.Position     = UDim2.new(0.5, 360, 0.5, 0)
+_UH_PlayersPage.Interactable = false
+_UH_PlayersPage.Visible      = false
+
+UI.CreateButton(MainPage, "Uhhhhhh Players \226\150\186", 20).Activated:Connect(function()
+        _UH_PlayersPage.Interactable = false
+        _UH_PlayersPage.Visible      = true
+        MainPage.Interactable        = false
+        local tw = TweenService:Create(_UH_PlayersPage,
+                TweenInfo.new(0.5, Enum.EasingStyle.Cubic, Enum.EasingDirection.In),
+                { Position = UDim2.new(0.5, 0, 0.5, 0) })
+        tw:Play()
+        tw.Completed:Connect(function()
+                _UH_PlayersPage.Interactable = true
+        end)
+end)
+
+_UH_PlayersPage.Back.Activated:Connect(function()
+        _UH_PlayersPage.Interactable = false
+        _UH_PlayersPage.Visible      = true
+        MainPage.Interactable        = false
+        local tw = TweenService:Create(_UH_PlayersPage,
+                TweenInfo.new(0.5, Enum.EasingStyle.Cubic, Enum.EasingDirection.Out),
+                { Position = UDim2.new(0.5, 360, 0.5, 0) })
+        tw:Play()
+        tw.Completed:Connect(function()
+                MainPage.Interactable     = true
+                _UH_PlayersPage.Visible   = false
+        end)
+end)
+
+UI.CreateText(_UH_PlayersPage.List,
+        "Players detected running Uhhhhhh", 14, Enum.TextXAlignment.Center)
+UI.CreateText(_UH_PlayersPage.List,
+        "(shown when their heartbeat reaches you)", 11, Enum.TextXAlignment.Center)
+UI.CreateSeparator(_UH_PlayersPage.List)
+
+-- ── Sync Dance button at the top of DancesPage ──────────────────────
+UI.CreateText(DancesPage.List, "* Sync Dance *", 14, Enum.TextXAlignment.Center)
+local _UH_SyncBtn = UI.CreateButton(
+        DancesPage.List, "Broadcast Current Dance to Uhhhhhh Users", 17)
+_UH_SyncBtn.Activated:Connect(function()
+        local dance = _CurrentDance or CurrentDance
+        if dance then
+                local iname = dance.InternalName or dance.Name
+                _UH_SendSyncDance(iname)
+                Util.UINotify("Dance synced: " .. dance.Name)
+        else
+                Util.UINotify("No dance is currently active!")
+        end
+end)
+UI.CreateSeparator(DancesPage.List)
+
+-- ── Dynamic player label map ─────────────────────────────────────────
+local _UH_PlayerLabels = {}   -- { [Player] = TextLabel }
+
+local function _UH_RefreshList()
+        -- Remove labels for users no longer tracked
+        for player, lbl in _UH_PlayerLabels do
+                if not _UH_Users[player] then
+                        pcall(function()
+                                if lbl and lbl.Parent then lbl.Parent:Destroy() end
+                        end)
+                        _UH_PlayerLabels[player] = nil
+                end
+        end
+        -- Add labels for newly detected users
+        for player, _ in _UH_Users do
+                if not _UH_PlayerLabels[player] then
+                        local lbl = UI.CreateText(
+                                _UH_PlayersPage.List,
+                                player.DisplayName .. "  (@" .. player.Name .. ")",
+                                16, Enum.TextXAlignment.Left)
+                        _UH_PlayerLabels[player] = lbl
+                end
+        end
+end
+
+local function _UH_AddUser(player)
+        if player == Player then return end
+        local isNew = not _UH_Users[player]
+        _UH_Users[player] = { lastSeen = os.clock() }
+        if isNew then
+                Util.UINotify(player.DisplayName .. " is also running Uhhhhhh!")
+                task.spawn(_UH_RefreshList)
+        else
+                _UH_Users[player].lastSeen = os.clock()
+        end
+end
+
+local function _UH_RemoveUser(player)
+        if not _UH_Users[player] then return end
+        _UH_Users[player] = nil
+        local lbl = _UH_PlayerLabels[player]
+        if lbl then
+                pcall(function()
+                        if lbl.Parent then lbl.Parent:Destroy() end
+                end)
+                _UH_PlayerLabels[player] = nil
+        end
+end
+
+-- ── Save-data flags ───────────────────────────────────────────────────
+SaveData.UhhhhhhNoCollide  = not not SaveData.UhhhhhhNoCollide
+SaveData.UhhhhhhAutoSync   = not not SaveData.UhhhhhhAutoSync
+
+UI.CreateSwitch(MainPage, "Auto-Accept Sync Dance", SaveData.UhhhhhhAutoSync).Changed:Connect(function(val)
+        SaveData.UhhhhhhAutoSync = val
+end)
+UI.CreateSwitch(MainPage, "No Collision with Uhhhhhh Users", SaveData.UhhhhhhNoCollide).Changed:Connect(function(val)
+        SaveData.UhhhhhhNoCollide = val
+end)
+
+-- ── Detect peers: listen to chat for our invisible prefix ─────────────
+OnPlayerChatted.Event:Connect(function(player, msg)
+        if #msg >= #_UH_PREFIX and msg:sub(1, #_UH_PREFIX) == _UH_PREFIX then
+                _UH_AddUser(player)
+                -- Handle sync-dance request
+                if SaveData.UhhhhhhAutoSync
+                        and #msg >= #_UH_SYNC_PREFIX
+                        and msg:sub(1, #_UH_SYNC_PREFIX) == _UH_SYNC_PREFIX then
+                        local iname = msg:sub(#_UH_SYNC_PREFIX + 1)
+                        for _, dance in DanceableDances do
+                                if dance.InternalName == iname or dance.Name == iname then
+                                        CurrentDance = dance
+                                        Util.UINotify(player.DisplayName .. " synced: " .. dance.Name)
+                                        break
+                                end
+                        end
+                end
+        end
+end)
+
+-- Also scan character attributes (works without a chat message)
+task.spawn(function()
+        while true do
+                task.wait(10)
+                for _, plr in Players:GetPlayers() do
+                        if plr ~= Player then
+                                local char = plr.Character
+                                if char then
+                                        local detected = false
+                                        local hum = char:FindFirstChildOfClass("Humanoid")
+                                        if hum then
+                                                local ok, val = pcall(function()
+                                                        return hum:GetAttribute("_UH6")
+                                                end)
+                                                if ok and val == true then detected = true end
+                                        end
+                                        if not detected then
+                                                local root = char:FindFirstChild("HumanoidRootPart")
+                                                if root then
+                                                        local ok, val = pcall(function()
+                                                                return root:GetAttribute("_UH6")
+                                                        end)
+                                                        if ok and val == true then detected = true end
+                                                end
+                                        end
+                                        if detected then
+                                                _UH_AddUser(plr)
+                                        end
+                                end
+                        end
+                end
+        end
+end)
+
+-- Remove users that leave the game
+Players.PlayerRemoving:Connect(function(player)
+        _UH_RemoveUser(player)
+end)
+
+-- ── No-Collision loop ─────────────────────────────────────────────────
+-- Disables CanCollide on the BaseParts of all detected Uhhhhhh peers
+-- so walking into them never interrupts their reanimation poses.
+task.spawn(function()
+        while true do
+                task.wait(0.2)
+                if SaveData.UhhhhhhNoCollide then
+                        for player, _ in _UH_Users do
+                                local char = player.Character
+                                if char then
+                                        for _, part in char:GetDescendants() do
+                                                if part:IsA("BasePart") and part.CanCollide then
+                                                        pcall(function() part.CanCollide = false end)
+                                                        pcall(sethiddenproperty, part, "CanCollide", false)
+                                                end
+                                        end
+                                end
+                        end
+                end
+        end
+end)
+
+-- ── Presence heartbeat loop ───────────────────────────────────────────
+task.spawn(function()
+        task.wait(4)
+        _UH_SendPresence()
+        local _lastPing = os.clock()
+        while true do
+                task.wait(5)
+                if os.clock() - _lastPing >= _UH_INTERVAL then
+                        _UH_SendPresence()
+                        _lastPing = os.clock()
+                end
+                -- Evict peers not seen in 2× interval + 15 s
+                local stale = {}
+                for player, data in _UH_Users do
+                        if os.clock() - data.lastSeen > _UH_INTERVAL * 2 + 15 then
+                                table.insert(stale, player)
+                        end
+                end
+                for _, p in stale do
+                        _UH_RemoveUser(p)
+                end
+        end
+end)
+
+-- Mark own character on spawn so attribute-scanning peers can find us
+Player.CharacterAdded:Connect(function(character)
+        task.wait(1)
+        _UH_MarkCharacter(character)
+        task.wait(1)
+        _UH_SendPresence()
+end)
+if Player.Character then
+        task.spawn(function()
+                task.wait(0.5)
+                _UH_MarkCharacter(Player.Character)
+        end)
+end
+-- ===================================================================
+-- END OF P2P SOCIAL FEATURES
+-- ===================================================================
+
 UI.CreateSeparator(MainPage)
 task.wait()
 local CreditsPage = UI.CreatePage()
