@@ -1388,10 +1388,11 @@ do
         local UINotifyFrame = Instance.new("Frame", UIMainFrame)
         UINotifyFrame.AnchorPoint = Vector2.new(0.5, 0)
         UINotifyFrame.Position = UDim2.new(0.5, 0, 1, 10)
-        UINotifyFrame.Size = UDim2.new(0, 300, 0, 30)
+        UINotifyFrame.Size = UDim2.new(0, 200, 0, 30)
         UINotifyFrame.BackgroundTransparency = 0
         UINotifyFrame.BackgroundColor3 = Color3.new(1, 1, 1)
         UINotifyFrame.BorderSizePixel = 0
+        UINotifyFrame.ClipsDescendants = true
         UINotifyFrame.Visible = false
         UINotifyFrame.ZIndex = -1
         Stylize(UINotifyFrame, {
@@ -1436,6 +1437,10 @@ do
         local _notifyMaxW = 520
         local _notifyMinW = 200
         local _notifyLastText = ""
+        local _notifyTargetW = 200
+        local _notifyTargetH = 30
+        local _notifyCurrentW = 200
+        local _notifyCurrentH = 30
         AddToRenderStep(function(t, dt)
                 if t - uinotif.LastNotif < 4 or uinotif.Progress < 1 then
                         uinotif.Animation = math.max(0, uinotif.Animation - dt * 2)
@@ -1448,11 +1453,14 @@ do
                                 _notifyLastText = uinotif.Text
                                 local innerW = _notifyMaxW - _notifyPadX * 2
                                 local textBounds = TextService:GetTextSize(uinotif.Text, 18, Enum.Font.Code, Vector2.new(innerW, math.huge))
-                                local frameW = math.clamp(textBounds.X + _notifyPadX * 2, _notifyMinW, _notifyMaxW)
-                                local frameH = math.max(30, textBounds.Y + _notifyPadY)
-                                UINotifyFrame.Size = UDim2.new(0, frameW, 0, frameH)
+                                _notifyTargetW = math.clamp(textBounds.X + _notifyPadX * 2, _notifyMinW, _notifyMaxW)
+                                _notifyTargetH = math.max(30, textBounds.Y + _notifyPadY)
                                 NotifyText.Size = UDim2.new(1, -_notifyPadX, 0, textBounds.Y)
                         end
+                        local alpha = 1 - math.exp(-10 * dt)
+                        _notifyCurrentW = _notifyCurrentW + (_notifyTargetW - _notifyCurrentW) * alpha
+                        _notifyCurrentH = _notifyCurrentH + (_notifyTargetH - _notifyCurrentH) * alpha
+                        UINotifyFrame.Size = UDim2.new(0, _notifyCurrentW, 0, _notifyCurrentH)
                         UINotifyFrame.Position = UIMainWindow.Position + UDim2.new(0, 0, 0, UIMainWindow.Size.Y.Offset / 2 + 10 + math.pow(uinotif.Animation, 3) * -40)
                         if uinotif.Progress >= 1 then
                                 Progress.BackgroundTransparency = math.min(t - uinotif.LastNotif, 0.5) * 2 * 0.3 + 0.7
