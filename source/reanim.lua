@@ -5136,7 +5136,6 @@ function LimbReanimator.Start()
                                                 newWeld.C0 = fullGripCF
                                                 accReanim.GripLastFullCF = fullGripCF
                                         end
-                                        accHandle.CFrame = actualArm.CFrame * fullGripCF
                                 end
                         else
                                 local weld = accReanim.GripOriginalWeld
@@ -5148,7 +5147,6 @@ function LimbReanimator.Start()
                                                 weld.C0 = fullGripCF
                                                 accReanim.GripLastFullCF = fullGripCF
                                         end
-                                        accHandle.CFrame = actualArm.CFrame * fullGripCF
                                 end
                         end
                 end
