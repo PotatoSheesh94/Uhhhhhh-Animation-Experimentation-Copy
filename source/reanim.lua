@@ -4964,8 +4964,12 @@ function LimbReanimator.Start()
                                         end
                                         if not LimbReanimator.Permadeath then
                                                 if Humanoid.MaxHealth > 0 and Humanoid.Health < Humanoid.MaxHealth then
-                                                        Humanoid.Health = Humanoid.MaxHealth
+                                                        local fullHealth = Humanoid.MaxHealth
+                                                        Humanoid.Health = fullHealth
+                                                        pcall(replicatesignal, Humanoid.HealthChanged, fullHealth)
+                                                        pcall(replicatesignal, Humanoid.MaxHealthChanged, fullHealth)
                                                 end
+                                                pcall(sethiddenproperty, Humanoid, "NetworkHumanoidState", Enum.HumanoidStateType.Running)
                                                 pcall(function()
                                                         Humanoid:SetStateEnabled(Enum.HumanoidStateType.Dead, false)
                                                 end)
