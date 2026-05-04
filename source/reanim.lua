@@ -4809,6 +4809,15 @@ function LimbReanimator.Start()
                                         pcall(sethiddenproperty, humanoid, "NetworkHumanoidState", Enum.HumanoidStateType.Dead)
                                 end
                         end)
+                        humanoid:GetPropertyChangedSignal("MaxHealth"):Connect(function()
+                                if LimbReanimator.Permadeath and humanoid.MaxHealth > 0.001 then
+                                        humanoid.MaxHealth = 0.001
+                                        humanoid.Health = 0.001
+                                        pcall(replicatesignal, humanoid.MaxHealthChanged, 0.001)
+                                        pcall(replicatesignal, humanoid.HealthChanged, 0.001)
+                                        pcall(sethiddenproperty, humanoid, "NetworkHumanoidState", Enum.HumanoidStateType.Dead)
+                                end
+                        end)
                 end
                 local stupid = humanoid and humanoid:FindFirstChildWhichIsA("Animator")
                 if stupid then
