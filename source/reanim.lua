@@ -4334,8 +4334,6 @@ Util.ShowPartHitbox = function(part)
         Debris:AddItem(w, 1)
 end
 
-local RIGHTGRIP_C0 = CFrame.new(0, -1, 0, 1, 0, 0, 0, 0, 1, 0, -1, 0)
-local LEFTGRIP_C0  = CFrame.new(0, -1, 0, -1, 0, 0, 0, 0, 1, 0, 1, 0)
 Util.PredictionFling = function(target)
         if typeof(target) == "Instance" then
                 if target:IsA("Model") then
@@ -4398,78 +4396,6 @@ SaveData.Reanimator.LimbRoleplay = not not SaveData.Reanimator.LimbRoleplay
 SaveData.Reanimator.LimbUseNaNFling = not not SaveData.Reanimator.LimbUseNaNFling
 SaveData.Reanimator.LimbPermadeath = not not SaveData.Reanimator.LimbPermadeath
 SaveData.Reanimator.LimbPermanentRespawnShield = not not SaveData.Reanimator.LimbPermanentRespawnShield
-SaveData.Reanimator.LimbAccessoryReanimEnabled = not not SaveData.Reanimator.LimbAccessoryReanimEnabled
-SaveData.Reanimator.LimbAccessoryReanimSide = SaveData.Reanimator.LimbAccessoryReanimSide or 0
-SaveData.Reanimator.LimbAccessoryReanimName = SaveData.Reanimator.LimbAccessoryReanimName or ""
-SaveData.Reanimator.LimbAccessoryReanimOffsetX = SaveData.Reanimator.LimbAccessoryReanimOffsetX or 0
-SaveData.Reanimator.LimbAccessoryReanimOffsetY = SaveData.Reanimator.LimbAccessoryReanimOffsetY or 0
-SaveData.Reanimator.LimbAccessoryReanimOffsetZ = SaveData.Reanimator.LimbAccessoryReanimOffsetZ or 0
-SaveData.Reanimator.LimbAccessoryReanimRotPitch = SaveData.Reanimator.LimbAccessoryReanimRotPitch or 0
-SaveData.Reanimator.LimbAccessoryReanimRotYaw   = SaveData.Reanimator.LimbAccessoryReanimRotYaw   or 0
-SaveData.Reanimator.LimbAccessoryReanimRotRoll  = SaveData.Reanimator.LimbAccessoryReanimRotRoll  or 0
-LimbReanimator.AccessoryReanim = {
-        Enabled = SaveData.Reanimator.LimbAccessoryReanimEnabled,
-        SelectedName = SaveData.Reanimator.LimbAccessoryReanimName,
-        GripSide = SaveData.Reanimator.LimbAccessoryReanimSide,
-        GripOffset = Vector3.new(
-                SaveData.Reanimator.LimbAccessoryReanimOffsetX,
-                SaveData.Reanimator.LimbAccessoryReanimOffsetY,
-                SaveData.Reanimator.LimbAccessoryReanimOffsetZ
-        ),
-        GripRotation = Vector3.new(
-                SaveData.Reanimator.LimbAccessoryReanimRotPitch,
-                SaveData.Reanimator.LimbAccessoryReanimRotYaw,
-                SaveData.Reanimator.LimbAccessoryReanimRotRoll
-        ),
-        GripActive = false,
-        GripOriginalHandle = nil,
-        GripOriginalWeld = nil,
-        GripOriginalPart0 = nil,
-        GripOriginalC0 = nil,
-        GripOriginalC1 = nil,
-        GripOriginalRelCFrame = nil,
-        GripIsWeldConstraint = false,
-        GripLastFullCF = nil,
-        GripCreatedWeld = nil,
-}
-function LimbReanimator.RestoreAccessoryGrip(Character)
-        local accReanim = LimbReanimator.AccessoryReanim
-        if not accReanim.GripActive then return end
-        -- Destroy the Motor6D we created for currentAngle-style replication
-        if accReanim.GripCreatedWeld and accReanim.GripCreatedWeld.Parent then
-                accReanim.GripCreatedWeld:Destroy()
-        end
-        accReanim.GripCreatedWeld = nil
-        -- Re-enable the original weld
-        local weld = accReanim.GripOriginalWeld
-        if weld and weld.Parent then
-                if accReanim.GripIsWeldConstraint then
-                        -- Restore Part0 then re-enable the WeldConstraint
-                        local op0 = accReanim.GripOriginalPart0
-                        local handle = accReanim.GripOriginalHandle
-                        if op0 and op0.Parent and handle and handle.Parent then
-                                handle.CFrame = op0.CFrame * accReanim.GripOriginalRelCFrame
-                        end
-                        weld.Part0 = op0
-                        weld.Enabled = true
-                else
-                        -- Restore the original Part0, C0, C1 on the Weld
-                        local op0 = accReanim.GripOriginalPart0
-                        weld.Part0 = op0
-                        weld.C0 = accReanim.GripOriginalC0
-                        weld.C1 = accReanim.GripOriginalC1
-                end
-        end
-        accReanim.GripOriginalWeld = nil
-        accReanim.GripOriginalPart0 = nil
-        accReanim.GripOriginalC0 = nil
-        accReanim.GripOriginalC1 = nil
-        accReanim.GripOriginalRelCFrame = nil
-        accReanim.GripIsWeldConstraint = false
-        accReanim.GripOriginalHandle = nil
-        accReanim.GripLastFullCF = nil
-        accReanim.GripActive = false
-end
 LimbReanimator.Mode = SaveData.Reanimator.LimbMode
 -- 0 = hide rootpart (defaults to 2 when streaming is enabled)
 -- 1 = put rootpart just under void (defaults to 2 when streaming is enabled)
@@ -4588,151 +4514,6 @@ function LimbReanimator.Config(parent)
                 SaveData.Reanimator.LimbPermanentRespawnShield = val
         end)
         local shieldStatusText = UI.CreateText(parent, "Shield Status: OFF", 12, Enum.TextXAlignment.Center)
-        UI.CreateSeparator(parent)
-        UI.CreateText(parent, "Accessory Grip Reanimate", 15, Enum.TextXAlignment.Center)
-        UI.CreateText(parent, "teleports a worn accessory to your chosen hand while reanimating", 10, Enum.TextXAlignment.Center)
-        UI.CreateSwitch(parent, "Accessory Grip Enabled", LimbReanimator.AccessoryReanim.Enabled).Changed:Connect(function(val)
-                LimbReanimator.AccessoryReanim.Enabled = val
-                SaveData.Reanimator.LimbAccessoryReanimEnabled = val
-                if not val then
-                        LimbReanimator.RestoreAccessoryGrip(Player.Character)
-                end
-        end)
-        UI.CreateDropdown(parent, "Hold With", {"Right Hand", "Left Hand"}, LimbReanimator.AccessoryReanim.GripSide + 1).Changed:Connect(function(val)
-                LimbReanimator.AccessoryReanim.GripSide = val - 1
-                SaveData.Reanimator.LimbAccessoryReanimSide = val - 1
-        end)
-        UI.CreateText(parent, "Grip Offset", 15, Enum.TextXAlignment.Center)
-        UI.CreateSlider(parent, "X", LimbReanimator.AccessoryReanim.GripOffset.X, -5, 5, 0).Changed:Connect(function(val)
-                local r = LimbReanimator.AccessoryReanim
-                r.GripOffset = Vector3.new(val, r.GripOffset.Y, r.GripOffset.Z)
-                SaveData.Reanimator.LimbAccessoryReanimOffsetX = val
-        end)
-        UI.CreateSlider(parent, "Y", LimbReanimator.AccessoryReanim.GripOffset.Y, -5, 5, 0).Changed:Connect(function(val)
-                local r = LimbReanimator.AccessoryReanim
-                r.GripOffset = Vector3.new(r.GripOffset.X, val, r.GripOffset.Z)
-                SaveData.Reanimator.LimbAccessoryReanimOffsetY = val
-        end)
-        UI.CreateSlider(parent, "Z", LimbReanimator.AccessoryReanim.GripOffset.Z, -5, 5, 0).Changed:Connect(function(val)
-                local r = LimbReanimator.AccessoryReanim
-                r.GripOffset = Vector3.new(r.GripOffset.X, r.GripOffset.Y, val)
-                SaveData.Reanimator.LimbAccessoryReanimOffsetZ = val
-        end)
-        UI.CreateText(parent, "Grip Rotation (degrees)", 15, Enum.TextXAlignment.Center)
-        UI.CreateSlider(parent, "Pitch", LimbReanimator.AccessoryReanim.GripRotation.X, -180, 180, 0).Changed:Connect(function(val)
-                local r = LimbReanimator.AccessoryReanim
-                r.GripRotation = Vector3.new(val, r.GripRotation.Y, r.GripRotation.Z)
-                SaveData.Reanimator.LimbAccessoryReanimRotPitch = val
-        end)
-        UI.CreateSlider(parent, "Yaw", LimbReanimator.AccessoryReanim.GripRotation.Y, -180, 180, 0).Changed:Connect(function(val)
-                local r = LimbReanimator.AccessoryReanim
-                r.GripRotation = Vector3.new(r.GripRotation.X, val, r.GripRotation.Z)
-                SaveData.Reanimator.LimbAccessoryReanimRotYaw = val
-        end)
-        UI.CreateSlider(parent, "Roll", LimbReanimator.AccessoryReanim.GripRotation.Z, -180, 180, 0).Changed:Connect(function(val)
-                local r = LimbReanimator.AccessoryReanim
-                r.GripRotation = Vector3.new(r.GripRotation.X, r.GripRotation.Y, val)
-                SaveData.Reanimator.LimbAccessoryReanimRotRoll = val
-        end)
-        local accDrop, accDropText = nil, nil
-        local accDropLayoutOrder = nil
-        local function BuildAccDrop()
-                local names = {"(none)"}
-                if Player.Character then
-                        for _, v in Player.Character:GetChildren() do
-                                if v:IsA("Accessory") then
-                                        local h = v:FindFirstChild("Handle")
-                                        if h and h:IsA("BasePart") then
-                                                table.insert(names, v.Name)
-                                        end
-                                end
-                        end
-                end
-                local selIdx = 1
-                for i, n in names do
-                        if n == LimbReanimator.AccessoryReanim.SelectedName then
-                                selIdx = i
-                                break
-                        end
-                end
-                local d, dt = UI.CreateDropdown(parent, "Accessory", names, selIdx)
-                if accDropLayoutOrder then
-                        dt.Parent.LayoutOrder = accDropLayoutOrder
-                else
-                        accDropLayoutOrder = dt.Parent.LayoutOrder
-                end
-                accDrop = d
-                accDropText = dt
-                d.Changed:Connect(function(val)
-                        LimbReanimator.AccessoryReanim.SelectedName = val == 1 and "" or (names[val] or "")
-                        SaveData.Reanimator.LimbAccessoryReanimName = LimbReanimator.AccessoryReanim.SelectedName
-                end)
-        end
-        BuildAccDrop()
-        UI.CreateButton(parent, "Refresh Accessory List", 18).Activated:Connect(function()
-                if accDropText and accDropText.Parent then
-                        accDropText.Parent:Destroy()
-                        accDrop = nil
-                        accDropText = nil
-                end
-                BuildAccDrop()
-        end)
-        UI.CreateButton(parent, "Re-apply Grip", 18).Activated:Connect(function()
-                local accReanim = LimbReanimator.AccessoryReanim
-                accReanim.GripActive = false
-                accReanim.GripOriginalWeld = nil
-                accReanim.GripOriginalPart0 = nil
-                accReanim.GripOriginalC0 = nil
-                accReanim.GripOriginalC1 = nil
-                accReanim.GripOriginalRelCFrame = nil
-                accReanim.GripIsWeldConstraint = false
-                accReanim.GripOriginalHandle = nil
-                Util.UINotify("Grip will re-apply next frame")
-        end)
-        UI.CreateButton(parent, "Check Server State", 18).Activated:Connect(function()
-                local accReanim = LimbReanimator.AccessoryReanim
-                if not accReanim.Enabled then
-                        Util.UINotify("Accessory Grip is disabled")
-                        return
-                end
-                if accReanim.SelectedName == "" then
-                        Util.UINotify("No accessory selected")
-                        return
-                end
-                if not accReanim.GripActive then
-                        Util.UINotify("Grip not active (not reanimating?)")
-                        return
-                end
-                local weld = accReanim.GripOriginalWeld
-                local handle = accReanim.GripOriginalHandle
-                local armName = accReanim.GripSide == 0 and "Right Arm" or "Left Arm"
-                local Character = Player.Character
-                local actualArm = Character and Character:FindFirstChild(armName)
-                if weld and weld.Parent then
-                        local p0name = (weld.Part0 and weld.Part0.Name) or "(nil)"
-                        local isOnArm = weld.Part0 == actualArm
-                        if isOnArm then
-                                Util.UINotify("Server: HOLDING - " .. accReanim.SelectedName .. " is on " .. armName)
-                        else
-                                Util.UINotify("Server: NOT holding - weld Part0 is " .. p0name)
-                        end
-                elseif handle and handle.Parent then
-                        local accWeld = handle:FindFirstChildWhichIsA("Weld") or handle:FindFirstChildWhichIsA("WeldConstraint")
-                        if accWeld then
-                                local p0name = (accWeld.Part0 and accWeld.Part0.Name) or "(nil)"
-                                local isOnArm = accWeld.Part0 == actualArm
-                                if isOnArm then
-                                        Util.UINotify("Server: HOLDING - " .. accReanim.SelectedName .. " is on " .. armName)
-                                else
-                                        Util.UINotify("Server: NOT holding - weld Part0 is " .. p0name)
-                                end
-                        else
-                                Util.UINotify("Server: no weld found on " .. accReanim.SelectedName)
-                        end
-                else
-                        Util.UINotify("Grip state lost - try Re-apply Grip")
-                end
-        end)
         Util.LinkDestroyI2C(dmode, RunService.Heartbeat:Connect(function()
                 dmode.Value = LimbReanimator.Mode + 1
                 dvel.Value = LimbReanimator.Velocity + 1
@@ -4903,17 +4684,6 @@ function LimbReanimator.Start()
                         Camera.CFrame = camcfr
                 end)
                 lastspawn = os.clock()
-                local accReanim = LimbReanimator.AccessoryReanim
-                accReanim.GripActive = false
-                accReanim.GripOriginalWeld = nil
-                accReanim.GripOriginalPart0 = nil
-                accReanim.GripOriginalC0 = nil
-                accReanim.GripOriginalC1 = nil
-                accReanim.GripOriginalRelCFrame = nil
-                accReanim.GripIsWeldConstraint = false
-                accReanim.GripOriginalHandle = nil
-                accReanim.GripLastFullCF = nil
-                accReanim.GripCreatedWeld = nil
                 table.clear(BaseParts)
                 table.clear(UnknownMotor6Ds)
                 smoothedRootCF = nil
@@ -5068,80 +4838,6 @@ function LimbReanimator.Start()
                 end
         end
 
-        local function ApplyAccessoryGrip(ReanimCharacter, Character, ltm, flingtarget)
-                local accReanim = LimbReanimator.AccessoryReanim
-                if not accReanim or not accReanim.Enabled or accReanim.SelectedName == "" then return end
-                if not Character or not ReanimCharacter or flingtarget then return end
-                local armName = accReanim.GripSide == 0 and "Right Arm" or "Left Arm"
-                local actualArm = Character:FindFirstChild(armName)
-                if not actualArm then return end
-                local accHandle = nil
-                for _, v in Character:GetChildren() do
-                        if v:IsA("Accessory") and v.Name == accReanim.SelectedName then
-                                local h = v:FindFirstChild("Handle")
-                                if h and h:IsA("BasePart") then
-                                        accHandle = h
-                                        break
-                                end
-                        end
-                end
-                if not accHandle then return end
-                local gripCF = accReanim.GripSide == 0 and RIGHTGRIP_C0 or LEFTGRIP_C0
-                local rot = accReanim.GripRotation
-                local rotCF = CFrame.Angles(math.rad(rot.X), math.rad(rot.Y), math.rad(rot.Z))
-                local fullGripCF = gripCF * CFrame.new(accReanim.GripOffset) * rotCF
-                -- ── Setup (first activation or accessory changed) ───────────────
-                -- currentAngle style: sever the original weld so the handle is
-                -- free, then create a Motor6D (Part0=arm, Part1=handle) whose
-                -- transform we drive via ReplicateCurrentOffset6D /
-                -- ReplicateCurrentAngle6D every frame — exactly the same path used
-                -- by limb reanimation, so other players reliably see the grip.
-                if not accReanim.GripActive or accReanim.GripOriginalHandle ~= accHandle then
-                        if accReanim.GripActive then
-                                LimbReanimator.RestoreAccessoryGrip(Character)
-                        end
-                        local accWeld = accHandle:FindFirstChildWhichIsA("Weld")
-                                or accHandle:FindFirstChildWhichIsA("WeldConstraint")
-                        if not accWeld then return end
-                        accReanim.GripOriginalHandle = accHandle
-                        accReanim.GripOriginalWeld   = accWeld
-                        accReanim.GripOriginalPart0  = accWeld.Part0
-                        if accWeld:IsA("WeldConstraint") then
-                                accReanim.GripIsWeldConstraint = true
-                                accReanim.GripOriginalRelCFrame = accWeld.Part0
-                                        and accWeld.Part0.CFrame:ToObjectSpace(accHandle.CFrame)
-                                        or CFrame.identity
-                                -- Detach: disable the WeldConstraint → handle floats freely
-                                accWeld.Enabled = false
-                        else
-                                accReanim.GripIsWeldConstraint = false
-                                accReanim.GripOriginalC0 = accWeld.C0
-                                accReanim.GripOriginalC1 = accWeld.C1
-                                -- Detach: sever the Weld by clearing Part0 → handle floats freely
-                                accWeld.Part0 = nil
-                        end
-                        -- Create the Motor6D that drives the handle via currentAngle replication
-                        local m6d = Instance.new("Motor6D")
-                        m6d.Name = "AccessoryGripMotor6D"
-                        m6d.MaxVelocity = 9e9
-                        m6d.C0 = CFrame.identity
-                        m6d.C1 = CFrame.identity
-                        m6d.Part0 = actualArm
-                        m6d.Part1 = accHandle
-                        m6d.Parent = actualArm
-                        accReanim.GripCreatedWeld = m6d
-                        accReanim.GripActive      = true
-                        accReanim.GripLastFullCF  = fullGripCF
-                end
-                -- ── Every frame: drive the Motor6D via currentAngle-style replication ──
-                -- This uses the same sethiddenproperty path as limb reanimation, so
-                -- the grip pose is visible to other players on the server side.
-                local m6d = accReanim.GripCreatedWeld
-                if m6d and m6d.Parent then
-                        Util.SetMotor6DOffset(m6d, fullGripCF)
-                end
-        end
-
         Reanimate.Starting = false
         while not Reanimate.Stopping do
                 RunService.PreSimulation:Wait()
@@ -5263,7 +4959,6 @@ function LimbReanimator.Start()
                                                 flingtarget = nil
                                         end
                                 end
-                                ApplyAccessoryGrip(ReanimCharacter, Character, ltm, flingtarget)
                                 UpdateTransforms(ReanimCharacter, RootPart, rootcf, rootvel, flingtarget, flingcf, heartbeatDt)
                                 if LimbReanimator.UseNaNFling then
                                         if os.clock() - lastspawn > 0.1 then
@@ -5279,12 +4974,10 @@ function LimbReanimator.Start()
                                 if Reanimate:ShouldRotationType() then
                                         Reanimate:CameraLockCharacter()
                                 end
-                                ApplyAccessoryGrip(ReanimCharacter, Character, ltm, flingtarget)
                                 UpdateTransforms(ReanimCharacter, RootPart, rootcf, rootvel, flingtarget, flingcf, heartbeatDt)
                         end
                 end
         end
-        LimbReanimator.RestoreAccessoryGrip(Player.Character)
         CharConn:Disconnect()
         if Player.Character then
                 local h = Player.Character:FindFirstChild("Humanoid")
