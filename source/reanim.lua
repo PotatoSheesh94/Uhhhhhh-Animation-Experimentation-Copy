@@ -4402,20 +4402,35 @@ LimbReanimator.AccessoryReanim = {
         GripOriginalPart0 = nil,
         GripOriginalC0 = nil,
         GripOriginalC1 = nil,
+        GripOriginalRelCFrame = nil,
+        GripIsWeldConstraint = false,
 }
 function LimbReanimator.RestoreAccessoryGrip(Character)
         local accReanim = LimbReanimator.AccessoryReanim
         if not accReanim.GripActive then return end
         local weld = accReanim.GripOriginalWeld
         if weld and weld.Parent then
-                weld.Part0 = accReanim.GripOriginalPart0
-                weld.C0 = accReanim.GripOriginalC0
-                weld.C1 = accReanim.GripOriginalC1
+                if accReanim.GripIsWeldConstraint then
+                        weld.Enabled = false
+                        local op0 = accReanim.GripOriginalPart0
+                        local handle = accReanim.GripOriginalHandle
+                        if op0 and op0.Parent and handle and handle.Parent then
+                                handle.CFrame = op0.CFrame * accReanim.GripOriginalRelCFrame
+                        end
+                        weld.Part0 = op0
+                        weld.Enabled = true
+                else
+                        weld.Part0 = accReanim.GripOriginalPart0
+                        weld.C0 = accReanim.GripOriginalC0
+                        weld.C1 = accReanim.GripOriginalC1
+                end
         end
         accReanim.GripOriginalWeld = nil
         accReanim.GripOriginalPart0 = nil
         accReanim.GripOriginalC0 = nil
         accReanim.GripOriginalC1 = nil
+        accReanim.GripOriginalRelCFrame = nil
+        accReanim.GripIsWeldConstraint = false
         accReanim.GripOriginalHandle = nil
         accReanim.GripActive = false
 end
@@ -4879,22 +4894,39 @@ function LimbReanimator.Start()
                         if accReanim.GripActive then
                                 LimbReanimator.RestoreAccessoryGrip(Character)
                         end
-                        local accWeld = accHandle:FindFirstChild("AccessoryWeld")
+                        local accWeld = accHandle:FindFirstChildWhichIsA("Weld") or accHandle:FindFirstChildWhichIsA("WeldConstraint")
                         if not accWeld then return end
                         accReanim.GripOriginalHandle = accHandle
                         accReanim.GripOriginalWeld = accWeld
                         accReanim.GripOriginalPart0 = accWeld.Part0
-                        accReanim.GripOriginalC0 = accWeld.C0
-                        accReanim.GripOriginalC1 = accWeld.C1
-                        accWeld.Part0 = actualArm
-                        accWeld.C0 = fullGripCF
-                        accWeld.C1 = CFrame.identity
+                        if accWeld:IsA("WeldConstraint") then
+                                accReanim.GripIsWeldConstraint = true
+                                accReanim.GripOriginalRelCFrame = accWeld.Part0 and accWeld.Part0.CFrame:ToObjectSpace(accHandle.CFrame) or CFrame.identity
+                                accWeld.Enabled = false
+                                accHandle.CFrame = actualArm.CFrame * fullGripCF
+                                accWeld.Part0 = actualArm
+                                accWeld.Enabled = true
+                        else
+                                accReanim.GripIsWeldConstraint = false
+                                accReanim.GripOriginalC0 = accWeld.C0
+                                accReanim.GripOriginalC1 = accWeld.C1
+                                accWeld.Part0 = actualArm
+                                accWeld.C0 = fullGripCF
+                                accWeld.C1 = CFrame.identity
+                        end
                         accReanim.GripActive = true
                 else
                         local weld = accReanim.GripOriginalWeld
                         if weld and weld.Parent then
-                                weld.Part0 = actualArm
-                                weld.C0 = fullGripCF
+                                if accReanim.GripIsWeldConstraint then
+                                        weld.Enabled = false
+                                        accHandle.CFrame = actualArm.CFrame * fullGripCF
+                                        weld.Part0 = actualArm
+                                        weld.Enabled = true
+                                else
+                                        weld.Part0 = actualArm
+                                        weld.C0 = fullGripCF
+                                end
                         end
                 end
         end
