@@ -459,8 +459,8 @@ do
                 Downloading.ClipsDescendants = true
                 Downloading.BorderSizePixel = 0
                 Downloading.TextColor3 = Color3.new(1, 1, 1)
-                Downloading.TextSize = 20
-                Downloading.Font = Enum.Font.Code
+                Downloading.TextSize = 14
+                Downloading.Font = Enum.Font.Gotham
                 Downloading.Text = "Fetching Assets metadata..."
                 Util.ForceTextSize(Downloading)
                 TweenService:Create(Downloading, TweenInfo.new(0.5), {
@@ -887,12 +887,12 @@ end
 local StylizedObjs = {}
 local function Stylize(obj, options)
         options = options or {}
-        Util.Instance("UICorner", obj).CornerRadius = UDim.new(0, 5)
+        Util.Instance("UICorner", obj).CornerRadius = UDim.new(0, 10)
         local Out = Util.Instance("UIStroke", obj)
         Out.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
         Out.Color = Color3.new(1, 1, 1)
         Out.LineJoinMode = Enum.LineJoinMode.Round
-        Out.Thickness = 1
+        Out.Thickness = 1.5
         Out.Transparency = 0
         Out.Enabled = true
         obj.BackgroundColor3 = Color3.new(0, 0, 0)
@@ -1145,13 +1145,13 @@ local UIMainWindow, WindowContent do
         
         local TopBarText = Util.Instance("TextLabel", TopBarFrame)
         TopBarText.AnchorPoint = Vector2.new(0, 0.5)
-        TopBarText.Position = UDim2.new(0, 8, 0.5, 0)
-        TopBarText.Size = UDim2.new(1, -35, 1, 0)
+        TopBarText.Position = UDim2.new(0, 10, 0.5, 0)
+        TopBarText.Size = UDim2.new(1, -40, 1, 0)
         TopBarText.BackgroundTransparency = 1
         TopBarText.ClipsDescendants = true
-        TopBarText.Font = Enum.Font.Code
+        TopBarText.Font = Enum.Font.GothamBold
         TopBarText.TextColor3 = Color3.new(1, 1, 1)
-        TopBarText.TextSize = 20
+        TopBarText.TextSize = 14
         TopBarText.TextXAlignment = Enum.TextXAlignment.Left
         TopBarText.Text = "Uhhhhhh Reanimate | v" .. UhhhhhhVersion
         TopBarText.RichText = true
@@ -1426,9 +1426,9 @@ do
         NotifyText.BackgroundTransparency = 1
         NotifyText.ClipsDescendants = false
         NotifyText.TextWrapped = true
-        NotifyText.Font = Enum.Font.Code
+        NotifyText.Font = Enum.Font.Gotham
         NotifyText.TextColor3 = Color3.new(1, 1, 1)
-        NotifyText.TextSize = 18
+        NotifyText.TextSize = 14
         NotifyText.TextXAlignment = Enum.TextXAlignment.Center
         NotifyText.Text = ""
         RegisterTextLabel(NotifyText)
@@ -1452,7 +1452,7 @@ do
                         if _notifyLastText ~= uinotif.Text then
                                 _notifyLastText = uinotif.Text
                                 local innerW = _notifyMaxW - _notifyPadX * 2
-                                local textBounds = TextService:GetTextSize(uinotif.Text, 18, Enum.Font.Code, Vector2.new(innerW, math.huge))
+                                local textBounds = TextService:GetTextSize(uinotif.Text, 14, Enum.Font.Gotham, Vector2.new(innerW, math.huge))
                                 _notifyTargetW = math.clamp(textBounds.X + _notifyPadX * 2, _notifyMinW, _notifyMaxW)
                                 _notifyTargetH = math.max(30, textBounds.Y + _notifyPadY)
                                 NotifyText.Size = UDim2.new(1, -_notifyPadX, 0, textBounds.Y)
@@ -1790,15 +1790,15 @@ function UI.CreatePage()
                 Frame.ScrollBarImageColor3 = val
         end))
         local Padding = Util.Instance("UIPadding", Frame)
-        Padding.PaddingTop = UDim.new(0, 5)
-        Padding.PaddingBottom = UDim.new(0, 0)
+        Padding.PaddingTop = UDim.new(0, 8)
+        Padding.PaddingBottom = UDim.new(0, 4)
         Padding.PaddingLeft = UDim.new(0, 0)
         Padding.PaddingRight = UDim.new(0, 0)
         local UIList = Util.Instance("UIListLayout", Frame)
         UIList.FillDirection = Enum.FillDirection.Vertical
         UIList.HorizontalAlignment = Enum.HorizontalAlignment.Center
         UIList.VerticalAlignment = Enum.VerticalAlignment.Top
-        UIList.Padding = UDim.new(0, 0)
+        UIList.Padding = UDim.new(0, 2)
         UIList.SortOrder = Enum.SortOrder.LayoutOrder
         return Frame
 end
@@ -1814,7 +1814,7 @@ function UI.CreateText(parent, text, size, alignment)
         Text.Size = UDim2.new(1, margin * -2, 1, -margin + 1)
         Text.BackgroundTransparency = 1
         Text.RichText = true
-        Text.Font = Enum.Font.Code
+        Text.Font = Enum.Font.Gotham
         Text.TextColor3 = Color3.new(1, 1, 1)
         Text.TextTransparency = 0
         Text.TextXAlignment = alignment
@@ -1835,22 +1835,28 @@ end
 function UI.CreateSeparator(parent)
         local Container = Util.Instance("Frame", parent)
         Container.AnchorPoint = Vector2.new(0.5, 0)
-        Container.Size = UDim2.new(1, 0, 0, 7)
+        Container.Size = UDim2.new(1, 0, 0, 14)
         Container.BackgroundTransparency = 1
         Container.LayoutOrder = #parent:GetChildren()
         local Sep = Util.Instance("Frame", Container)
         Sep.AnchorPoint = Vector2.new(0.5, 0.5)
         Sep.Position = UDim2.new(0.5, 0, 0.5, 0)
-        Sep.Size = UDim2.new(1, -8, 0, 1)
+        Sep.Size = UDim2.new(1, -24, 0, 1)
         Sep.BackgroundColor3 = UITextColor.Value
-        Sep.BackgroundTransparency = 0.8
+        Sep.BackgroundTransparency = 0.55
         Sep.BorderSizePixel = 0
+        Util.Instance("UIGradient", Sep).Transparency = NumberSequence.new({
+                NumberSequenceKeypoint.new(0, 1),
+                NumberSequenceKeypoint.new(0.15, 0),
+                NumberSequenceKeypoint.new(0.85, 0),
+                NumberSequenceKeypoint.new(1, 1),
+        })
         Util.LinkDestroyI2C(Sep, UITextColor.Changed:Connect(function(val)
                 Sep.BackgroundColor3 = val
         end))
 end
 function UI.CreateButton(parent, text, size)
-        local margin = 5
+        local margin = 7
         local Container = Util.Instance("Frame", parent)
         Container.AnchorPoint = Vector2.new(0.5, 0)
         Container.Size = UDim2.new(1, 0, 0, 65536)
@@ -1871,7 +1877,7 @@ function UI.CreateButton(parent, text, size)
         ButtonText.Size = UDim2.new(1, 0, 1, -margin)
         ButtonText.BackgroundTransparency = 1
         ButtonText.RichText = true
-        ButtonText.Font = Enum.Font.Code
+        ButtonText.Font = Enum.Font.GothamBold
         ButtonText.TextColor3 = Color3.new(1, 1, 1)
         ButtonText.TextTransparency = 0
         ButtonText.TextXAlignment = Enum.TextXAlignment.Center
@@ -1883,7 +1889,7 @@ function UI.CreateButton(parent, text, size)
         local function update()
                 local x = parent.AbsoluteSize.X
                 local size = TextService:GetTextSize(ButtonText.ContentText, ButtonText.TextSize, ButtonText.Font, Vector2.new(x - margin * 2, math.huge))
-                Container.Size = UDim2.new(1, 0, 0, size.Y + margin * 2)
+                Container.Size = UDim2.new(1, 0, 0, size.Y + margin * 2 + 4)
         end
         ButtonText.Text = text
         update()
@@ -1891,8 +1897,8 @@ function UI.CreateButton(parent, text, size)
         return Button, ButtonText
 end
 function UI.CreateSwitch(parent, text, value)
-        local margin = 5
-        local switchsize = 50
+        local margin = 6
+        local switchW, switchH = 44, 22
         local Container = Util.Instance("Frame", parent)
         Container.AnchorPoint = Vector2.new(0.5, 0)
         Container.Size = UDim2.new(1, 0, 0, 10)
@@ -1907,49 +1913,68 @@ function UI.CreateSwitch(parent, text, value)
         local ButtonText = Util.Instance("TextLabel", Button)
         ButtonText.AnchorPoint = Vector2.new(0, 0)
         ButtonText.Position = UDim2.new(0, margin, 0, 0)
-        ButtonText.Size = UDim2.new(1, margin * -3 - switchsize, 1, 0)
+        ButtonText.Size = UDim2.new(1, margin * -3 - switchW, 1, 0)
         ButtonText.BackgroundTransparency = 1
         ButtonText.RichText = true
-        ButtonText.Font = Enum.Font.Code
+        ButtonText.Font = Enum.Font.Gotham
         ButtonText.TextColor3 = Color3.new(1, 1, 1)
         ButtonText.TextTransparency = 0
         ButtonText.TextXAlignment = Enum.TextXAlignment.Left
         ButtonText.TextYAlignment = Enum.TextYAlignment.Center
         ButtonText.TextWrapped = true
-        ButtonText.TextSize = 20
+        ButtonText.TextSize = 14
         RegisterTextLabel(ButtonText)
         local function update()
                 local x = parent.AbsoluteSize.X
-                local size = TextService:GetTextSize(ButtonText.ContentText, ButtonText.TextSize, ButtonText.Font, Vector2.new(x - margin * 3 - switchsize, math.huge))
-                Container.Size = UDim2.new(1, 0, 0, math.max(35, size.Y))
+                local sz = TextService:GetTextSize(ButtonText.ContentText, ButtonText.TextSize, ButtonText.Font, Vector2.new(x - margin * 3 - switchW, math.huge))
+                Container.Size = UDim2.new(1, 0, 0, math.max(36, sz.Y + 14))
         end
         ButtonText.Text = text
         update()
         ButtonText.Changed:Connect(update)
+        -- Pill-shaped toggle track
         local Switch = Util.Instance("Frame", Container)
         Switch.AnchorPoint = Vector2.new(1, 0.5)
         Switch.Position = UDim2.new(1, -margin, 0.5, 0)
-        Switch.Size = UDim2.new(0, 25, 0, 25)
+        Switch.Size = UDim2.new(0, switchW, 0, switchH)
         Switch.BackgroundTransparency = 0
-        Switch.BackgroundColor3 = Color3.new(0, 0, 0)
+        Switch.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
         Switch.BorderSizePixel = 0
-        Util.Instance("UICorner", Switch).CornerRadius = UDim.new(0, 5)
-        Stylize(Switch)
+        Util.Instance("UICorner", Switch).CornerRadius = UDim.new(1, 0)
+        local SwitchStroke = Util.Instance("UIStroke", Switch)
+        SwitchStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+        SwitchStroke.Color = Color3.new(1, 1, 1)
+        SwitchStroke.Thickness = 1.5
+        SwitchStroke.Transparency = 0.6
+        -- Sliding thumb
+        local dotOff = UDim2.new(0, switchH / 2 - 1, 0.5, 0)
+        local dotOn  = UDim2.new(0, switchW - switchH / 2 + 1, 0.5, 0)
         local SwitchDot = Util.Instance("Frame", Switch)
         SwitchDot.AnchorPoint = Vector2.new(0.5, 0.5)
-        SwitchDot.Position = UDim2.new(0.5, 0, 0.5, 0)
-        SwitchDot.Size = UDim2.new(0, 19, 0, 19)
-        SwitchDot.BackgroundTransparency = 0.2
-        SwitchDot.BackgroundColor3 = UITextColor.Value
+        SwitchDot.Position = dotOff
+        SwitchDot.Size = UDim2.new(0, switchH - 6, 0, switchH - 6)
+        SwitchDot.BackgroundTransparency = 0
+        SwitchDot.BackgroundColor3 = Color3.new(1, 1, 1)
         SwitchDot.BorderSizePixel = 0
-        Util.LinkDestroyI2C(SwitchDot, UITextColor.Changed:Connect(function(val)
-                SwitchDot.BackgroundColor3 = val
-        end))
-        Util.Instance("UICorner", SwitchDot).CornerRadius = UDim.new(0, 2)
+        Util.Instance("UICorner", SwitchDot).CornerRadius = UDim.new(1, 0)
         local Lever = Util.Instance("BoolValue")
         Lever.Value = value
+        local onColor = UITextColor.Value
+        Util.LinkDestroyI2C(Switch, UITextColor.Changed:Connect(function(val)
+                onColor = val
+                if Lever.Value then
+                        Switch.BackgroundColor3 = val
+                end
+        end))
+        local tweenInfo = TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
         local function updatesw()
-                SwitchDot.Visible = Lever.Value
+                if Lever.Value then
+                        TweenService:Create(SwitchDot, tweenInfo, { Position = dotOn }):Play()
+                        TweenService:Create(Switch, tweenInfo, { BackgroundColor3 = onColor }):Play()
+                else
+                        TweenService:Create(SwitchDot, tweenInfo, { Position = dotOff }):Play()
+                        TweenService:Create(Switch, tweenInfo, { BackgroundColor3 = Color3.fromRGB(45, 45, 45) }):Play()
+                end
         end
         Lever.Changed:Connect(updatesw)
         updatesw()
@@ -1977,7 +2002,7 @@ function UI.CreateTextbox(parent, text, placeholder, size)
         BoxText.Position = UDim2.new(0, 0, 0.5, 0)
         BoxText.Size = UDim2.new(1, 0, 1, -margin)
         BoxText.BackgroundTransparency = 1
-        BoxText.Font = Enum.Font.Code
+        BoxText.Font = Enum.Font.Gotham
         BoxText.TextColor3 = Color3.new(1, 1, 1)
         BoxText.PlaceholderColor3 = Color3.new(0.7, 0.7, 0.7)
         BoxText.TextTransparency = 0
@@ -2028,19 +2053,19 @@ function UI.CreateSlider(parent, text, value, min, max, step)
         Text.Size = UDim2.new(1, margin * -2, 0, 35)
         Text.BackgroundTransparency = 1
         Text.RichText = true
-        Text.Font = Enum.Font.Code
+        Text.Font = Enum.Font.Gotham
         Text.TextColor3 = Color3.new(1, 1, 1)
         Text.TextTransparency = 0
         Text.TextXAlignment = Enum.TextXAlignment.Left
         Text.TextYAlignment = Enum.TextYAlignment.Center
         Text.TextWrapped = true
-        Text.TextSize = 20
+        Text.TextSize = 14
         Text.Text = text
         RegisterTextLabel(Text)
         local Box = Util.Instance("Frame", Container)
         Box.AnchorPoint = Vector2.new(1, 0)
         Box.Position = UDim2.new(1, -margin, 0, margin)
-        Box.Size = UDim2.new(0, 80, 0, 35 - margin * 2)
+        Box.Size = UDim2.new(0, 86, 0, 35 - margin * 2)
         Box.BackgroundTransparency = 0
         Box.BackgroundColor3 = Color3.new(1, 1, 1)
         Box.BorderSizePixel = 0
@@ -2049,14 +2074,14 @@ function UI.CreateSlider(parent, text, value, min, max, step)
         BoxText.Position = UDim2.new(0, 0, 0.5, 0)
         BoxText.Size = UDim2.new(1, 0, 1, -margin)
         BoxText.BackgroundTransparency = 1
-        BoxText.Font = Enum.Font.Code
+        BoxText.Font = Enum.Font.Gotham
         BoxText.TextColor3 = Color3.new(1, 1, 1)
         BoxText.PlaceholderColor3 = Color3.new(0.7, 0.7, 0.7)
         BoxText.TextTransparency = 0
         BoxText.TextXAlignment = Enum.TextXAlignment.Center
         BoxText.TextYAlignment = Enum.TextYAlignment.Center
         BoxText.TextWrapped = true
-        BoxText.TextSize = 15
+        BoxText.TextSize = 13
         BoxText.ClearTextOnFocus = false
         RegisterTextLabel(BoxText)
         BoxText.Focused:Connect(function()
@@ -2068,21 +2093,21 @@ function UI.CreateSlider(parent, text, value, min, max, step)
         local SliderC = Util.Instance("TextButton", Container)
         SliderC.AnchorPoint = Vector2.new(0, 0)
         SliderC.Position = UDim2.new(0, 0, 0, 40)
-        SliderC.Size = UDim2.new(1, 0, 0, 20)
+        SliderC.Size = UDim2.new(1, 0, 0, 22)
         SliderC.BackgroundTransparency = 1
         SliderC.Text = ""
         SliderC.AutoButtonColor = true
         local SliderR = Util.Instance("Frame", SliderC)
         SliderR.AnchorPoint = Vector2.new(0.5, 0.5)
         SliderR.Position = UDim2.new(0.5, 0, 0.5, 0)
-        SliderR.Size = UDim2.new(1, margin * -2 - 18, 0, 5)
+        SliderR.Size = UDim2.new(1, margin * -2 - 20, 0, 6)
         SliderR.BackgroundTransparency = 0
         SliderR.BackgroundColor3 = Color3.new(1, 1, 1)
         SliderR.BorderSizePixel = 0
         local SliderB = Util.Instance("Frame", SliderR)
         SliderB.AnchorPoint = Vector2.new(0.5, 0.5)
         SliderB.Position = UDim2.new(0, 0, 0.5, 0)
-        SliderB.Size = UDim2.new(0, 18, 0, 18)
+        SliderB.Size = UDim2.new(0, 20, 0, 20)
         SliderB.BackgroundTransparency = 0
         SliderB.BackgroundColor3 = Color3.new(1, 1, 1)
         SliderB.BorderSizePixel = 0
@@ -2192,13 +2217,13 @@ function UI.CreateDropdown(parent, text, array, value)
         Text.Size = UDim2.new(1, margin * -2, 1, 0)
         Text.BackgroundTransparency = 1
         Text.RichText = true
-        Text.Font = Enum.Font.Code
+        Text.Font = Enum.Font.Gotham
         Text.TextColor3 = Color3.new(1, 1, 1)
         Text.TextTransparency = 0
         Text.TextXAlignment = Enum.TextXAlignment.Left
         Text.TextYAlignment = Enum.TextYAlignment.Center
         Text.TextWrapped = true
-        Text.TextSize = 20
+        Text.TextSize = 14
         RegisterTextLabel(Text)
         local Dropdown = Util.Instance("TextButton", Container)
         Dropdown.AnchorPoint = Vector2.new(1, 0.5)
@@ -2215,13 +2240,13 @@ function UI.CreateDropdown(parent, text, array, value)
         DropdownText.Size = UDim2.new(1, -margin * 2, 1, -margin)
         DropdownText.BackgroundTransparency = 1
         DropdownText.RichText = true
-        DropdownText.Font = Enum.Font.Code
+        DropdownText.Font = Enum.Font.Gotham
         DropdownText.TextColor3 = Color3.new(1, 1, 1)
         DropdownText.TextTransparency = 0
         DropdownText.TextXAlignment = Enum.TextXAlignment.Center
         DropdownText.TextYAlignment = Enum.TextYAlignment.Center
         DropdownText.TextWrapped = true
-        DropdownText.TextSize = 15
+        DropdownText.TextSize = 13
         RegisterTextLabel(DropdownText)
         Stylize(Dropdown)
         local function update()
@@ -2281,8 +2306,8 @@ function UI.CreateDropdown(parent, text, array, value)
                 Item.AutoButtonColor = true
                 Item.LayoutOrder = i
                 Item.Text = itemname
-                Item.TextSize = 15
-                Item.Font = Enum.Font.Code
+                Item.TextSize = 13
+                Item.Font = Enum.Font.Gotham
                 Item.TextColor3 = Color3.new(1, 1, 1)
                 Item.TextXAlignment = Enum.TextXAlignment.Left
                 Item.TextYAlignment = Enum.TextYAlignment.Center
@@ -2479,13 +2504,13 @@ function UI.CreateItemListPage()
         BackButtonText.Position = UDim2.new(0.5, 0, 0.5, 0)
         BackButtonText.Size = UDim2.new(1, margin * -2, 1, -margin)
         BackButtonText.BackgroundTransparency = 1
-        BackButtonText.Font = Enum.Font.Code
+        BackButtonText.Font = Enum.Font.GothamBold
         BackButtonText.TextColor3 = Color3.new(1, 1, 1)
         BackButtonText.TextTransparency = 0
         BackButtonText.TextXAlignment = Enum.TextXAlignment.Center
         BackButtonText.TextYAlignment = Enum.TextYAlignment.Center
         BackButtonText.TextWrapped = true
-        BackButtonText.TextSize = 20
+        BackButtonText.TextSize = 16
         BackButtonText.Text = "<"
         RegisterTextLabel(BackButtonText)
         Stylize(BackButton)
@@ -2501,14 +2526,14 @@ function UI.CreateItemListPage()
         SearchBoxText.Position = UDim2.new(0.5, 0, 0.5, 0)
         SearchBoxText.Size = UDim2.new(1, margin * -2, 1, -margin)
         SearchBoxText.BackgroundTransparency = 1
-        SearchBoxText.Font = Enum.Font.Code
+        SearchBoxText.Font = Enum.Font.Gotham
         SearchBoxText.TextColor3 = Color3.new(1, 1, 1)
         SearchBoxText.PlaceholderColor3 = Color3.new(0.7, 0.7, 0.7)
         SearchBoxText.TextTransparency = 0
         SearchBoxText.TextXAlignment = Enum.TextXAlignment.Left
         SearchBoxText.TextYAlignment = Enum.TextYAlignment.Center
         SearchBoxText.TextWrapped = true
-        SearchBoxText.TextSize = 20
+        SearchBoxText.TextSize = 14
         SearchBoxText.ClearTextOnFocus = false
         SearchBoxText.Focused:Connect(function()
                 UISound.Click:Play()
