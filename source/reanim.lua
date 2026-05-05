@@ -4475,7 +4475,6 @@ SaveData.Reanimator.LimbForceFreefall = not not SaveData.Reanimator.LimbForceFre
 SaveData.Reanimator.LimbSpeedLock = not not SaveData.Reanimator.LimbSpeedLock
 SaveData.Reanimator.LimbDisableDeath = not not SaveData.Reanimator.LimbDisableDeath
 SaveData.Reanimator.LimbNoSounds = not not SaveData.Reanimator.LimbNoSounds
-SaveData.Reanimator.LimbGodMode = not not SaveData.Reanimator.LimbGodMode
 LimbReanimator.Mode = SaveData.Reanimator.LimbMode
 -- 0 = hide rootpart (defaults to 2 when streaming is enabled)
 -- 1 = put rootpart just under void (defaults to 2 when streaming is enabled)
@@ -4496,7 +4495,6 @@ LimbReanimator.ForceFreefall = SaveData.Reanimator.LimbForceFreefall
 LimbReanimator.SpeedLock = SaveData.Reanimator.LimbSpeedLock
 LimbReanimator.DisableDeath = SaveData.Reanimator.LimbDisableDeath
 LimbReanimator.NoSounds = SaveData.Reanimator.LimbNoSounds
-LimbReanimator.GodMode = SaveData.Reanimator.LimbGodMode
 LimbReanimator.FlingTargets = {}
 LimbReanimator._TempNotFling = {}
 function LimbReanimator.ShowHitboxes()
@@ -4599,11 +4597,6 @@ function LimbReanimator.Config(parent)
         UI.CreateSwitch(parent, "No Character Sounds", LimbReanimator.NoSounds).Changed:Connect(function(val)
                 LimbReanimator.NoSounds = val
                 SaveData.Reanimator.LimbNoSounds = val
-        end)
-        UI.CreateText(parent, "restores health to full every frame, any damage taken is instantly undone", 10, Enum.TextXAlignment.Center)
-        UI.CreateSwitch(parent, "God Mode", LimbReanimator.GodMode).Changed:Connect(function(val)
-                LimbReanimator.GodMode = val
-                SaveData.Reanimator.LimbGodMode = val
         end)
         Util.LinkDestroyI2C(dmode, RunService.Heartbeat:Connect(function()
                 dmode.Value = LimbReanimator.Mode + 1
@@ -4790,16 +4783,6 @@ function LimbReanimator.Start()
                                         v:Destroy()
                                 end
                         end
-                end
-                if humanoid then
-                        humanoid.HealthChanged:Connect(function(newHealth)
-                                if LimbReanimator.GodMode and newHealth < humanoid.MaxHealth then
-                                        local full = humanoid.MaxHealth
-                                        humanoid.Health = full
-                                        pcall(replicatesignal, humanoid.HealthChanged, full)
-                                        pcall(replicatesignal, humanoid.MaxHealthChanged, full)
-                                end
-                        end)
                 end
         end)
         Player.CharacterAdded:Wait()
@@ -5038,12 +5021,6 @@ function LimbReanimator.Start()
                                                 Humanoid:SetStateEnabled(Enum.HumanoidStateType.Dead, false)
                                                 Humanoid:SetStateEnabled(Enum.HumanoidStateType.GettingUp, false)
                                         end)
-                                end
-                                if LimbReanimator.GodMode and Humanoid.MaxHealth > 0 and Humanoid.Health < Humanoid.MaxHealth then
-                                        local full = Humanoid.MaxHealth
-                                        Humanoid.Health = full
-                                        pcall(replicatesignal, Humanoid.HealthChanged, full)
-                                        pcall(replicatesignal, Humanoid.MaxHealthChanged, full)
                                 end
                                 RunService.PreRender:Wait()
                                 if Reanimate:ShouldRotationType() then
