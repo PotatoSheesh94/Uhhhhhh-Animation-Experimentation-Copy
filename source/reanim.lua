@@ -4804,16 +4804,12 @@ function LimbReanimator.Start()
                                 if LimbReanimator.Permadeath and newHealth > 0.001 then
                                         humanoid.MaxHealth = 0.001
                                         humanoid.Health = 0.001
-                                        pcall(replicatesignal, humanoid.MaxHealthChanged, 0.001)
-                                        pcall(replicatesignal, humanoid.HealthChanged, 0.001)
                                 end
                         end)
                         humanoid:GetPropertyChangedSignal("MaxHealth"):Connect(function()
                                 if LimbReanimator.Permadeath and humanoid.MaxHealth > 0.001 then
                                         humanoid.MaxHealth = 0.001
                                         humanoid.Health = 0.001
-                                        pcall(replicatesignal, humanoid.MaxHealthChanged, 0.001)
-                                        pcall(replicatesignal, humanoid.HealthChanged, 0.001)
                                 end
                         end)
                 end
@@ -4965,11 +4961,9 @@ function LimbReanimator.Start()
                                 if RootPart and LimbReanimator.Permadeath then
                                         if Humanoid.MaxHealth > 0.001 then
                                                 Humanoid.MaxHealth = 0.001
-                                                pcall(replicatesignal, Humanoid.MaxHealthChanged, 0.001)
                                         end
                                         if Humanoid.Health > 0.001 then
                                                 Humanoid.Health = 0.001
-                                                pcall(replicatesignal, Humanoid.HealthChanged, 0.001)
                                         end
                                 end
                                 if LimbReanimator.PermanentRespawnShield and LimbReanimator._HadRespawnShield then
