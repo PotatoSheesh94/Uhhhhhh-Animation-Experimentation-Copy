@@ -4471,7 +4471,6 @@ SaveData.Reanimator.LimbInitMode = SaveData.Reanimator.LimbInitMode or 2
 SaveData.Reanimator.LimbReplicateFPS10 = not not SaveData.Reanimator.LimbReplicateFPS10
 SaveData.Reanimator.LimbRoleplay = not not SaveData.Reanimator.LimbRoleplay
 SaveData.Reanimator.LimbUseNaNFling = not not SaveData.Reanimator.LimbUseNaNFling
-SaveData.Reanimator.LimbPermadeath = not not SaveData.Reanimator.LimbPermadeath
 SaveData.Reanimator.LimbPermanentRespawnShield = not not SaveData.Reanimator.LimbPermanentRespawnShield
 LimbReanimator.Mode = SaveData.Reanimator.LimbMode
 -- 0 = hide rootpart (defaults to 2 when streaming is enabled)
@@ -4485,12 +4484,10 @@ LimbReanimator.Velocity = SaveData.Reanimator.LimbVelocity
 -- 2 = fling-y velocity
 LimbReanimator.InitMode = SaveData.Reanimator.LimbInitMode
 -- 0 = just reset
--- 1 = time permadeath, and reset
--- 2 = time permadeath, "without reset"
+-- 1 = reset
 LimbReanimator.ReplicateFPS10 = SaveData.Reanimator.LimbReplicateFPS10
 LimbReanimator.FlingEnabled = not SaveData.Reanimator.LimbRoleplay
 LimbReanimator.UseNaNFling = SaveData.Reanimator.LimbUseNaNFling
-LimbReanimator.Permadeath = SaveData.Reanimator.LimbPermadeath
 LimbReanimator.PermanentRespawnShield = SaveData.Reanimator.LimbPermanentRespawnShield
 LimbReanimator._HadRespawnShield = false
 LimbReanimator._OriginalRespawnTime = nil
@@ -4575,13 +4572,6 @@ function LimbReanimator.Config(parent)
         UI.CreateSwitch(parent, "Use NaN State Fling", LimbReanimator.UseNaNFling).Changed:Connect(function(val)
                 LimbReanimator.UseNaNFling = val
                 SaveData.Reanimator.LimbUseNaNFling = val
-        end)
-        UI.CreateSeparator(parent)
-        UI.CreateText(parent, "Permadeath Limb Reanimation", 15, Enum.TextXAlignment.Center)
-        UI.CreateText(parent, "keeps health at 0 while reanimating so you never respawn", 10, Enum.TextXAlignment.Center)
-        UI.CreateSwitch(parent, "Permadeath", LimbReanimator.Permadeath).Changed:Connect(function(val)
-                LimbReanimator.Permadeath = val
-                SaveData.Reanimator.LimbPermadeath = val
         end)
         UI.CreateSeparator(parent)
         UI.CreateText(parent, "Respawn Shield Barrier", 15, Enum.TextXAlignment.Center)
@@ -4799,20 +4789,6 @@ function LimbReanimator.Start()
                         task.spawn(CharOnDesc, v)
                 end
                 local humanoid = character:WaitForChild("Humanoid", 5)
-                if humanoid then
-                        humanoid.HealthChanged:Connect(function(newHealth)
-                                if LimbReanimator.Permadeath and newHealth > 0.001 then
-                                        humanoid.MaxHealth = 0.001
-                                        humanoid.Health = 0.001
-                                end
-                        end)
-                        humanoid:GetPropertyChangedSignal("MaxHealth"):Connect(function()
-                                if LimbReanimator.Permadeath and humanoid.MaxHealth > 0.001 then
-                                        humanoid.MaxHealth = 0.001
-                                        humanoid.Health = 0.001
-                                end
-                        end)
-                end
                 local stupid = humanoid and humanoid:FindFirstChildWhichIsA("Animator")
                 if stupid then
                         stupid:Destroy()
@@ -4958,14 +4934,6 @@ function LimbReanimator.Start()
                                         Humanoid:ChangeState(Enum.HumanoidStateType.Freefall)
                                         ReanimOkay = LimbReanimator.FlingTargets[1] == nil
                                 end
-                                if RootPart and LimbReanimator.Permadeath then
-                                        if Humanoid.MaxHealth > 0.001 then
-                                                Humanoid.MaxHealth = 0.001
-                                        end
-                                        if Humanoid.Health > 0.001 then
-                                                Humanoid.Health = 0.001
-                                        end
-                                end
                                 if LimbReanimator.PermanentRespawnShield and LimbReanimator._HadRespawnShield then
                                         local existingFF = Character:FindFirstChildOfClass("ForceField")
                                         if not existingFF then
@@ -4974,18 +4942,16 @@ function LimbReanimator.Start()
                                                 ff.Parent = Character
                                                 pcall(replicatesignal, Character.ChildAdded, ff)
                                         end
-                                        if not LimbReanimator.Permadeath then
-                                                if Humanoid.MaxHealth > 0 and Humanoid.Health < Humanoid.MaxHealth then
-                                                        local fullHealth = Humanoid.MaxHealth
-                                                        Humanoid.Health = fullHealth
-                                                        pcall(replicatesignal, Humanoid.HealthChanged, fullHealth)
-                                                        pcall(replicatesignal, Humanoid.MaxHealthChanged, fullHealth)
-                                                end
-                                                pcall(sethiddenproperty, Humanoid, "NetworkHumanoidState", Enum.HumanoidStateType.Running)
-                                                pcall(function()
-                                                        Humanoid:SetStateEnabled(Enum.HumanoidStateType.Dead, false)
-                                                end)
+                                        if Humanoid.MaxHealth > 0 and Humanoid.Health < Humanoid.MaxHealth then
+                                                local fullHealth = Humanoid.MaxHealth
+                                                Humanoid.Health = fullHealth
+                                                pcall(replicatesignal, Humanoid.HealthChanged, fullHealth)
+                                                pcall(replicatesignal, Humanoid.MaxHealthChanged, fullHealth)
                                         end
+                                        pcall(sethiddenproperty, Humanoid, "NetworkHumanoidState", Enum.HumanoidStateType.Running)
+                                        pcall(function()
+                                                Humanoid:SetStateEnabled(Enum.HumanoidStateType.Dead, false)
+                                        end)
                                 end
                         end
                 end
