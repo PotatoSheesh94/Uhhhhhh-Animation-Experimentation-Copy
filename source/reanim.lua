@@ -4471,7 +4471,6 @@ SaveData.Reanimator.LimbInitMode = SaveData.Reanimator.LimbInitMode or 2
 SaveData.Reanimator.LimbReplicateFPS10 = not not SaveData.Reanimator.LimbReplicateFPS10
 SaveData.Reanimator.LimbRoleplay = not not SaveData.Reanimator.LimbRoleplay
 SaveData.Reanimator.LimbUseNaNFling = not not SaveData.Reanimator.LimbUseNaNFling
-SaveData.Reanimator.LimbPermanentRespawnShield = not not SaveData.Reanimator.LimbPermanentRespawnShield
 SaveData.Reanimator.LimbForceFreefall = not not SaveData.Reanimator.LimbForceFreefall
 SaveData.Reanimator.LimbSpeedLock = not not SaveData.Reanimator.LimbSpeedLock
 SaveData.Reanimator.LimbDisableDeath = not not SaveData.Reanimator.LimbDisableDeath
@@ -4493,14 +4492,11 @@ LimbReanimator.InitMode = SaveData.Reanimator.LimbInitMode
 LimbReanimator.ReplicateFPS10 = SaveData.Reanimator.LimbReplicateFPS10
 LimbReanimator.FlingEnabled = not SaveData.Reanimator.LimbRoleplay
 LimbReanimator.UseNaNFling = SaveData.Reanimator.LimbUseNaNFling
-LimbReanimator.PermanentRespawnShield = SaveData.Reanimator.LimbPermanentRespawnShield
 LimbReanimator.ForceFreefall = SaveData.Reanimator.LimbForceFreefall
 LimbReanimator.SpeedLock = SaveData.Reanimator.LimbSpeedLock
 LimbReanimator.DisableDeath = SaveData.Reanimator.LimbDisableDeath
 LimbReanimator.NoSounds = SaveData.Reanimator.LimbNoSounds
 LimbReanimator.GodMode = SaveData.Reanimator.LimbGodMode
-LimbReanimator._HadRespawnShield = false
-LimbReanimator._OriginalRespawnTime = nil
 LimbReanimator.FlingTargets = {}
 LimbReanimator._TempNotFling = {}
 function LimbReanimator.ShowHitboxes()
@@ -4609,35 +4605,10 @@ function LimbReanimator.Config(parent)
                 LimbReanimator.GodMode = val
                 SaveData.Reanimator.LimbGodMode = val
         end)
-        UI.CreateSeparator(parent)
-        UI.CreateText(parent, "Respawn Shield Barrier", 15, Enum.TextXAlignment.Center)
-        UI.CreateText(parent, "if the game has a respawn shield, it will never disappear while in limb reanimation mode", 10, Enum.TextXAlignment.Center)
-        UI.CreateSwitch(parent, "Permanent Respawn Shield", LimbReanimator.PermanentRespawnShield).Changed:Connect(function(val)
-                LimbReanimator.PermanentRespawnShield = val
-                SaveData.Reanimator.LimbPermanentRespawnShield = val
-        end)
-        local shieldStatusText = UI.CreateText(parent, "Shield Status: OFF", 12, Enum.TextXAlignment.Center)
         Util.LinkDestroyI2C(dmode, RunService.Heartbeat:Connect(function()
                 dmode.Value = LimbReanimator.Mode + 1
                 dvel.Value = LimbReanimator.Velocity + 1
                 dinit.Value = LimbReanimator.InitMode + 1
-                if not LimbReanimator.PermanentRespawnShield then
-                        shieldStatusText.Text = "Shield Status: OFF"
-                        shieldStatusText.TextColor3 = Color3.fromRGB(180, 180, 180)
-                elseif not LimbReanimator._HadRespawnShield then
-                        shieldStatusText.Text = "Shield Status: WAITING (game has no shield yet)"
-                        shieldStatusText.TextColor3 = Color3.fromRGB(255, 200, 50)
-                else
-                        local char = Player.Character
-                        local hasFF = char and char:FindFirstChildOfClass("ForceField") ~= nil
-                        if hasFF then
-                                shieldStatusText.Text = "Shield Status: ACTIVE"
-                                shieldStatusText.TextColor3 = Color3.fromRGB(80, 255, 100)
-                        else
-                                shieldStatusText.Text = "Shield Status: APPLYING..."
-                                shieldStatusText.TextColor3 = Color3.fromRGB(255, 200, 50)
-                        end
-                end
         end))
 end
 function LimbReanimator.Start()
@@ -4796,30 +4767,6 @@ function LimbReanimator.Start()
                         map.CFrame = nil
                         map.PosVelocity = nil
                 end
-                LimbReanimator._HadRespawnShield = false
-                for _, v in character:GetChildren() do
-                        if v:IsA("ForceField") then
-                                LimbReanimator._HadRespawnShield = true
-                                break
-                        end
-                end
-                character.ChildAdded:Connect(function(child)
-                        if child:IsA("ForceField") then
-                                LimbReanimator._HadRespawnShield = true
-                        end
-                end)
-                character.ChildRemoved:Connect(function(child)
-                        if child:IsA("ForceField") and LimbReanimator.PermanentRespawnShield and LimbReanimator._HadRespawnShield then
-                                task.defer(function()
-                                        if character:IsDescendantOf(workspace) and not character:FindFirstChildOfClass("ForceField") then
-                                                local ff = Instance.new("ForceField")
-                                                ff.Visible = true
-                                                ff.Parent = character
-                                                pcall(replicatesignal, character.ChildAdded, ff)
-                                        end
-                                end)
-                        end
-                end)
                 character.DescendantAdded:Connect(CharOnDesc)
                 for _,v in character:GetDescendants() do
                         task.spawn(CharOnDesc, v)
@@ -4991,25 +4938,6 @@ function LimbReanimator.Start()
                                 if RootPart and Humanoid:GetState() ~= Enum.HumanoidStateType.Dead then
                                         Humanoid:ChangeState(Enum.HumanoidStateType.Freefall)
                                         ReanimOkay = LimbReanimator.FlingTargets[1] == nil
-                                end
-                                if LimbReanimator.PermanentRespawnShield and LimbReanimator._HadRespawnShield then
-                                        local existingFF = Character:FindFirstChildOfClass("ForceField")
-                                        if not existingFF then
-                                                local ff = Instance.new("ForceField")
-                                                ff.Visible = true
-                                                ff.Parent = Character
-                                                pcall(replicatesignal, Character.ChildAdded, ff)
-                                        end
-                                        if Humanoid.MaxHealth > 0 and Humanoid.Health < Humanoid.MaxHealth then
-                                                local fullHealth = Humanoid.MaxHealth
-                                                Humanoid.Health = fullHealth
-                                                pcall(replicatesignal, Humanoid.HealthChanged, fullHealth)
-                                                pcall(replicatesignal, Humanoid.MaxHealthChanged, fullHealth)
-                                        end
-                                        pcall(sethiddenproperty, Humanoid, "NetworkHumanoidState", Enum.HumanoidStateType.Running)
-                                        pcall(function()
-                                                Humanoid:SetStateEnabled(Enum.HumanoidStateType.Dead, false)
-                                        end)
                                 end
                         end
                 end
