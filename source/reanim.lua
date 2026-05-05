@@ -4847,7 +4847,10 @@ function LimbReanimator.Start()
                 if humanoid then
                         humanoid.HealthChanged:Connect(function(newHealth)
                                 if LimbReanimator.GodMode and newHealth < humanoid.MaxHealth then
-                                        humanoid.Health = humanoid.MaxHealth
+                                        local full = humanoid.MaxHealth
+                                        humanoid.Health = full
+                                        pcall(replicatesignal, humanoid.HealthChanged, full)
+                                        pcall(replicatesignal, humanoid.MaxHealthChanged, full)
                                 end
                         end)
                 end
@@ -5109,7 +5112,10 @@ function LimbReanimator.Start()
                                         end)
                                 end
                                 if LimbReanimator.GodMode and Humanoid.MaxHealth > 0 and Humanoid.Health < Humanoid.MaxHealth then
-                                        Humanoid.Health = Humanoid.MaxHealth
+                                        local full = Humanoid.MaxHealth
+                                        Humanoid.Health = full
+                                        pcall(replicatesignal, Humanoid.HealthChanged, full)
+                                        pcall(replicatesignal, Humanoid.MaxHealthChanged, full)
                                 end
                                 RunService.PreRender:Wait()
                                 if Reanimate:ShouldRotationType() then
