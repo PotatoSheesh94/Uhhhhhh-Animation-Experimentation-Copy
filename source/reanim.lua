@@ -4806,7 +4806,6 @@ function LimbReanimator.Start()
                                         humanoid.Health = 0.001
                                         pcall(replicatesignal, humanoid.MaxHealthChanged, 0.001)
                                         pcall(replicatesignal, humanoid.HealthChanged, 0.001)
-                                        pcall(sethiddenproperty, humanoid, "NetworkHumanoidState", Enum.HumanoidStateType.Dead)
                                 end
                         end)
                         humanoid:GetPropertyChangedSignal("MaxHealth"):Connect(function()
@@ -4815,7 +4814,6 @@ function LimbReanimator.Start()
                                         humanoid.Health = 0.001
                                         pcall(replicatesignal, humanoid.MaxHealthChanged, 0.001)
                                         pcall(replicatesignal, humanoid.HealthChanged, 0.001)
-                                        pcall(sethiddenproperty, humanoid, "NetworkHumanoidState", Enum.HumanoidStateType.Dead)
                                 end
                         end)
                 end
@@ -5084,9 +5082,7 @@ function LimbReanimator.Start()
                                                 pcall(sethiddenproperty, Humanoid, "MoveDirectionInternal", Vector3.zero)
                                         end
                                 end
-                                if LimbReanimator.Permadeath then
-                                        pcall(sethiddenproperty, Humanoid, "NetworkHumanoidState", Enum.HumanoidStateType.Dead)
-                                elseif LimbReanimator.UseNaNFling then
+                                if LimbReanimator.UseNaNFling then
                                         pcall(sethiddenproperty, Humanoid, "NetworkHumanoidState", Enum.HumanoidStateType.Freefall)
                                 else
                                         pcall(sethiddenproperty, Humanoid, "NetworkHumanoidState", Enum.HumanoidStateType[({"Running", "PlatformStanding", "Jumping", "Ragdoll", "Seated", "Physics"})[math.random(1, 6)]])
