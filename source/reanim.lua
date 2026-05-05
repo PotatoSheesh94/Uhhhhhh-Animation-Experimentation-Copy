@@ -4472,6 +4472,10 @@ SaveData.Reanimator.LimbReplicateFPS10 = not not SaveData.Reanimator.LimbReplica
 SaveData.Reanimator.LimbRoleplay = not not SaveData.Reanimator.LimbRoleplay
 SaveData.Reanimator.LimbUseNaNFling = not not SaveData.Reanimator.LimbUseNaNFling
 SaveData.Reanimator.LimbPermanentRespawnShield = not not SaveData.Reanimator.LimbPermanentRespawnShield
+SaveData.Reanimator.LimbForceFreefall = not not SaveData.Reanimator.LimbForceFreefall
+SaveData.Reanimator.LimbSpeedLock = not not SaveData.Reanimator.LimbSpeedLock
+SaveData.Reanimator.LimbDisableDeath = not not SaveData.Reanimator.LimbDisableDeath
+SaveData.Reanimator.LimbNoSounds = not not SaveData.Reanimator.LimbNoSounds
 LimbReanimator.Mode = SaveData.Reanimator.LimbMode
 -- 0 = hide rootpart (defaults to 2 when streaming is enabled)
 -- 1 = put rootpart just under void (defaults to 2 when streaming is enabled)
@@ -4489,6 +4493,10 @@ LimbReanimator.ReplicateFPS10 = SaveData.Reanimator.LimbReplicateFPS10
 LimbReanimator.FlingEnabled = not SaveData.Reanimator.LimbRoleplay
 LimbReanimator.UseNaNFling = SaveData.Reanimator.LimbUseNaNFling
 LimbReanimator.PermanentRespawnShield = SaveData.Reanimator.LimbPermanentRespawnShield
+LimbReanimator.ForceFreefall = SaveData.Reanimator.LimbForceFreefall
+LimbReanimator.SpeedLock = SaveData.Reanimator.LimbSpeedLock
+LimbReanimator.DisableDeath = SaveData.Reanimator.LimbDisableDeath
+LimbReanimator.NoSounds = SaveData.Reanimator.LimbNoSounds
 LimbReanimator._HadRespawnShield = false
 LimbReanimator._OriginalRespawnTime = nil
 LimbReanimator.FlingTargets = {}
@@ -4572,6 +4580,27 @@ function LimbReanimator.Config(parent)
         UI.CreateSwitch(parent, "Use NaN State Fling", LimbReanimator.UseNaNFling).Changed:Connect(function(val)
                 LimbReanimator.UseNaNFling = val
                 SaveData.Reanimator.LimbUseNaNFling = val
+        end)
+        UI.CreateText(parent, "locks NetworkHumanoidState to Freefall every frame, lighter than NaN fling", 10, Enum.TextXAlignment.Center)
+        UI.CreateSwitch(parent, "Force Freefall State", LimbReanimator.ForceFreefall).Changed:Connect(function(val)
+                LimbReanimator.ForceFreefall = val
+                SaveData.Reanimator.LimbForceFreefall = val
+        end)
+        UI.CreateSeparator(parent)
+        UI.CreateText(parent, "forces WalkSpeed=16 JumpPower=50 every frame so games can't zero them out", 10, Enum.TextXAlignment.Center)
+        UI.CreateSwitch(parent, "Speed Lock", LimbReanimator.SpeedLock).Changed:Connect(function(val)
+                LimbReanimator.SpeedLock = val
+                SaveData.Reanimator.LimbSpeedLock = val
+        end)
+        UI.CreateText(parent, "calls SetStateEnabled(Dead, false) every frame so the humanoid can't be killed", 10, Enum.TextXAlignment.Center)
+        UI.CreateSwitch(parent, "Disable Death State", LimbReanimator.DisableDeath).Changed:Connect(function(val)
+                LimbReanimator.DisableDeath = val
+                SaveData.Reanimator.LimbDisableDeath = val
+        end)
+        UI.CreateText(parent, "removes Sound instances from actual character on spawn to hide footstep audio", 10, Enum.TextXAlignment.Center)
+        UI.CreateSwitch(parent, "No Character Sounds", LimbReanimator.NoSounds).Changed:Connect(function(val)
+                LimbReanimator.NoSounds = val
+                SaveData.Reanimator.LimbNoSounds = val
         end)
         UI.CreateSeparator(parent)
         UI.CreateText(parent, "Respawn Shield Barrier", 15, Enum.TextXAlignment.Center)
@@ -4801,6 +4830,13 @@ function LimbReanimator.Start()
                         end
                         stupid:Destroy()
                 end
+                if LimbReanimator.NoSounds then
+                        for _, v in character:GetDescendants() do
+                                if v:IsA("Sound") then
+                                        v:Destroy()
+                                end
+                        end
+                end
         end)
         Player.CharacterAdded:Wait()
         Reanimate.CreateCharacter(InitCFrame)
@@ -4923,11 +4959,16 @@ function LimbReanimator.Start()
                         Humanoid = Character:FindFirstChildOfClass("Humanoid")
                         if Humanoid then
                                 Humanoid.AutoRotate = false
-                                if Humanoid.WalkSpeed < 1 then
+                                if LimbReanimator.SpeedLock then
                                         Humanoid.WalkSpeed = 16
-                                end
-                                if Humanoid.JumpPower < 1 then
                                         Humanoid.JumpPower = 50
+                                else
+                                        if Humanoid.WalkSpeed < 1 then
+                                                Humanoid.WalkSpeed = 16
+                                        end
+                                        if Humanoid.JumpPower < 1 then
+                                                Humanoid.JumpPower = 50
+                                        end
                                 end
                                 RootPart = Humanoid.RootPart
                                 if RootPart and Humanoid:GetState() ~= Enum.HumanoidStateType.Dead then
@@ -5042,10 +5083,16 @@ function LimbReanimator.Start()
                                                 pcall(sethiddenproperty, Humanoid, "MoveDirectionInternal", Vector3.zero)
                                         end
                                 end
-                                if LimbReanimator.UseNaNFling then
+                                if LimbReanimator.UseNaNFling or LimbReanimator.ForceFreefall then
                                         pcall(sethiddenproperty, Humanoid, "NetworkHumanoidState", Enum.HumanoidStateType.Freefall)
                                 else
                                         pcall(sethiddenproperty, Humanoid, "NetworkHumanoidState", Enum.HumanoidStateType[({"Running", "PlatformStanding", "Jumping", "Ragdoll", "Seated", "Physics"})[math.random(1, 6)]])
+                                end
+                                if LimbReanimator.DisableDeath then
+                                        pcall(function()
+                                                Humanoid:SetStateEnabled(Enum.HumanoidStateType.Dead, false)
+                                                Humanoid:SetStateEnabled(Enum.HumanoidStateType.GettingUp, false)
+                                        end)
                                 end
                                 RunService.PreRender:Wait()
                                 if Reanimate:ShouldRotationType() then
