@@ -4759,6 +4759,7 @@ function LimbReanimator.Start()
                 for _,map in LimbMapping do
                         map.Reference = nil
                         map.CFrame = nil
+                        map.TargetCF = nil
                         map.PosVelocity = nil
                 end
                 character.DescendantAdded:Connect(CharOnDesc)
@@ -4878,14 +4879,26 @@ function LimbReanimator.Start()
                                         if dorep or not map.CFrame then
                                                 if map.CFrame and dt and dt > 0 then
                                                         if LimbReanimator.Mode == 3 then
-                                                                local mult     = jointSpeedMult[map.RPart1] or 1.0
+                                                                local mult        = jointSpeedMult[map.RPart1] or 1.0
                                                                 local isAnimating = ReanimCharacter:GetAttribute("IsDancing") or ReanimCharacter:GetAttribute("MovementInit")
-                                                                local omega    = (isAnimating and 55 or 14) * mult
+                                                                -- Stage 1: smooth the raw target so sudden cf jumps (animation end,
+                                                                -- walk<->idle swap, Roblox built-in anim snaps) are absorbed gradually
+                                                                if not map.TargetCF then
+                                                                        map.TargetCF = cf
+                                                                else
+                                                                        local tOmega = (isAnimating and 35 or 11) * mult
+                                                                        local tAlpha = 1 - math.exp(-tOmega * dt)
+                                                                        local tPos   = map.TargetCF.Position:Lerp(cf.Position, tAlpha)
+                                                                        local tRot   = (map.TargetCF - map.TargetCF.Position):Lerp(cf - cf.Position, tAlpha)
+                                                                        map.TargetCF = CFrame.new(tPos) * tRot
+                                                                end
+                                                                -- Stage 2: track toward the smoothed target
+                                                                local omega    = (isAnimating and 60 or 22) * mult
                                                                 local posAlpha = 1 - math.exp(-omega * dt)
                                                                 local rotAlpha = 1 - math.exp(-omega * 1.3 * dt)
-                                                                local newPos   = map.CFrame.Position:Lerp(cf.Position, posAlpha)
+                                                                local newPos   = map.CFrame.Position:Lerp(map.TargetCF.Position, posAlpha)
                                                                 local rotCurrent = map.CFrame - map.CFrame.Position
-                                                                local rotTarget  = cf - cf.Position
+                                                                local rotTarget  = map.TargetCF - map.TargetCF.Position
                                                                 local rotLerped  = rotCurrent:Lerp(rotTarget, rotAlpha)
                                                                 map.CFrame = CFrame.new(newPos) * rotLerped
                                                         else
@@ -4894,6 +4907,7 @@ function LimbReanimator.Start()
                                                         end
                                                 else
                                                         map.CFrame = cf
+                                                        map.TargetCF = cf
                                                         map.PosVelocity = nil
                                                 end
                                         end
