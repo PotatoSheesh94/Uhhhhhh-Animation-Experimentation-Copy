@@ -5042,6 +5042,41 @@ function LimbReanimator.Start()
         Reanimate.DestroyCharacter()
 end
 
+local LimbPermReanimator = {}
+LimbPermReanimator.Name = "Limbs + Permadeath"
+LimbPermReanimator.FlingTargets = LimbReanimator.FlingTargets
+LimbPermReanimator._TempNotFling = LimbReanimator._TempNotFling
+function LimbPermReanimator.ShowHitboxes()
+        LimbReanimator.ShowHitboxes()
+end
+function LimbPermReanimator.Fling(target, duration)
+        return LimbReanimator.Fling(target, duration)
+end
+function LimbPermReanimator.Config(parent)
+        LimbReanimator.Config(parent)
+end
+function LimbPermReanimator.Start()
+        task.spawn(function()
+                while not Reanimate.Stopping do
+                        local char = Player.CharacterAdded:Wait()
+                        if Reanimate.Stopping then break end
+                        task.wait(2)
+                        if Reanimate.Stopping then break end
+                        if Player.Character ~= char then continue end
+                        local hum = char:FindFirstChildOfClass("Humanoid")
+                        if hum and hum.Health > 0 then
+                                pcall(replicatesignal, hum.ServerBreakJoints)
+                                hum.EvaluateStateMachine = true
+                                hum.BreakJointsOnDeath = true
+                                hum:SetStateEnabled(Enum.HumanoidStateType.Dead, true)
+                                hum.Health = 0
+                                hum:ChangeState(Enum.HumanoidStateType.Dead)
+                        end
+                end
+        end)
+        LimbReanimator.Start()
+end
+
 local HatReanimator = {}
 HatReanimator.Name = "Hats"
 SaveData.Reanimator.HatsCollide = not not SaveData.Reanimator.HatsCollide
@@ -7240,12 +7275,16 @@ end
 
 do
         SaveData.SelectedReanimator = SaveData.SelectedReanimator or 1
-        local ReanimateMethodSelect = UI.CreateDropdown(MainPage, "Reanimator", {"Limb Reanimator", "Hats Reanimator"}, SaveData.SelectedReanimator)
+        local ReanimateMethodSelect = UI.CreateDropdown(MainPage, "Reanimator", {"Limb Reanimator", "Hats Reanimator", "Limbs + Permadeath"}, SaveData.SelectedReanimator)
         local ReanimatorConfigTitle = UI.CreateText(MainPage, "-=+ Limb Reanimator Config +=-", 15, Enum.TextXAlignment.Center)
         local SelectedReanimator = LimbReanimator
         if SaveData.SelectedReanimator == 2 then
                 SelectedReanimator = HatReanimator
                 ReanimatorConfigTitle.Text = "-=+ Hats Reanimator Config +=-"
+        end
+        if SaveData.SelectedReanimator == 3 then
+                SelectedReanimator = LimbPermReanimator
+                ReanimatorConfigTitle.Text = "-=+ Limbs + Permadeath Config +=-"
         end
         local ReanimatorConfigCanvas = UI.CreateCanvas(MainPage)
         ReanimateMethodSelect.Changed:Connect(function(value)
@@ -7257,6 +7296,10 @@ do
                 if value == 2 then
                         SelectedReanimator = HatReanimator
                         ReanimatorConfigTitle.Text = "-=+ Hats Reanimator Config +=-"
+                end
+                if value == 3 then
+                        SelectedReanimator = LimbPermReanimator
+                        ReanimatorConfigTitle.Text = "-=+ Limbs + Permadeath Config +=-"
                 end
                 Util.ClearAllChildrenGui(ReanimatorConfigCanvas)
                 SelectedReanimator.Config(ReanimatorConfigCanvas)
