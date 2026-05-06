@@ -4674,10 +4674,12 @@ function LimbReanimator.Start()
                         if not v:IsDescendantOf(workspace) then return end
                         local p0, p1 = v.Part0, v.Part1
                         if p0 and p1 then
+                                local realp1 = p1
                                 p0, p1 = p0.Name, p1.Name
                                 for _,map in LimbMapping do
                                         if map.Part0 == p0 and map.Part1 == p1 then
                                                 map.Reference = v
+                                                map.RealPart1 = realp1
                                                 return
                                         end
                                 end
@@ -4762,6 +4764,7 @@ function LimbReanimator.Start()
                         map.CFrame = nil
                         map.TargetCF = nil
                         map.PosVelocity = nil
+                        map.RealPart1 = nil
                 end
                 character.DescendantAdded:Connect(CharOnDesc)
                 for _,v in character:GetDescendants() do
@@ -4786,6 +4789,17 @@ function LimbReanimator.Start()
                                         v:Destroy()
                                 end
                         end
+                end
+                if LimbReanimator.Mode == 3 then
+                        task.defer(function()
+                                local hum = character:FindFirstChildOfClass("Humanoid")
+                                if hum then
+                                        if replicatesignal then
+                                                pcall(replicatesignal, hum.ServerBreakJoints)
+                                        end
+                                        pcall(function() hum:BreakJoints() end)
+                                end
+                        end)
                 end
         end)
         Player.CharacterAdded:Wait()
@@ -4853,7 +4867,9 @@ function LimbReanimator.Start()
                         end
                 end
                 for _,v in UnknownMotor6Ds do
-                        Util.SetMotor6DTransform(v, CFrame.identity)
+                        if v.Parent then
+                                Util.SetMotor6DTransform(v, CFrame.identity)
+                        end
                 end
                 for _,map in LimbMapping do
                         local v = map.Reference
@@ -4912,9 +4928,11 @@ function LimbReanimator.Start()
                                                         map.PosVelocity = nil
                                                 end
                                         end
-                                        Util.SetMotor6DOffset(v, map.CFrame, LimbReanimator.Mode == 3 and cf or nil)
+                                        if v.Parent then
+                                                Util.SetMotor6DOffset(v, map.CFrame, LimbReanimator.Mode == 3 and cf or nil)
+                                        end
                                         if LimbReanimator.Mode == 3 and p1 then
-                                                local realPart = v.Part1
+                                                local realPart = map.RealPart1
                                                 if realPart then
                                                         realPart.CFrame = p1.CFrame
                                                 end
