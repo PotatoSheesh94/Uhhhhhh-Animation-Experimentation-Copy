@@ -5056,6 +5056,13 @@ function LimbPermReanimator.Config(parent)
         LimbReanimator.Config(parent)
 end
 function LimbPermReanimator.Start()
+        local char = Player.Character
+        if char and replicatesignal then
+                local hum = char:FindFirstChildOfClass("Humanoid")
+                if hum then
+                        pcall(replicatesignal, hum.ServerBreakJoints)
+                end
+        end
         LimbReanimator.Start()
 end
 
@@ -5085,6 +5092,7 @@ HatReanimator.HatCollideMethod = SaveData.Reanimator.HatsCollideMethod
 HatReanimator.IWantAllHats = SaveData.Reanimator.IWantAllHats
 HatReanimator.IWantHatCollide = SaveData.Reanimator.IWantHatCollide
 HatReanimator.Permadeath = false--not SaveData.Reanimator.HatsPatchmahub
+HatReanimator.SkipKill = false
 HatReanimator.RespawnPosition = SaveData.Reanimator.RespawnPosition
 -- 0 - hide body
 -- 1 - behind character
@@ -6656,10 +6664,12 @@ function HatReanimator.Start()
                                 end
                         end
                 end
-                lgloop = RunService.Heartbeat:Connect(function(dt)
-                        selhatcol.HRPTP(dt, character, Humanoid, RootPosition, RootPart, readystate)
-                end)
-                if hatcols then task.wait(0.2) end
+                if not HatReanimator.SkipKill then
+                        lgloop = RunService.Heartbeat:Connect(function(dt)
+                                selhatcol.HRPTP(dt, character, Humanoid, RootPosition, RootPart, readystate)
+                        end)
+                end
+                if hatcols and not HatReanimator.SkipKill then task.wait(0.2) end
                 HatReanimator.Status.ReanimState = "Loading Permadeath."
                 if perma then
                         HatReanimator.Status.Permadeath = "no."
@@ -6667,7 +6677,7 @@ function HatReanimator.Start()
                         HatReanimator.Status.Permadeath = "Disabled, nothing to do."
                 end
                 if not character:IsDescendantOf(workspace) then
-                        lgloop:Disconnect()
+                        if lgloop then lgloop:Disconnect() end
                         return
                 end
                 readystate = 1
@@ -6681,7 +6691,7 @@ function HatReanimator.Start()
                 claimarea = Vector3.new(claimarea.X, math.max(FallenPartsDestroyHeight + 16, claimarea.Y + 4), claimarea.Z)
                 task.wait(selhatcol.Wait1 or 0.1)
                 if not character:IsDescendantOf(workspace) then
-                        lgloop:Disconnect()
+                        if lgloop then lgloop:Disconnect() end
                         return
                 end
                 readystate = 2
@@ -6704,18 +6714,20 @@ function HatReanimator.Start()
                 Humanoid:ChangeState(Enum.HumanoidStateType.FallingDown)
                 task.wait(selhatcol.Wait2 or 0.15)
                 if not character:IsDescendantOf(workspace) then
-                        lgloop:Disconnect()
+                        if lgloop then lgloop:Disconnect() end
                         for _,c in bringconns do
                                 c:Disconnect()
                         end
                         return
                 end
-                pcall(replicatesignal, Humanoid.ServerBreakJoints)
-                Humanoid.EvaluateStateMachine = true
-                Humanoid.BreakJointsOnDeath = true
-                Humanoid.Health = 0
-                Humanoid:SetStateEnabled(Enum.HumanoidStateType.Dead, true)
-                Humanoid:ChangeState(Enum.HumanoidStateType.Dead)
+                if not HatReanimator.SkipKill then
+                        pcall(replicatesignal, Humanoid.ServerBreakJoints)
+                        Humanoid.EvaluateStateMachine = true
+                        Humanoid.BreakJointsOnDeath = true
+                        Humanoid.Health = 0
+                        Humanoid:SetStateEnabled(Enum.HumanoidStateType.Dead, true)
+                        Humanoid:ChangeState(Enum.HumanoidStateType.Dead)
+                end
                 readystate = 3
                 HatReanimator.Status.ReanimState = "Reanimate State: 3"
                 IsRespawning = false
@@ -6754,7 +6766,7 @@ function HatReanimator.Start()
                                 tool.Parent = backpack
                         end
                 end
-                lgloop:Disconnect()
+                if lgloop then lgloop:Disconnect() end
                 if perma then task.wait(1) end
                 for _,c in bringconns do
                         c:Disconnect()
@@ -6799,9 +6811,11 @@ function HatReanimator.Start()
                 local h = Player.Character:FindFirstChildOfClass("Humanoid")
                 if h and h.RootPart then
                         InitCFrame = h.RootPart.CFrame
-                        pcall(function() Player.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Dead) end)
-                        pcall(function() Player.Character.Humanoid.Health = 0 end)
-                        pcall(replicatesignal, Player.Character.Humanoid.ServerBreakJoints)
+                        if not HatReanimator.SkipKill then
+                                pcall(function() Player.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Dead) end)
+                                pcall(function() Player.Character.Humanoid.Health = 0 end)
+                                pcall(replicatesignal, Player.Character.Humanoid.ServerBreakJoints)
+                        end
                         --pcall(replicatesignal, Player.ConnectDiedSignalBackend)
                         Player.Character.DescendantAdded:Connect(CharOnDesc)
                         for _,v in Player.Character:GetDescendants() do
@@ -6811,9 +6825,10 @@ function HatReanimator.Start()
                 end
         end
 
-        Reanimate.CreateCharacter(InitCFrame)
-
-        Reanimate.Starting = false
+        if not HatReanimator.SkipKill then
+                Reanimate.CreateCharacter(InitCFrame)
+                Reanimate.Starting = false
+        end
         local letitgo = 0
         while not Reanimate.Stopping do
                 RunService.PreSimulation:Wait()
@@ -7221,8 +7236,33 @@ function HatReanimator.Start()
         for _,v in HatRefs do if v.PH then v.PH:Destroy() end end
         CharConn:Disconnect()
         --replicatesignal(Player.ConnectDiedSignalBackend)
-        Reanimate.Stopping = false
-        Reanimate.DestroyCharacter()
+        if not HatReanimator.SkipKill then
+                Reanimate.Stopping = false
+                Reanimate.DestroyCharacter()
+        end
+end
+
+local CombinedReanimator = {}
+CombinedReanimator.Name = "Limbs + Hats"
+CombinedReanimator.FlingTargets = LimbReanimator.FlingTargets
+CombinedReanimator._TempNotFling = LimbReanimator._TempNotFling
+function CombinedReanimator.ShowHitboxes()
+        LimbReanimator.ShowHitboxes()
+        HatReanimator.ShowHitboxes()
+end
+function CombinedReanimator.Fling(target, duration)
+        return LimbReanimator.Fling(target, duration)
+end
+function CombinedReanimator.Config(parent)
+        LimbReanimator.Config(parent)
+        UI.CreateSeparator(parent)
+        HatReanimator.Config(parent)
+end
+function CombinedReanimator.Start()
+        HatReanimator.SkipKill = true
+        task.spawn(HatReanimator.Start)
+        LimbReanimator.Start()
+        HatReanimator.SkipKill = false
 end
 
 task.wait()
@@ -7257,7 +7297,7 @@ end
 
 do
         SaveData.SelectedReanimator = SaveData.SelectedReanimator or 1
-        local ReanimateMethodSelect = UI.CreateDropdown(MainPage, "Reanimator", {"Limb Reanimator", "Hats Reanimator", "Limbs + Permadeath"}, SaveData.SelectedReanimator)
+        local ReanimateMethodSelect = UI.CreateDropdown(MainPage, "Reanimator", {"Limb Reanimator", "Hats Reanimator", "Limbs + Permadeath", "Limbs + Hats"}, SaveData.SelectedReanimator)
         local ReanimatorConfigTitle = UI.CreateText(MainPage, "-=+ Limb Reanimator Config +=-", 15, Enum.TextXAlignment.Center)
         local SelectedReanimator = LimbReanimator
         if SaveData.SelectedReanimator == 2 then
@@ -7267,6 +7307,10 @@ do
         if SaveData.SelectedReanimator == 3 then
                 SelectedReanimator = LimbPermReanimator
                 ReanimatorConfigTitle.Text = "-=+ Limbs + Permadeath Config +=-"
+        end
+        if SaveData.SelectedReanimator == 4 then
+                SelectedReanimator = CombinedReanimator
+                ReanimatorConfigTitle.Text = "-=+ Limbs + Hats Config +=-"
         end
         local ReanimatorConfigCanvas = UI.CreateCanvas(MainPage)
         ReanimateMethodSelect.Changed:Connect(function(value)
@@ -7282,6 +7326,10 @@ do
                 if value == 3 then
                         SelectedReanimator = LimbPermReanimator
                         ReanimatorConfigTitle.Text = "-=+ Limbs + Permadeath Config +=-"
+                end
+                if value == 4 then
+                        SelectedReanimator = CombinedReanimator
+                        ReanimatorConfigTitle.Text = "-=+ Limbs + Hats Config +=-"
                 end
                 Util.ClearAllChildrenGui(ReanimatorConfigCanvas)
                 SelectedReanimator.Config(ReanimatorConfigCanvas)
