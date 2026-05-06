@@ -4913,6 +4913,12 @@ function LimbReanimator.Start()
                                                 end
                                         end
                                         Util.SetMotor6DOffset(v, map.CFrame, LimbReanimator.Mode == 3 and cf or nil)
+                                        if LimbReanimator.Mode == 3 and p1 then
+                                                local realPart = v.Part1
+                                                if realPart then
+                                                        realPart.CFrame = p1.CFrame
+                                                end
+                                        end
                                 end
                         end
                 end
