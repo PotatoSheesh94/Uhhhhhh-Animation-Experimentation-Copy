@@ -4844,6 +4844,11 @@ function LimbReanimator.Start()
                                 lastrep = b - a
                         end
                 end
+                if not dorep and ReanimCharacter then
+                        if ReanimCharacter:GetAttribute("IsDancing") or ReanimCharacter:GetAttribute("MovementInit") then
+                                dorep = true
+                        end
+                end
                 for _,v in UnknownMotor6Ds do
                         Util.SetMotor6DTransform(v, CFrame.identity)
                 end
@@ -4873,7 +4878,8 @@ function LimbReanimator.Start()
                                                 if map.CFrame and dt and dt > 0 then
                                                         if LimbReanimator.Mode == 3 then
                                                                 local mult     = jointSpeedMult[map.RPart1] or 1.0
-                                                                local omega    = 100 * mult
+                                                                local isAnimating = ReanimCharacter:GetAttribute("IsDancing") or ReanimCharacter:GetAttribute("MovementInit")
+                                                                local omega    = (isAnimating and 55 or 14) * mult
                                                                 local posAlpha = 1 - math.exp(-omega * dt)
                                                                 local rotAlpha = 1 - math.exp(-omega * 1.3 * dt)
                                                                 local newPos   = map.CFrame.Position:Lerp(cf.Position, posAlpha)
