@@ -1,6 +1,6 @@
 # Uhhhhhh - Universal Hierarchical 6 Reanimator
 
-A Roblox Lua scripting project featuring a reanimation/animation script with UI, dances, movesets, hat dropping, modding support, and P2P social features.
+A Roblox Lua scripting project featuring a reanimation/animation script with UI, dances, movesets, hat dropping, and modding support.
 
 ## Project Overview
 
@@ -8,7 +8,7 @@ This is **not a web application**. It is a Roblox exploit/script project written
 
 ## Project Structure
 
-- `source/reanim.lua` - Main Roblox Lua script (~9600+ lines). The core reanimation script loaded into Roblox.
+- `source/reanim.lua` - Main Roblox Lua script (~9000+ lines). The core reanimation script loaded into Roblox.
 - `source/reanim_bak.lua` - Backup of the main script.
 - `content/` - Animation files (`.anim`), audio files (`.mp3`), and Lua variant files for dances/movesets.
 - `community/` - Community-contributed content and dance files.
@@ -53,29 +53,19 @@ python3 tools/allinone.py    # All-in-one processing
 - Lua 5.2 (available at `/nix/store/.../bin/lua`)
 - Python 3.12 standard library (zipfile, struct, base64, re, math, xml)
 
-## P2P Social Features (added to `source/reanim.lua`)
+## Reanimators (selectable in-script dropdown)
 
-Three new features were added at the end of the main script (before the credits section):
+### 1. Limb Reanimator
+Motor6D joint-based reanimation. Config options: RootPart Mode, RootPart Velocity, Init Mode, Show me how I look (FPS10 replication), Target Fling, NaN State Fling, Force Freefall State, Speed Lock, Disable Death State, No Character Sounds.
 
-### 1. Uhhhhhh Players List
-- A new **"Uhhhhhh Players ▶"** button appears on the main menu, opening a live list of other players in the server who are also running the script.
-- Detection is **dual-method**: chat heartbeat (invisible U+2800 Braille-blank prefix, visually empty to other players) sent every 45 seconds, and periodic character-attribute scanning (`_UH6` attribute on Humanoid/HumanoidRootPart).
-- A UI notification pops up whenever a new Uhhhhhh user is detected.
-- Players are auto-removed from the list when they leave the game or stop sending heartbeats.
+### 2. Hats Reanimator
+Hat/accessory physics-based reanimation with hat collide methods, fling, spin, tool holding, and permadeath (commented out).
 
-### 2. Sync Dance
-- A **"Broadcast Current Dance to Uhhhhhh Users"** button appears at the top of the Dances page.
-- Pressing it sends an invisible chat message containing the current dance's internal name.
-- Other Uhhhhhh users with **"Auto-Accept Sync Dance"** toggled on will automatically switch to that dance and see a notification showing who initiated the sync.
-- Toggle: **Auto-Accept Sync Dance** (on/off switch in main menu).
-
-### 3. No Collision with Uhhhhhh Users
-- Toggle: **"No Collision with Uhhhhhh Users"** (on/off switch in main menu, saved to save file).
-- When enabled, a background loop runs every 0.2 s and sets `CanCollide = false` (via both direct assignment and `sethiddenproperty`) on all BaseParts belonging to detected Uhhhhhh users' characters.
-- This prevents physical collisions from disturbing their reanimation poses or animations.
+### 3. Limbs + Permadeath
+Thin wrapper around Limb Reanimator — shares all LimbReanimator config and runs `LimbReanimator.Start()` directly. No respawn cycle; no P2P features.
 
 ## Notes
 
 - The script is designed to run inside Roblox's Luau environment, which provides Roblox-specific globals (`game`, `workspace`, `cloneref`, etc.) not available in standard Lua.
 - The Python tools are standalone utilities for processing animation files offline.
-- The P2P heartbeat chat messages use U+2800 (Braille blank), which renders as an empty line in Roblox chat and is invisible to other players.
+- P2P social features (Uhhhhhh Players List, Sync Dance, No Collision) have been fully removed.
