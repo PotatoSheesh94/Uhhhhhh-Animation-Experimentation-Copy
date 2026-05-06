@@ -4362,10 +4362,12 @@ else
 end
 
 Util.SetMotor6DTransform = function(motor, transform)
-        motor.MaxVelocity = 0
+        motor.MaxVelocity = 9e9
         motor.Transform = transform
-        local axis, angle = transform:ToAxisAngle()
-        local newangle = axis * angle
+        local _, _, angle = transform:ToEulerAngles(Enum.RotationOrder.ZYX)
+        motor:SetDesiredAngle(angle)
+        local axis, tangle = transform:ToAxisAngle()
+        local newangle = axis * tangle
         pcall(sethiddenproperty, motor, "ReplicateCurrentOffset6D", transform.Position)
         pcall(sethiddenproperty, motor, "ReplicateCurrentAngle6D", newangle)
 end
