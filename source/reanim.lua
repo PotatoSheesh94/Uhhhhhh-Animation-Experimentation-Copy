@@ -4361,18 +4361,20 @@ else
         end
 end
 
-Util.SetMotor6DTransform = function(motor, transform)
+Util.SetMotor6DTransform = function(motor, transform, repTransform)
+        repTransform = repTransform or transform
         motor.MaxVelocity = 9e9
         motor.Transform = transform
-        local _, _, angle = transform:ToEulerAngles(Enum.RotationOrder.ZYX)
+        local _, _, angle = repTransform:ToEulerAngles(Enum.RotationOrder.ZYX)
         motor:SetDesiredAngle(angle)
-        local axis, tangle = transform:ToAxisAngle()
+        local axis, tangle = repTransform:ToAxisAngle()
         local newangle = axis * tangle
-        pcall(sethiddenproperty, motor, "ReplicateCurrentOffset6D", transform.Position)
+        pcall(sethiddenproperty, motor, "ReplicateCurrentOffset6D", repTransform.Position)
         pcall(sethiddenproperty, motor, "ReplicateCurrentAngle6D", newangle)
 end
-Util.SetMotor6DOffset = function(motor, offset)
-        Util.SetMotor6DTransform(motor, motor.C0:Inverse() * offset * motor.C1)
+Util.SetMotor6DOffset = function(motor, offset, repOffset)
+        local repTransform = repOffset and (motor.C0:Inverse() * repOffset * motor.C1) or nil
+        Util.SetMotor6DTransform(motor, motor.C0:Inverse() * offset * motor.C1, repTransform)
 end
 
 Util.ShowPartHitbox = function(part)
@@ -4910,7 +4912,7 @@ function LimbReanimator.Start()
                                                         map.PosVelocity = nil
                                                 end
                                         end
-                                        Util.SetMotor6DOffset(v, map.CFrame)
+                                        Util.SetMotor6DOffset(v, map.CFrame, LimbReanimator.Mode == 3 and cf or nil)
                                 end
                         end
                 end
