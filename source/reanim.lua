@@ -4086,6 +4086,7 @@ Reanimate.CreateCharacter = function(InitCFrame)
         BodyForce.Parent = RCRootPart
         BodyForce.Force = Vector3.zero
         RC.Parent = workspace
+        pcall(function() RC:SetAttribute("_UhhhhhRC_Owner", tostring(Player.UserId)) end)
         RCRootPart.RootPriority = 67
         RCRootPart.CFrame = cf
         local SafeY = cf.Y
@@ -4856,20 +4857,24 @@ function LimbReanimator.Start()
                                                 if rcContainer then
                                                         local rcMotor = rcContainer:FindFirstChild(v.Name)
                                                         if rcMotor and rcMotor:IsA("Motor6D") then
-                                                                local _m3origC0 = v:GetAttribute("_UhhhC0") or v.C0
-                                                                local newCF = _m3origC0 * rcMotor.Transform * v.C1:Inverse()
+                                                                local targetTransform = rcMotor.Transform
                                                                 if dt ~= nil then
                                                                         if map.CFrame and dt > 0 then
                                                                                 local alpha = 1 - math.exp(-20 * dt)
-                                                                                map.CFrame = map.CFrame:Lerp(newCF, alpha)
+                                                                                map.CFrame = map.CFrame:Lerp(targetTransform, alpha)
                                                                         else
-                                                                                map.CFrame = newCF
+                                                                                map.CFrame = targetTransform
                                                                         end
                                                                 end
                                                         end
                                                 end
                                                 if map.CFrame then
-                                                        Util.SetMotor6DOffset(v, map.CFrame)
+                                                        local transform = map.CFrame
+                                                        pcall(rawset, v, "Transform", transform)
+                                                        local axis, tangle = transform:ToAxisAngle()
+                                                        local newangle = axis * tangle
+                                                        pcall(sethiddenproperty, v, "ReplicateCurrentOffset6D", transform.Position)
+                                                        pcall(sethiddenproperty, v, "ReplicateCurrentAngle6D", newangle)
                                                 end
                                         else
                                                 local cf = CFrame.identity
@@ -5044,6 +5049,13 @@ function LimbReanimator.Start()
                                 end
                                 if LimbReanimator.UseNaNFling or LimbReanimator.ForceFreefall then
                                         pcall(sethiddenproperty, Humanoid, "NetworkHumanoidState", Enum.HumanoidStateType.Freefall)
+                                elseif LimbReanimator.Mode == 3 and ReanimCharacter then
+                                        local _rcHum3 = ReanimCharacter:FindFirstChildOfClass("Humanoid")
+                                        if _rcHum3 then
+                                                pcall(sethiddenproperty, Humanoid, "NetworkHumanoidState", _rcHum3:GetState())
+                                        else
+                                                pcall(sethiddenproperty, Humanoid, "NetworkHumanoidState", Enum.HumanoidStateType.Running)
+                                        end
                                 else
                                         pcall(sethiddenproperty, Humanoid, "NetworkHumanoidState", Enum.HumanoidStateType[({"Running", "PlatformStanding", "Jumping", "Physics"})[math.random(1, 4)]])
                                 end
@@ -10735,13 +10747,49 @@ local d = function()
                 end
 
                 -- Overhead BillboardGui tag (client-local only: parented to SCREENGUI
-                -- with Adornee, so it is NEVER replicated to the server or visible
-                -- to players not running this same Uhhhhhh script)
+                -- with Adornee pointing at the visible ReanimCharacter head, so it is
+                -- NEVER replicated to the server but IS visible to any Uhhhhhh user
+                -- who detects the P2P marker on another player's real character)
                 local _overheadTags = {}  -- [player] = BillboardGui
                 local function AddOverheadTag(player, character)
                         task.spawn(function()
                                 pcall(function()
-                                        local head = character:WaitForChild("Head", 5)
+                                        local head = nil
+                                        if player == Player then
+                                                -- For ourselves: wait for the visible ReanimCharacter head
+                                                -- (real character is in the void; RC head is what's on-screen)
+                                                local deadline = os.clock() + 12
+                                                while os.clock() < deadline do
+                                                        if Reanimate.Character then
+                                                                head = Reanimate.Character:FindFirstChild("Head")
+                                                                if head and head.Parent then break end
+                                                        end
+                                                        task.wait(0.1)
+                                                end
+                                        else
+                                                -- For other Uhhhhhh users: find their RC by the owner attribute
+                                                -- so the tag appears above their visible animated model, not
+                                                -- their void-character
+                                                local deadline = os.clock() + 6
+                                                while os.clock() < deadline do
+                                                        for _, model in workspace:GetChildren() do
+                                                                if model:IsA("Model")
+                                                                        and tostring(model:GetAttribute("_UhhhhhRC_Owner")) == tostring(player.UserId) then
+                                                                        local h = model:FindFirstChild("Head")
+                                                                        if h and h.Parent then
+                                                                                head = h
+                                                                                break
+                                                                        end
+                                                                end
+                                                        end
+                                                        if head then break end
+                                                        task.wait(0.5)
+                                                end
+                                                -- Fallback: real character head (may be in void on old versions)
+                                                if not head then
+                                                        head = character:FindFirstChild("Head")
+                                                end
+                                        end
                                         if not head or not head.Parent then return end
                                         -- Remove stale tag if it exists
                                         if _overheadTags[player] then
@@ -10766,14 +10814,18 @@ local d = function()
                                         lbl.TextStrokeTransparency = 0
                                         lbl.Font = Enum.Font.GothamBold
                                         lbl.TextSize = 12
-                                        -- Clean up when player leaves or character is removed
-                                        character.AncestryChanged:Connect(function()
-                                                if not character.Parent then
-                                                        if _overheadTags[player] == bb then
-                                                                bb:Destroy()
-                                                                _overheadTags[player] = nil
-                                                        end
+                                        -- Clean up when the adorned head or the real character leaves
+                                        local function cleanup()
+                                                if _overheadTags[player] == bb then
+                                                        bb:Destroy()
+                                                        _overheadTags[player] = nil
                                                 end
+                                        end
+                                        character.AncestryChanged:Connect(function()
+                                                if not character.Parent then cleanup() end
+                                        end)
+                                        head.AncestryChanged:Connect(function()
+                                                if not head.Parent then cleanup() end
                                         end)
                                 end)
                         end)
