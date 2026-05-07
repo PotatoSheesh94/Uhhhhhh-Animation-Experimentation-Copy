@@ -4361,20 +4361,18 @@ else
         end
 end
 
-Util.SetMotor6DTransform = function(motor, transform, repTransform)
-        repTransform = repTransform or transform
+Util.SetMotor6DTransform = function(motor, transform)
+        local name = motor.Name
         motor.MaxVelocity = 9e9
-        motor.Transform = transform
-        local _, _, angle = repTransform:ToEulerAngles(Enum.RotationOrder.ZYX)
+        local _, _, angle = transform:ToEulerAngles(Enum.RotationOrder.ZYX)
         motor:SetDesiredAngle(angle)
-        local axis, tangle = repTransform:ToAxisAngle()
-        local newangle = axis * tangle
-        pcall(sethiddenproperty, motor, "ReplicateCurrentOffset6D", repTransform.Position)
+        local axis, angle = transform:ToAxisAngle()
+        local newangle = axis * angle
+        pcall(sethiddenproperty, motor, "ReplicateCurrentOffset6D", transform.Position)
         pcall(sethiddenproperty, motor, "ReplicateCurrentAngle6D", newangle)
 end
-Util.SetMotor6DOffset = function(motor, offset, repOffset)
-        local repTransform = repOffset and (motor.C0:Inverse() * repOffset * motor.C1) or nil
-        Util.SetMotor6DTransform(motor, motor.C0:Inverse() * offset * motor.C1, repTransform)
+Util.SetMotor6DOffset = function(motor, offset)
+        Util.SetMotor6DTransform(motor, motor.C0:Inverse() * offset * motor.C1)
 end
 
 Util.ShowPartHitbox = function(part)
@@ -4674,12 +4672,10 @@ function LimbReanimator.Start()
                         if not v:IsDescendantOf(workspace) then return end
                         local p0, p1 = v.Part0, v.Part1
                         if p0 and p1 then
-                                local realp1 = p1
                                 p0, p1 = p0.Name, p1.Name
                                 for _,map in LimbMapping do
                                         if map.Part0 == p0 and map.Part1 == p1 then
                                                 map.Reference = v
-                                                map.RealPart1 = realp1
                                                 return
                                         end
                                 end
@@ -4762,9 +4758,7 @@ function LimbReanimator.Start()
                 for _,map in LimbMapping do
                         map.Reference = nil
                         map.CFrame = nil
-                        map.TargetCF = nil
                         map.PosVelocity = nil
-                        map.RealPart1 = nil
                 end
                 character.DescendantAdded:Connect(CharOnDesc)
                 for _,v in character:GetDescendants() do
@@ -4789,15 +4783,6 @@ function LimbReanimator.Start()
                                         v:Destroy()
                                 end
                         end
-                end
-                if LimbReanimator.Mode == 3 then
-                        task.defer(function()
-                                for _, m in character:GetDescendants() do
-                                        if m:IsA("Motor6D") then
-                                                m.Enabled = false
-                                        end
-                                end
-                        end)
                 end
         end)
         Player.CharacterAdded:Wait()
@@ -4865,9 +4850,7 @@ function LimbReanimator.Start()
                         end
                 end
                 for _,v in UnknownMotor6Ds do
-                        if v.Parent then
-                                Util.SetMotor6DTransform(v, CFrame.identity)
-                        end
+                        Util.SetMotor6DTransform(v, CFrame.identity)
                 end
                 for _,map in LimbMapping do
                         local v = map.Reference
@@ -4894,26 +4877,13 @@ function LimbReanimator.Start()
                                         if dorep or not map.CFrame then
                                                 if map.CFrame and dt and dt > 0 then
                                                         if LimbReanimator.Mode == 3 then
-                                                                local mult        = jointSpeedMult[map.RPart1] or 1.0
-                                                                local isAnimating = ReanimCharacter:GetAttribute("IsDancing") or ReanimCharacter:GetAttribute("MovementInit")
-                                                                -- Stage 1: smooth the raw target so sudden cf jumps (animation end,
-                                                                -- walk<->idle swap, Roblox built-in anim snaps) are absorbed gradually
-                                                                if not map.TargetCF then
-                                                                        map.TargetCF = cf
-                                                                else
-                                                                        local tOmega = (isAnimating and 35 or 11) * mult
-                                                                        local tAlpha = 1 - math.exp(-tOmega * dt)
-                                                                        local tPos   = map.TargetCF.Position:Lerp(cf.Position, tAlpha)
-                                                                        local tRot   = (map.TargetCF - map.TargetCF.Position):Lerp(cf - cf.Position, tAlpha)
-                                                                        map.TargetCF = CFrame.new(tPos) * tRot
-                                                                end
-                                                                -- Stage 2: track toward the smoothed target
-                                                                local omega    = (isAnimating and 60 or 22) * mult
+                                                                local mult     = jointSpeedMult[map.RPart1] or 1.0
+                                                                local omega    = 100 * mult
                                                                 local posAlpha = 1 - math.exp(-omega * dt)
                                                                 local rotAlpha = 1 - math.exp(-omega * 1.3 * dt)
-                                                                local newPos   = map.CFrame.Position:Lerp(map.TargetCF.Position, posAlpha)
+                                                                local newPos   = map.CFrame.Position:Lerp(cf.Position, posAlpha)
                                                                 local rotCurrent = map.CFrame - map.CFrame.Position
-                                                                local rotTarget  = map.TargetCF - map.TargetCF.Position
+                                                                local rotTarget  = cf - cf.Position
                                                                 local rotLerped  = rotCurrent:Lerp(rotTarget, rotAlpha)
                                                                 map.CFrame = CFrame.new(newPos) * rotLerped
                                                         else
@@ -4922,19 +4892,10 @@ function LimbReanimator.Start()
                                                         end
                                                 else
                                                         map.CFrame = cf
-                                                        map.TargetCF = cf
                                                         map.PosVelocity = nil
                                                 end
                                         end
-                                        if v.Parent then
-                                                Util.SetMotor6DOffset(v, map.CFrame, LimbReanimator.Mode == 3 and cf or nil)
-                                        end
-                                        if LimbReanimator.Mode == 3 and p1 then
-                                                local realPart = map.RealPart1
-                                                if realPart then
-                                                        realPart.CFrame = p1.CFrame
-                                                end
-                                        end
+                                        Util.SetMotor6DOffset(v, map.CFrame)
                                 end
                         end
                 end
