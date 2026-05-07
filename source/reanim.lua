@@ -4022,6 +4022,10 @@ Reanimate.CameraLockCharacter = function()
                 RCRootPart.CFrame = CFrame.fromEulerAngles(bx, ay, bz, Enum.RotationOrder.YXZ) + rcf.Position
         end
 end
+-- Populated in LimbReanimator's CharConn just before the Animate script is
+-- destroyed; consumed inside Reanimate.CreateCharacter to give the RC Animator
+-- the game's actual animation IDs for Mode 3.
+local _mode3AnimIds = nil
 Reanimate.CreateCharacter = function(InitCFrame)
         local RC = Reanimate.Character
         local cf = CFrame.new(Camera.Focus.Position)
@@ -4089,6 +4093,108 @@ Reanimate.CreateCharacter = function(InitCFrame)
         pcall(function() RC:SetAttribute("_UhhhhhRC_Owner", tostring(Player.UserId)) end)
         RCRootPart.RootPriority = 67
         RCRootPart.CFrame = cf
+
+        -- ── Mode 3 RC animation system ──────────────────────────────────────────
+        -- We add an Animator to the RC's Humanoid and load the game's actual
+        -- animation IDs (captured from the character's Animate script just before
+        -- it was destroyed) directly from our executor context.  Because we are the
+        -- executor, checkcaller() is true → the LoadAnimation hook is bypassed →
+        -- the animations load on the RC Humanoid for real.
+        -- Mode 3 then reads rcMotor.Transform each frame and copies it to the real
+        -- character's Motor6D via rawset + ReplicateCurrentAngle6D.
+        do
+                local RCAnimator = Instance.new("Animator")
+                RCAnimator.Parent = RCHumanoid
+
+                local defaultIds = {
+                        idle  = "rbxassetid://180435571",
+                        walk  = "rbxassetid://180426354",
+                        jump  = "rbxassetid://125750702",
+                        fall  = "rbxassetid://180436148",
+                        climb = "rbxassetid://180436334",
+                }
+                local ids = _mode3AnimIds or defaultIds
+                -- Fill in any missing entries from defaults
+                for k, v in defaultIds do
+                        ids[k] = ids[k] or v
+                end
+
+                local function loadTrack(id, priority, looped)
+                        if not id or id == "" then return nil end
+                        local ok, track = pcall(function()
+                                local anim = Instance.new("Animation")
+                                anim.AnimationId = id
+                                local t = RCAnimator:LoadAnimation(anim)
+                                t.Priority = priority or Enum.AnimationPriority.Core
+                                t.Looped = looped ~= false
+                                return t
+                        end)
+                        return ok and track or nil
+                end
+
+                local tIdle  = loadTrack(ids.idle,  Enum.AnimationPriority.Idle,       true)
+                local tWalk  = loadTrack(ids.walk,  Enum.AnimationPriority.Core,       true)
+                local tJump  = loadTrack(ids.jump,  Enum.AnimationPriority.Action,     false)
+                local tFall  = loadTrack(ids.fall,  Enum.AnimationPriority.Core,       true)
+                local tClimb = loadTrack(ids.climb, Enum.AnimationPriority.Core,       true)
+
+                if tIdle then tIdle:Play(0) end
+
+                local function stopAll()
+                        if tIdle  then tIdle:Stop(0.1)  end
+                        if tWalk  then tWalk:Stop(0.1)  end
+                        if tJump  then tJump:Stop(0.1)  end
+                        if tFall  then tFall:Stop(0.1)  end
+                        if tClimb then tClimb:Stop(0.1) end
+                end
+
+                Util.LinkDestroyI2C(RC, RCHumanoid.Running:Connect(function(speed)
+                        stopAll()
+                        if speed > 0.5 then
+                                if tWalk then tWalk:Play(0.1) end
+                        else
+                                if tIdle then tIdle:Play(0.1) end
+                        end
+                end))
+                Util.LinkDestroyI2C(RC, RCHumanoid.Jumping:Connect(function(active)
+                        if active then
+                                stopAll()
+                                if tJump then tJump:Play(0.05) end
+                        end
+                end))
+                Util.LinkDestroyI2C(RC, RCHumanoid.FreeFalling:Connect(function(active)
+                        if active then
+                                stopAll()
+                                if tFall then tFall:Play(0.2) end
+                        else
+                                if tIdle then tIdle:Play(0.1) end
+                        end
+                end))
+                Util.LinkDestroyI2C(RC, RCHumanoid.Climbing:Connect(function(speed)
+                        stopAll()
+                        if math.abs(speed) > 0.1 then
+                                if tClimb then tClimb:Play(0.1) end
+                        else
+                                if tIdle then tIdle:Play(0.1) end
+                        end
+                end))
+
+                -- Store unscaled motor transforms each PreRender so Mode 3 can read
+                -- clean (scale=1) transforms regardless of RC scale setting.
+                Util.LinkDestroyI2C(RC, RunService.PreRender:Connect(function()
+                        for _, motor in RC:GetDescendants() do
+                                if motor:IsA("Motor6D") then
+                                        local scale = RC:GetScale()
+                                        local unscaled = if scale ~= 1
+                                                then Util.ScaleCFrame(motor.Transform, 1 / scale)
+                                                else motor.Transform
+                                        motor:SetAttribute("_UhhhM3T", unscaled)
+                                end
+                        end
+                end))
+        end
+        -- ────────────────────────────────────────────────────────────────────────
+
         local SafeY = cf.Y
         local IsFloat = false
         local SeatWeld = nil
@@ -4695,15 +4801,8 @@ function LimbReanimator.Start()
                         end
                         table.insert(UnknownMotor6Ds, v)
                 elseif v:IsA("Animator") then
-                        -- In Mode 3 we keep the Animator alive so Roblox replicates joint
-                        -- angles natively; every other mode destroys it.
-                        if LimbReanimator.Mode ~= 3 then
-                                task.defer(v.Destroy, v)
-                        end
+                        task.defer(v.Destroy, v)
                 elseif v:IsA("LocalScript") and v.Parent == Player.Character then
-                        -- Keep "Animate" script alive in Mode 3 so walking/idle animations
-                        -- drive the motor transforms and replicate to the server naturally.
-                        if LimbReanimator.Mode == 3 and v.Name == "Animate" then return end
                         v.Enabled = false
                         v:GetPropertyChangedSignal("Enabled"):Connect(function()
                                 if v.Enabled then v.Enabled = false end
@@ -4793,10 +4892,7 @@ function LimbReanimator.Start()
                 local humanoid = character:WaitForChild("Humanoid", 5)
                 local stupid = humanoid and humanoid:FindFirstChildWhichIsA("Animator")
                 if stupid then
-                        -- Mode 3 keeps the Animator so Roblox replicates joint angles natively
-                        if LimbReanimator.Mode ~= 3 then
-                                stupid:Destroy()
-                        end
+                        stupid:Destroy()
                 end
                 if not Reanimate.UseLoadAnimationHook then
                         stupid = character:FindFirstChild("Animate")
@@ -4804,10 +4900,25 @@ function LimbReanimator.Start()
                                 character.ChildAdded:Wait()
                                 stupid = character:FindFirstChild("Animate")
                         end
-                        -- Mode 3 keeps the Animate script so walk/idle animations drive motors
-                        if LimbReanimator.Mode ~= 3 then
-                                stupid:Destroy()
+                        -- Capture animation IDs from the Animate script before destroying it.
+                        -- These are the game's actual animation IDs (walk, idle, jump, fall…)
+                        -- which we then load onto the RC's Animator from our executor context,
+                        -- bypassing the LoadAnimation hook that blocks game-script calls.
+                        do
+                                local ids = {}
+                                for _, folder in stupid:GetChildren() do
+                                        for _, a in folder:GetChildren() do
+                                                if a:IsA("Animation") and a.AnimationId ~= "" then
+                                                        ids[folder.Name:lower()] = ids[folder.Name:lower()] or a.AnimationId
+                                                end
+                                        end
+                                        if folder:IsA("Animation") and folder.AnimationId ~= "" then
+                                                ids[folder.Name:lower()] = ids[folder.Name:lower()] or folder.AnimationId
+                                        end
+                                end
+                                _mode3AnimIds = ids
                         end
+                        stupid:Destroy()
                 end
                 if LimbReanimator.NoSounds then
                         for _, v in character:GetDescendants() do
@@ -4875,13 +4986,36 @@ function LimbReanimator.Start()
                                         Util.SetMotor6DTransform(v, CFrame.identity)
                                 else
                                         if LimbReanimator.Mode == 3 then
-                                                -- Mode 3 keeps the real character's Animator alive.
-                                                -- The Animator drives Motor6D.Transform each frame and Roblox
-                                                -- replicates joint angles to the server natively – no manual
-                                                -- transform copy or ReplicateCurrentAngle6D needed here.
-                                                -- Restore C0 to original so the Animator's offsets are correct.
-                                                if map.OrigC0 and v.C0 ~= map.OrigC0 then
-                                                        pcall(function() v.C0 = map.OrigC0 end)
+                                                -- Read motor transform from RC (now driven by RC's Animator).
+                                                -- The RC Animator is loaded from our executor context so it
+                                                -- bypasses the LoadAnimation hook.  We copy the resulting
+                                                -- transform to the real character's motor via rawset and
+                                                -- ReplicateCurrentAngle6D so the server sees the animation.
+                                                local rcContainer = ReanimCharacter:FindFirstChild(map.RPart0 == "ROOT" and "HumanoidRootPart" or map.RPart0)
+                                                if rcContainer then
+                                                        local rcMotor = rcContainer:FindFirstChild(v.Name)
+                                                        if rcMotor and rcMotor:IsA("Motor6D") then
+                                                                local targetTransform = rcMotor:GetAttribute("_UhhhM3T") or rcMotor.Transform
+                                                                if dt ~= nil then
+                                                                        if map.CFrame and dt > 0 then
+                                                                                local alpha = 1 - math.exp(-30 * dt)
+                                                                                map.CFrame = map.CFrame:Lerp(targetTransform, alpha)
+                                                                        else
+                                                                                map.CFrame = targetTransform
+                                                                        end
+                                                                end
+                                                        end
+                                                end
+                                                if map.CFrame then
+                                                        local transform = map.CFrame
+                                                        pcall(rawset, v, "Transform", transform)
+                                                        if map.OrigC0 then
+                                                                pcall(function() v.C0 = map.OrigC0 * transform end)
+                                                        end
+                                                        local axis, tangle = transform:ToAxisAngle()
+                                                        local newangle = axis * tangle
+                                                        pcall(sethiddenproperty, v, "ReplicateCurrentOffset6D", transform.Position)
+                                                        pcall(sethiddenproperty, v, "ReplicateCurrentAngle6D", newangle)
                                                 end
                                         else
                                                 local cf = CFrame.identity
@@ -4944,11 +5078,7 @@ function LimbReanimator.Start()
                                 end
                                 RootPart = Humanoid.RootPart
                                 if RootPart and Humanoid:GetState() ~= Enum.HumanoidStateType.Dead then
-                                        -- Mode 3 lets the Humanoid determine its own state so the
-                                        -- Animate script can play correct walk/idle/jump animations.
-                                        if LimbReanimator.Mode ~= 3 then
-                                                Humanoid:ChangeState(Enum.HumanoidStateType.Freefall)
-                                        end
+                                        Humanoid:ChangeState(Enum.HumanoidStateType.Freefall)
                                         ReanimOkay = LimbReanimator.FlingTargets[1] == nil
                                 end
                         end
