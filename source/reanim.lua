@@ -130,7 +130,7 @@ do
                                 setscriptable(inst, prop, false)
                         end
                 else
-                        gethiddenproperty = function(inst, prop, val)
+                        sethiddenproperty = function(inst, prop, val)
                                 local was = isscriptable(inst, prop)
                                 if not was then setscriptable(inst, prop, true) end
                                 inst[prop] = val
@@ -4800,32 +4800,12 @@ function LimbReanimator.Start()
         Util.LinkDestroyI2C(Reanimate.Character, RunService.PreAnimation:Connect(function()
                 for _, map in LimbMapping do
                         local v = map.Reference
-                        if v then
-                                v.Part0 = nil
-                                if map.CFrame then
-                                        Util.SetMotor6DOffset(v, map.CFrame)
-                                end
+                        if v and map.CFrame then
+                                Util.SetMotor6DOffset(v, map.CFrame)
                         end
                 end
                 for _, v in UnknownMotor6Ds do
-                        v.Part0 = nil
                         Util.SetMotor6DTransform(v, CFrame.identity)
-                end
-        end))
-
-        Util.LinkDestroyI2C(Reanimate.Character, RunService.Heartbeat:Connect(function()
-                local reanimChar = Reanimate.Character
-                if not reanimChar then return end
-                for _, map in LimbMapping do
-                        local motor = map.Reference
-                        if motor and motor.Part1 then
-                                local reanimPart = reanimChar:FindFirstChild(map.RPart1)
-                                if reanimPart then
-                                        motor.Part1.CFrame = reanimPart.CFrame
-                                        motor.Part1.AssemblyLinearVelocity = Vector3.zero
-                                        motor.Part1.AssemblyAngularVelocity = Vector3.zero
-                                end
-                        end
                 end
         end))
 
