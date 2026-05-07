@@ -4550,7 +4550,8 @@ function LimbReanimator.SetRootPartMode(mode)
 end
 function LimbReanimator.Config(parent)
         UI.CreateText(parent, "as mentioned in the README, this only works for SOME games,\nbecause 'modern' games create the Animator automatically which breaks limb reanimation", 10, Enum.TextXAlignment.Center)
-        local dmode = UI.CreateDropdown(parent, "RootPart Mode", {"RootPart in very void", "RootPart in void", "Keep RootPart Streamed", "CurrentAngle Style", "RootPart is Torso"}, LimbReanimator.Mode + 1)
+        UI.CreateText(parent, "For others to see your animations, use Mode 3 or 4 below", 10, Enum.TextXAlignment.Center)
+        local dmode = UI.CreateDropdown(parent, "RootPart Mode", {"1 - Very void (invisible)", "2 - Void (invisible)", "3 - Streamed (invisible)", "4 - CurrentAngle (VISIBLE)", "5 - RootPart=Torso (VISIBLE)"}, LimbReanimator.Mode + 1)
         local dvel = UI.CreateDropdown(parent, "RootPart Velocity", {"No Velocity", "Follow Character", "Fling-like"}, LimbReanimator.Velocity + 1)
         local dinit = UI.CreateDropdown(parent, "Init Mode", {"Reset Character", "CDSB + Reset", "CDSB + SSE + Kill"}, LimbReanimator.InitMode + 1)
         dmode.Changed:Connect(function(val)
@@ -4799,12 +4800,32 @@ function LimbReanimator.Start()
         Util.LinkDestroyI2C(Reanimate.Character, RunService.PreAnimation:Connect(function()
                 for _, map in LimbMapping do
                         local v = map.Reference
-                        if v and map.CFrame then
-                                Util.SetMotor6DOffset(v, map.CFrame)
+                        if v then
+                                v.Part0 = nil
+                                if map.CFrame then
+                                        Util.SetMotor6DOffset(v, map.CFrame)
+                                end
                         end
                 end
                 for _, v in UnknownMotor6Ds do
+                        v.Part0 = nil
                         Util.SetMotor6DTransform(v, CFrame.identity)
+                end
+        end))
+
+        Util.LinkDestroyI2C(Reanimate.Character, RunService.Heartbeat:Connect(function()
+                local reanimChar = Reanimate.Character
+                if not reanimChar then return end
+                for _, map in LimbMapping do
+                        local motor = map.Reference
+                        if motor and motor.Part1 then
+                                local reanimPart = reanimChar:FindFirstChild(map.RPart1)
+                                if reanimPart then
+                                        motor.Part1.CFrame = reanimPart.CFrame
+                                        motor.Part1.AssemblyLinearVelocity = Vector3.zero
+                                        motor.Part1.AssemblyAngularVelocity = Vector3.zero
+                                end
+                        end
                 end
         end))
 
