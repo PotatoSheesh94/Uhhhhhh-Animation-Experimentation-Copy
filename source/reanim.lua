@@ -4758,6 +4758,7 @@ function LimbReanimator.Start()
                 for _,map in LimbMapping do
                         map.Reference = nil
                         map.CFrame = nil
+                        map.BlendTimer = nil
                         map.PosVelocity = nil
                 end
                 character.DescendantAdded:Connect(CharOnDesc)
@@ -4877,13 +4878,24 @@ function LimbReanimator.Start()
                                         if dorep or not map.CFrame then
                                                 if map.CFrame and dt and dt > 0 then
                                                         if LimbReanimator.Mode == 3 then
-                                                                local mult     = jointSpeedMult[map.RPart1] or 1.0
-                                                                local omega    = 100 * mult
+                                                                local mult = jointSpeedMult[map.RPart1] or 1.0
+                                                                local rotCurrent = map.CFrame - map.CFrame.Position
+                                                                local rotTarget  = cf - cf.Position
+                                                                local _, rotJump = (rotCurrent:Inverse() * rotTarget):ToAxisAngle()
+                                                                if rotJump > 0.25 then
+                                                                        map.BlendTimer = 0.25
+                                                                end
+                                                                local omega
+                                                                if map.BlendTimer and map.BlendTimer > 0 then
+                                                                        map.BlendTimer = math.max(0, map.BlendTimer - dt)
+                                                                        omega = 14 * mult
+                                                                else
+                                                                        map.BlendTimer = nil
+                                                                        omega = 100 * mult
+                                                                end
                                                                 local posAlpha = 1 - math.exp(-omega * dt)
                                                                 local rotAlpha = 1 - math.exp(-omega * 1.3 * dt)
                                                                 local newPos   = map.CFrame.Position:Lerp(cf.Position, posAlpha)
-                                                                local rotCurrent = map.CFrame - map.CFrame.Position
-                                                                local rotTarget  = cf - cf.Position
                                                                 local rotLerped  = rotCurrent:Lerp(rotTarget, rotAlpha)
                                                                 map.CFrame = CFrame.new(newPos) * rotLerped
                                                         else
@@ -4892,6 +4904,7 @@ function LimbReanimator.Start()
                                                         end
                                                 else
                                                         map.CFrame = cf
+                                                        map.BlendTimer = nil
                                                         map.PosVelocity = nil
                                                 end
                                         end
