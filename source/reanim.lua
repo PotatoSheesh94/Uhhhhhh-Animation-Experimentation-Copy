@@ -4860,16 +4860,11 @@ function LimbReanimator.Start()
                                                         cf = baseC0 * transform * v.C1:Inverse()
                                                 end
                                         end
-                                        if dorep or not map.CFrame then
+                                        if LimbReanimator.Mode == 3 or dorep or not map.CFrame then
                                                 if map.CFrame and dt and dt > 0 then
-                                                        if LimbReanimator.Mode == 3 then
-                                                                local alpha = 1 - math.exp(-25 * dt)
-                                                                map.CFrame = map.CFrame:Lerp(cf, alpha)
-                                                                map.BlendTimer = nil
-                                                        else
-                                                                local alpha = 1 - math.exp(-60 * dt)
-                                                                map.CFrame = map.CFrame:Lerp(cf, alpha)
-                                                        end
+                                                        local alpha = 1 - math.exp(-60 * dt)
+                                                        map.CFrame = map.CFrame:Lerp(cf, alpha)
+                                                        map.BlendTimer = nil
                                                 else
                                                         map.CFrame = cf
                                                         map.BlendTimer = nil
