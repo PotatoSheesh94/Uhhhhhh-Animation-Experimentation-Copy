@@ -4810,7 +4810,7 @@ function LimbReanimator.Start()
                 ["Right Leg"] = 0.97,
         }
         local function UpdateTransforms(ReanimCharacter, RootPart, rootcf, rootvel, flingtarget, flingcf, dt)
-                if not RootPart:IsGrounded() then
+                if not RootPart:IsGrounded() or LimbReanimator.Mode == 3 then
                         if flingtarget then
                                 smoothedRootCF = nil
                                 if LimbReanimator.UseNaNFling then
