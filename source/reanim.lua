@@ -8134,6 +8134,7 @@ local CurrentDance = nil
 local _CurrentDance = nil
 local DancePaused = false
 local _soundWasPaused = false
+local DanceLoop = {}
 local OldReanimCharacter = nil
 local _danceItemLabels = {} -- maps dance object -> DancesPage list name label
 
@@ -8259,10 +8260,11 @@ do -- Dance Player Popup
                 return b
         end
 
-        -- 3 buttons: Prev, Play/Pause toggle, Next — 64px center-to-center spacing
-        local DancePopupPrev      = MakeCtrlBtn("|<", -64)
-        local DancePopupPlayPause = MakeCtrlBtn("||",   0)
-        local DancePopupNext      = MakeCtrlBtn(">|",  64)
+        -- 4 buttons: Prev, Play/Pause, Next, Loop — 64px center-to-center spacing
+        local DancePopupPrev      = MakeCtrlBtn("|<", -96)
+        local DancePopupPlayPause = MakeCtrlBtn("||", -32)
+        local DancePopupNext      = MakeCtrlBtn(">|",  32)
+        local DancePopupLoop      = MakeCtrlBtn("\xe2\x86\xbb",  96)
 
         local function GetShownPos()
                 return UDim2.new(0.5, _popupDragOffset.X, 1, -20 + _popupDragOffset.Y)
@@ -8338,6 +8340,14 @@ do -- Dance Player Popup
                 HideDancePopup()
         end)
 
+        DancePopupLoop.Activated:Connect(function()
+                local dance = CurrentDance or _popupLastDance
+                if not dance then return end
+                DanceLoop[dance] = not DanceLoop[dance]
+                if type(SaveData.DanceLoop) ~= "table" then SaveData.DanceLoop = {} end
+                SaveData.DanceLoop[dance.Hash] = DanceLoop[dance]
+        end)
+
         DancePopupPlayPause.Activated:Connect(function()
                 if DancePaused then
                         DancePaused = false
@@ -8382,6 +8392,9 @@ do -- Dance Player Popup
         AddToRenderStep(function()
                 -- Keep play/pause button text in sync with state
                 DancePopupPlayPause.Text = DancePaused and ">" or "||"
+                -- Keep loop button in sync: ↻ = looping, 1x = play once
+                local _loopDance = CurrentDance or _popupLastDance
+                DancePopupLoop.Text = (_loopDance and DanceLoop[_loopDance] == false) and "1x" or "\xe2\x86\xbb"
                 -- Update dance list labels to reflect playing/paused state
                 for dance, label in _danceItemLabels do
                         if dance == CurrentDance then
@@ -8929,6 +8942,8 @@ local function AddDance(m)
                 msname.Name = "LabelName"
                 msdesc.Name = "LabelDesc"
                 _danceItemLabels[m] = msname
+                if type(SaveData.DanceLoop) ~= "table" then SaveData.DanceLoop = {} end
+                DanceLoop[m] = SaveData.DanceLoop[m.Hash] ~= false
                 item.Parent.Name = m.Name .. " " .. m.Description
                 Util.LinkDestroyI2C(item, item.Activated:Connect(function()
                         local page = UI.CreatePage()
@@ -9013,6 +9028,19 @@ local function AddDance(m)
                                 UpdatePauseText()
                                 UpdateEquipText()
                         end)
+                        local loopbtn, looptext = UI.CreateButton(page, "Loop: ON", 20)
+                        local function UpdateLoopText()
+                                looptext.Text = (DanceLoop[m] ~= false) and "Loop: ON" or "Loop: OFF (Play Once)"
+                        end
+                        UpdateLoopText()
+                        local loopRSConn = RunService.RenderStepped:Connect(UpdateLoopText)
+                        loopbtn.Destroying:Connect(function() loopRSConn:Disconnect() end)
+                        loopbtn.Activated:Connect(function()
+                                DanceLoop[m] = not DanceLoop[m]
+                                if type(SaveData.DanceLoop) ~= "table" then SaveData.DanceLoop = {} end
+                                SaveData.DanceLoop[m.Hash] = DanceLoop[m]
+                                UpdateLoopText()
+                        end)
                         UI.CreateSeparator(page)
                         UI.CreateText(page, "* Configuration *", 15, Enum.TextXAlignment.Center)
                         m.Config(page)
@@ -9083,6 +9111,7 @@ task.spawn(function()
 end)
 task.spawn(function()
         local _oldcharacterreference = nil
+        local _danceInitialized = false
         local errorsandwarnings = {}
         local currenterrorid = 1
         while true do local dt = RunService.Heartbeat:Wait() xpcall(function(dt)
@@ -9123,6 +9152,7 @@ task.spawn(function()
                                                         pcall(_CurrentDance.Destroy, ReanimCharacter)
                                                 end
                                                 _CurrentDance = CurrentDance
+                                                _danceInitialized = false
                                                 ReanimCharacter:SetAttribute("IsDancing", nil)
                                                 ReanimCharacter:SetAttribute("DanceInternalName", nil)
                                                 SetOverrideDanceMusic(nil)
@@ -9133,7 +9163,10 @@ task.spawn(function()
                                                                 _CurrentDance.Update(dt, ReanimCharacter)
                                                         end
                                                 else
-                                                        if AssetEnsure(_CurrentDance.Assets) then
+                                                        if _danceInitialized and not DanceLoop[_CurrentDance] then
+                                                                CurrentDance = nil
+                                                        elseif AssetEnsure(_CurrentDance.Assets) then
+                                                                _danceInitialized = true
                                                                 ReanimCharacter:SetAttribute("IsDancing", true)
                                                                 ReanimCharacter:SetAttribute("DanceInternalName", _CurrentDance.InternalName)
                                                                 _CurrentDance.Init(ReanimCharacter)
