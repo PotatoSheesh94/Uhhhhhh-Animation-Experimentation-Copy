@@ -8118,7 +8118,7 @@ do -- Dance Player Popup
         DancePopupFrame.Active = true
         DancePopupFrame.AnchorPoint = Vector2.new(0.5, 1)
         DancePopupFrame.Position = UDim2.new(0.5, 0, 1, 80)
-        DancePopupFrame.Size = UDim2.new(0, 320, 0, 152)
+        DancePopupFrame.Size = UDim2.new(0, 320, 0, 164)
         DancePopupFrame.BackgroundTransparency = 0
         DancePopupFrame.BackgroundColor3 = Color3.new(0, 0, 0)
         DancePopupFrame.BorderSizePixel = 0
@@ -8128,7 +8128,7 @@ do -- Dance Player Popup
         Stylize(DancePopupFrame, { Glow = true })
 
         local _popupMinimized = false
-        local POPUP_FULL_H = 152
+        local POPUP_FULL_H = 164
         local POPUP_MIN_H  = 38
 
         local DancePopupClose = Util.Instance("TextButton", DancePopupFrame)
@@ -8183,21 +8183,43 @@ do -- Dance Player Popup
                 ):Play()
         end)
 
-        -- Transparent drag handle covering the header (title + description area)
+        -- Header title (matches Players panel style)
+        local DancePopupHeaderTitle = Util.Instance("TextLabel", DancePopupFrame)
+        DancePopupHeaderTitle.Position = UDim2.new(0, 12, 0, 9)
+        DancePopupHeaderTitle.Size = UDim2.new(1, -90, 0, 20)
+        DancePopupHeaderTitle.BackgroundTransparency = 1
+        DancePopupHeaderTitle.Font = Enum.Font.GothamBold
+        DancePopupHeaderTitle.TextSize = 14
+        DancePopupHeaderTitle.TextXAlignment = Enum.TextXAlignment.Left
+        DancePopupHeaderTitle.ZIndex = 12
+        DancePopupHeaderTitle.Text = "Now Playing"
+        RegisterTextLabel(DancePopupHeaderTitle)
+
+        -- Header separator (matches Players panel style)
+        local DancePopupHeaderSep = Instance.new("Frame", DancePopupFrame)
+        DancePopupHeaderSep.AnchorPoint = Vector2.new(0.5, 0)
+        DancePopupHeaderSep.Position = UDim2.new(0.5, 0, 0, 38)
+        DancePopupHeaderSep.Size = UDim2.new(1, -24, 0, 1)
+        DancePopupHeaderSep.BackgroundTransparency = 0.6
+        DancePopupHeaderSep.BackgroundColor3 = Color3.new(1, 1, 1)
+        DancePopupHeaderSep.BorderSizePixel = 0
+        DancePopupHeaderSep.ZIndex = 11
+
+        -- Transparent drag handle covering only the header bar (title area)
         local DancePopupDragArea = Util.Instance("Frame", DancePopupFrame)
         DancePopupDragArea.Active = true
         DancePopupDragArea.Position = UDim2.new(0, 0, 0, 0)
-        DancePopupDragArea.Size = UDim2.new(1, 0, 0, 97)
+        DancePopupDragArea.Size = UDim2.new(1, 0, 0, 38)
         DancePopupDragArea.BackgroundTransparency = 1
         DancePopupDragArea.ZIndex = 11
 
         local DancePopupName = Util.Instance("TextLabel", DancePopupFrame)
         DancePopupName.AnchorPoint = Vector2.new(0, 0)
-        DancePopupName.Position = UDim2.new(0, 12, 0, 10)
-        DancePopupName.Size = UDim2.new(1, -90, 0, 26)
+        DancePopupName.Position = UDim2.new(0, 12, 0, 44)
+        DancePopupName.Size = UDim2.new(1, -24, 0, 22)
         DancePopupName.BackgroundTransparency = 1
         DancePopupName.Font = Enum.Font.GothamBold
-        DancePopupName.TextSize = 18
+        DancePopupName.TextSize = 15
         DancePopupName.TextXAlignment = Enum.TextXAlignment.Left
         DancePopupName.TextTruncate = Enum.TextTruncate.AtEnd
         DancePopupName.ZIndex = 12
@@ -8206,11 +8228,11 @@ do -- Dance Player Popup
 
         local DancePopupDesc = Util.Instance("TextLabel", DancePopupFrame)
         DancePopupDesc.AnchorPoint = Vector2.new(0, 0)
-        DancePopupDesc.Position = UDim2.new(0, 12, 0, 40)
-        DancePopupDesc.Size = UDim2.new(1, -24, 0, 52)
+        DancePopupDesc.Position = UDim2.new(0, 12, 0, 68)
+        DancePopupDesc.Size = UDim2.new(1, -24, 0, 38)
         DancePopupDesc.BackgroundTransparency = 1
         DancePopupDesc.Font = Enum.Font.Gotham
-        DancePopupDesc.TextSize = 13
+        DancePopupDesc.TextSize = 12
         DancePopupDesc.TextXAlignment = Enum.TextXAlignment.Left
         DancePopupDesc.TextYAlignment = Enum.TextYAlignment.Top
         DancePopupDesc.TextWrapped = true
@@ -8220,7 +8242,7 @@ do -- Dance Player Popup
 
         local DancePopupSep = Instance.new("Frame", DancePopupFrame)
         DancePopupSep.AnchorPoint = Vector2.new(0.5, 0)
-        DancePopupSep.Position = UDim2.new(0.5, 0, 0, 98)
+        DancePopupSep.Position = UDim2.new(0.5, 0, 0, 110)
         DancePopupSep.Size = UDim2.new(1, -24, 0, 1)
         DancePopupSep.BackgroundTransparency = 0.6
         DancePopupSep.BackgroundColor3 = Color3.new(1, 1, 1)
@@ -8230,7 +8252,7 @@ do -- Dance Player Popup
         local function MakeCtrlBtn(label, xOff)
                 local b = Util.Instance("TextButton", DancePopupFrame)
                 b.AnchorPoint = Vector2.new(0.5, 0)
-                b.Position = UDim2.new(0.5, xOff, 0, 108)
+                b.Position = UDim2.new(0.5, xOff, 0, 118)
                 b.Size = UDim2.new(0, 48, 0, 36)
                 b.BackgroundTransparency = 0
                 b.BorderSizePixel = 0
@@ -11137,7 +11159,7 @@ local d = function()
                 end)
                 PnlRefresh.Activated:Connect(function() if _pnlVisible then RebuildPnlList() end end)
 
-                -- Full-panel drag
+                -- Header-only drag (first 38px = title bar, above the separator)
                 UserInputService.InputBegan:Connect(function(input, gpe)
                         if gpe then return end
                         if _pnlDragRef then return end
@@ -11146,7 +11168,7 @@ local d = function()
                         local mp = Vector2.new(input.Position.X, input.Position.Y)
                         local fp = PnlFrame.AbsolutePosition
                         local fs = PnlFrame.AbsoluteSize
-                        if mp.X >= fp.X and mp.X <= fp.X + fs.X and mp.Y >= fp.Y and mp.Y <= fp.Y + fs.Y then
+                        if mp.X >= fp.X and mp.X <= fp.X + fs.X and mp.Y >= fp.Y and mp.Y <= fp.Y + 38 then
                                 _pnlDragRef = input
                                 _pnlDragLive = false
                                 _pnlDragStart = mp
@@ -11180,6 +11202,27 @@ local d = function()
                                 if _pnlVisible then pcall(RebuildPnlList) end
                         end
                 end)
+
+                -- Live detection: instantly rebuild when players join, leave, or respawn
+                Players.PlayerAdded:Connect(function(p)
+                        if _pnlVisible then pcall(RebuildPnlList) end
+                        p.CharacterAdded:Connect(function()
+                                task.wait(0.6)
+                                if _pnlVisible then pcall(RebuildPnlList) end
+                        end)
+                end)
+                Players.PlayerRemoving:Connect(function()
+                        if _pnlVisible then pcall(RebuildPnlList) end
+                end)
+                -- Watch characters of players already in-game at script load
+                for _, p in Players:GetPlayers() do
+                        if p ~= Player then
+                                p.CharacterAdded:Connect(function()
+                                        task.wait(0.6)
+                                        if _pnlVisible then pcall(RebuildPnlList) end
+                                end)
+                        end
+                end
 
                 -- ================================================================
                 -- Global Players System (cross-game presence via ntfy.sh relay)
@@ -11502,15 +11545,15 @@ local d = function()
                         end
                 end)
 
-                -- Auto-refresh every 15s while open
+                -- Auto-refresh every 5s while open (live detection)
                 task.spawn(function()
                         while true do
-                                task.wait(15)
+                                task.wait(5)
                                 if _gpnlVisible then pcall(RebuildGpnlList) end
                         end
                 end)
 
-                -- Full-panel drag
+                -- Header-only drag (first 38px = title bar, above the separator)
                 UserInputService.InputBegan:Connect(function(input, gpe)
                         if gpe then return end
                         if _gpnlDragRef then return end
@@ -11519,7 +11562,7 @@ local d = function()
                         local mp = Vector2.new(input.Position.X, input.Position.Y)
                         local fp = GpnlFrame.AbsolutePosition
                         local fs = GpnlFrame.AbsoluteSize
-                        if mp.X >= fp.X and mp.X <= fp.X + fs.X and mp.Y >= fp.Y and mp.Y <= fp.Y + fs.Y then
+                        if mp.X >= fp.X and mp.X <= fp.X + fs.X and mp.Y >= fp.Y and mp.Y <= fp.Y + 38 then
                                 _gpnlDragRef = input
                                 _gpnlDragLive = false
                                 _gpnlDragStart = mp
