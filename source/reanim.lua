@@ -8136,6 +8136,11 @@ local DancePaused = false
 local _soundWasPaused = false
 local DanceLoop = {}
 local DanceShuffle = false
+local DanceQueue = {}
+local DanceQueueMode = false
+local _queuePlayIndex = 0
+local _openQueue = nil
+local _rebuildQueue = nil
 local OldReanimCharacter = nil
 local _danceItemLabels = {} -- maps dance object -> DancesPage list name label
 
@@ -8191,6 +8196,22 @@ do -- Dance Player Popup
         Stylize(DancePopupMinimize)
         RegisterTextLabel(DancePopupMinimize)
 
+        local DancePopupQueueToggle = Util.Instance("TextButton", DancePopupFrame)
+        DancePopupQueueToggle.AnchorPoint = Vector2.new(1, 0)
+        DancePopupQueueToggle.Position = UDim2.new(1, -60, 0, 8)
+        DancePopupQueueToggle.Size = UDim2.new(0, 22, 0, 22)
+        DancePopupQueueToggle.BackgroundTransparency = 0
+        DancePopupQueueToggle.BorderSizePixel = 0
+        DancePopupQueueToggle.Text = "\xe2\x89\xa1"
+        DancePopupQueueToggle.Font = Enum.Font.GothamBold
+        DancePopupQueueToggle.TextSize = 14
+        DancePopupQueueToggle.ZIndex = 12
+        Stylize(DancePopupQueueToggle)
+        RegisterTextLabel(DancePopupQueueToggle)
+        DancePopupQueueToggle.Activated:Connect(function()
+                if _openQueue then _openQueue() end
+        end)
+
         DancePopupMinimize.Activated:Connect(function()
                 _popupMinimized = not _popupMinimized
                 DancePopupMinimize.Text = _popupMinimized and "+" or "-"
@@ -8212,7 +8233,7 @@ do -- Dance Player Popup
         local DancePopupName = Util.Instance("TextLabel", DancePopupFrame)
         DancePopupName.AnchorPoint = Vector2.new(0, 0)
         DancePopupName.Position = UDim2.new(0, 12, 0, 10)
-        DancePopupName.Size = UDim2.new(1, -72, 0, 26)
+        DancePopupName.Size = UDim2.new(1, -90, 0, 26)
         DancePopupName.BackgroundTransparency = 1
         DancePopupName.Font = Enum.Font.GothamBold
         DancePopupName.TextSize = 18
@@ -8442,6 +8463,313 @@ if type(SaveData.MovesetIndex) == "number" then
         MovementStyleIndex = SaveData.MovesetIndex
 end
 DanceShuffle = not not SaveData.DanceShuffle
+
+do -- Dance Queue Panel
+        local _queueMinimized = false
+        local _queueVisible = false
+        local _queueDragRef = nil
+        local _queueDragStart = Vector2.zero
+        local _queueDragStartOffset = Vector2.zero
+        local _queueDragOffset = Vector2.zero
+        local QUEUE_FULL_H = 204
+        local QUEUE_MIN_H  = 38
+
+        local QueueFrame = Instance.new("Frame", UIMainFrame)
+        QueueFrame.Active = true
+        QueueFrame.AnchorPoint = Vector2.new(0.5, 1)
+        QueueFrame.Position = UDim2.new(0.5, 0, 1, 80)
+        QueueFrame.Size = UDim2.new(0, 320, 0, QUEUE_FULL_H)
+        QueueFrame.BackgroundTransparency = 0
+        QueueFrame.BackgroundColor3 = Color3.new(0, 0, 0)
+        QueueFrame.BorderSizePixel = 0
+        QueueFrame.ClipsDescendants = true
+        QueueFrame.Visible = false
+        QueueFrame.ZIndex = 10
+        Stylize(QueueFrame, { Glow = true })
+
+        local QueueDragArea = Util.Instance("Frame", QueueFrame)
+        QueueDragArea.Active = true
+        QueueDragArea.Position = UDim2.new(0, 0, 0, 0)
+        QueueDragArea.Size = UDim2.new(1, -60, 0, 38)
+        QueueDragArea.BackgroundTransparency = 1
+        QueueDragArea.ZIndex = 11
+
+        local QueueTitle = Util.Instance("TextLabel", QueueFrame)
+        QueueTitle.Position = UDim2.new(0, 12, 0, 9)
+        QueueTitle.Size = UDim2.new(1, -90, 0, 20)
+        QueueTitle.BackgroundTransparency = 1
+        QueueTitle.Font = Enum.Font.GothamBold
+        QueueTitle.TextSize = 15
+        QueueTitle.TextXAlignment = Enum.TextXAlignment.Left
+        QueueTitle.ZIndex = 12
+        QueueTitle.Text = "\xe2\x96\xb6 Queue (0)"
+        RegisterTextLabel(QueueTitle)
+
+        local QueueClose = Util.Instance("TextButton", QueueFrame)
+        QueueClose.AnchorPoint = Vector2.new(1, 0)
+        QueueClose.Position = UDim2.new(1, -8, 0, 8)
+        QueueClose.Size = UDim2.new(0, 22, 0, 22)
+        QueueClose.BackgroundTransparency = 0
+        QueueClose.BorderSizePixel = 0
+        QueueClose.Text = "x"
+        QueueClose.Font = Enum.Font.GothamBold
+        QueueClose.TextSize = 13
+        QueueClose.ZIndex = 12
+        Stylize(QueueClose)
+        RegisterTextLabel(QueueClose)
+
+        local QueueMinimize = Util.Instance("TextButton", QueueFrame)
+        QueueMinimize.AnchorPoint = Vector2.new(1, 0)
+        QueueMinimize.Position = UDim2.new(1, -34, 0, 8)
+        QueueMinimize.Size = UDim2.new(0, 22, 0, 22)
+        QueueMinimize.BackgroundTransparency = 0
+        QueueMinimize.BorderSizePixel = 0
+        QueueMinimize.Text = "-"
+        QueueMinimize.Font = Enum.Font.GothamBold
+        QueueMinimize.TextSize = 15
+        QueueMinimize.ZIndex = 12
+        Stylize(QueueMinimize)
+        RegisterTextLabel(QueueMinimize)
+
+        local QueueSep1 = Instance.new("Frame", QueueFrame)
+        QueueSep1.AnchorPoint = Vector2.new(0.5, 0)
+        QueueSep1.Position = UDim2.new(0.5, 0, 0, 38)
+        QueueSep1.Size = UDim2.new(1, -24, 0, 1)
+        QueueSep1.BackgroundTransparency = 0.6
+        QueueSep1.BackgroundColor3 = Color3.new(1, 1, 1)
+        QueueSep1.BorderSizePixel = 0
+        QueueSep1.ZIndex = 11
+
+        local QueueScroll = Instance.new("ScrollingFrame", QueueFrame)
+        QueueScroll.Position = UDim2.new(0, 4, 0, 40)
+        QueueScroll.Size = UDim2.new(1, -8, 0, 120)
+        QueueScroll.BackgroundTransparency = 1
+        QueueScroll.BorderSizePixel = 0
+        QueueScroll.ScrollBarThickness = 4
+        QueueScroll.ScrollBarImageColor3 = Color3.new(1, 1, 1)
+        QueueScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+        QueueScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+        QueueScroll.ZIndex = 11
+        local QueueListLayout = Instance.new("UIListLayout", QueueScroll)
+        QueueListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+        QueueListLayout.Padding = UDim.new(0, 2)
+
+        local QueueSep2 = Instance.new("Frame", QueueFrame)
+        QueueSep2.AnchorPoint = Vector2.new(0.5, 0)
+        QueueSep2.Position = UDim2.new(0.5, 0, 0, 163)
+        QueueSep2.Size = UDim2.new(1, -24, 0, 1)
+        QueueSep2.BackgroundTransparency = 0.6
+        QueueSep2.BackgroundColor3 = Color3.new(1, 1, 1)
+        QueueSep2.BorderSizePixel = 0
+        QueueSep2.ZIndex = 11
+
+        local QueueModeBtn = Util.Instance("TextButton", QueueFrame)
+        QueueModeBtn.AnchorPoint = Vector2.new(0, 1)
+        QueueModeBtn.Position = UDim2.new(0, 8, 1, -8)
+        QueueModeBtn.Size = UDim2.new(0.56, -12, 0, 26)
+        QueueModeBtn.BackgroundTransparency = 0
+        QueueModeBtn.BorderSizePixel = 0
+        QueueModeBtn.Font = Enum.Font.GothamBold
+        QueueModeBtn.TextSize = 11
+        QueueModeBtn.ZIndex = 12
+        Stylize(QueueModeBtn)
+        RegisterTextLabel(QueueModeBtn)
+
+        local QueueClearBtn = Util.Instance("TextButton", QueueFrame)
+        QueueClearBtn.AnchorPoint = Vector2.new(1, 1)
+        QueueClearBtn.Position = UDim2.new(1, -8, 1, -8)
+        QueueClearBtn.Size = UDim2.new(0.44, -12, 0, 26)
+        QueueClearBtn.BackgroundTransparency = 0
+        QueueClearBtn.BorderSizePixel = 0
+        QueueClearBtn.Text = "Clear All"
+        QueueClearBtn.Font = Enum.Font.GothamBold
+        QueueClearBtn.TextSize = 11
+        QueueClearBtn.ZIndex = 12
+        Stylize(QueueClearBtn)
+        RegisterTextLabel(QueueClearBtn)
+
+        local function GetQueueShownPos()
+                return UDim2.new(0.5, _queueDragOffset.X, 1, -20 - 162 - 12 + _queueDragOffset.Y)
+        end
+        local function GetQueueHiddenPos()
+                return UDim2.new(0.5, _queueDragOffset.X, 1, 80 + _queueDragOffset.Y)
+        end
+
+        local function RebuildQueueList()
+                for _, c in QueueScroll:GetChildren() do
+                        if not c:IsA("UIListLayout") then c:Destroy() end
+                end
+                QueueTitle.Text = "\xe2\x96\xb6 Queue (" .. #DanceQueue .. ")"
+                if #DanceQueue == 0 then
+                        local empty = Util.Instance("TextLabel", QueueScroll)
+                        empty.Size = UDim2.new(1, 0, 0, 40)
+                        empty.BackgroundTransparency = 1
+                        empty.Font = Enum.Font.Gotham
+                        empty.TextSize = 11
+                        empty.TextColor3 = Color3.new(0.55, 0.55, 0.55)
+                        empty.TextWrapped = true
+                        empty.ZIndex = 13
+                        empty.Text = "Queue is empty — add dances from their detail page"
+                        RegisterTextLabel(empty)
+                        return
+                end
+                for i, dance in DanceQueue do
+                        local row = Instance.new("Frame", QueueScroll)
+                        row.Size = UDim2.new(1, 0, 0, 28)
+                        row.BackgroundTransparency = (DanceQueueMode and _queuePlayIndex == i) and 0.75 or 1
+                        row.BackgroundColor3 = Color3.new(0.1, 0.45, 0.18)
+                        row.BorderSizePixel = 0
+                        row.LayoutOrder = i
+                        row.ZIndex = 12
+
+                        local numLbl = Util.Instance("TextLabel", row)
+                        numLbl.Position = UDim2.new(0, 4, 0, 0)
+                        numLbl.Size = UDim2.new(0, 22, 1, 0)
+                        numLbl.BackgroundTransparency = 1
+                        numLbl.Font = Enum.Font.GothamBold
+                        numLbl.TextSize = 11
+                        numLbl.ZIndex = 13
+                        numLbl.Text = tostring(i)
+                        RegisterTextLabel(numLbl)
+
+                        local nameLbl = Util.Instance("TextLabel", row)
+                        nameLbl.Position = UDim2.new(0, 28, 0, 0)
+                        nameLbl.Size = UDim2.new(1, -106, 1, 0)
+                        nameLbl.BackgroundTransparency = 1
+                        nameLbl.Font = Enum.Font.Gotham
+                        nameLbl.TextSize = 12
+                        nameLbl.TextXAlignment = Enum.TextXAlignment.Left
+                        nameLbl.TextTruncate = Enum.TextTruncate.AtEnd
+                        nameLbl.ZIndex = 13
+                        nameLbl.Text = dance.Name
+                        RegisterTextLabel(nameLbl)
+
+                        local function MkBtn(txt, xr)
+                                local b = Util.Instance("TextButton", row)
+                                b.AnchorPoint = Vector2.new(1, 0.5)
+                                b.Position = UDim2.new(1, xr, 0.5, 0)
+                                b.Size = UDim2.new(0, 22, 0, 22)
+                                b.BackgroundTransparency = 0
+                                b.BorderSizePixel = 0
+                                b.Text = txt
+                                b.Font = Enum.Font.GothamBold
+                                b.TextSize = 11
+                                b.ZIndex = 13
+                                Stylize(b)
+                                RegisterTextLabel(b)
+                                return b
+                        end
+
+                        local idx = i
+                        local rmBtn  = MkBtn("x",   -2)
+                        local dnBtn  = MkBtn("v",  -26)
+                        local upBtn  = MkBtn("^",  -50)
+                        upBtn.Activated:Connect(function()
+                                if idx > 1 then
+                                        DanceQueue[idx], DanceQueue[idx-1] = DanceQueue[idx-1], DanceQueue[idx]
+                                        RebuildQueueList()
+                                end
+                        end)
+                        dnBtn.Activated:Connect(function()
+                                if idx < #DanceQueue then
+                                        DanceQueue[idx], DanceQueue[idx+1] = DanceQueue[idx+1], DanceQueue[idx]
+                                        RebuildQueueList()
+                                end
+                        end)
+                        rmBtn.Activated:Connect(function()
+                                table.remove(DanceQueue, idx)
+                                if _queuePlayIndex >= idx then
+                                        _queuePlayIndex = math.max(0, _queuePlayIndex - 1)
+                                end
+                                RebuildQueueList()
+                        end)
+                end
+        end
+
+        local function ShowQueuePanel()
+                RebuildQueueList()
+                QueueFrame.Visible = true
+                _queueVisible = true
+                TweenService:Create(QueueFrame,
+                        TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
+                        { Position = GetQueueShownPos() }
+                ):Play()
+        end
+        local function HideQueuePanel()
+                _queueVisible = false
+                local t = TweenService:Create(QueueFrame,
+                        TweenInfo.new(0.22, Enum.EasingStyle.Quad, Enum.EasingDirection.In),
+                        { Position = GetQueueHiddenPos() }
+                )
+                t:Play()
+                t.Completed:Connect(function()
+                        if not _queueVisible then QueueFrame.Visible = false end
+                end)
+        end
+
+        _openQueue = function()
+                if _queueVisible then HideQueuePanel() else ShowQueuePanel() end
+        end
+        _rebuildQueue = RebuildQueueList
+
+        -- Drag
+        QueueDragArea.InputBegan:Connect(function(input)
+                if _queueDragRef then return end
+                if input.UserInputState ~= Enum.UserInputState.Begin then return end
+                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                        _queueDragRef = input
+                        _queueDragStart = Vector2.new(input.Position.X, input.Position.Y)
+                        _queueDragStartOffset = _queueDragOffset
+                end
+        end)
+        UserInputService.InputChanged:Connect(function(input)
+                if not _queueDragRef then return end
+                if input.UserInputType == Enum.UserInputType.MouseMovement or (input.UserInputType == Enum.UserInputType.Touch and _queueDragRef == input) then
+                        local delta = Vector2.new(input.Position.X, input.Position.Y) - _queueDragStart
+                        _queueDragOffset = _queueDragStartOffset + delta
+                        if _queueVisible then QueueFrame.Position = GetQueueShownPos() end
+                end
+        end)
+        UserInputService.InputEnded:Connect(function(input)
+                if _queueDragRef and _queueDragRef == input then
+                        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                                _queueDragRef = nil
+                        end
+                end
+        end)
+
+        QueueMinimize.Activated:Connect(function()
+                _queueMinimized = not _queueMinimized
+                QueueMinimize.Text = _queueMinimized and "+" or "-"
+                local targetH = _queueMinimized and QUEUE_MIN_H or QUEUE_FULL_H
+                TweenService:Create(QueueFrame,
+                        TweenInfo.new(0.28, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+                        { Size = UDim2.new(0, 320, 0, targetH) }
+                ):Play()
+        end)
+
+        QueueClose.Activated:Connect(function() HideQueuePanel() end)
+
+        QueueModeBtn.Activated:Connect(function()
+                DanceQueueMode = not DanceQueueMode
+                _queuePlayIndex = 0
+                SaveData.DanceQueueMode = DanceQueueMode
+                RebuildQueueList()
+        end)
+
+        QueueClearBtn.Activated:Connect(function()
+                table.clear(DanceQueue)
+                _queuePlayIndex = 0
+                RebuildQueueList()
+        end)
+
+        AddToRenderStep(function()
+                QueueModeBtn.Text = DanceQueueMode and "Queue Mode: ON" or "Queue Mode: OFF"
+        end)
+
+        DanceQueueMode = not not SaveData.DanceQueueMode
+        RebuildQueueList()
+end
 
 local MovesetsPage = UI.CreateItemListPage()
 MovesetsPage.ZIndex = 1
@@ -9073,6 +9401,17 @@ local function AddDance(m)
                                 SaveData.DanceShuffle = DanceShuffle
                                 UpdateShuffleText()
                         end)
+                        local addqueuebtn, addqueuetext = UI.CreateButton(page, "+ Add to Queue", 20)
+                        addqueuebtn.Activated:Connect(function()
+                                table.insert(DanceQueue, m)
+                                addqueuetext.Text = "Added! (" .. #DanceQueue .. " in queue)"
+                                task.delay(1.5, function()
+                                        if addqueuetext and addqueuetext.Parent then
+                                                addqueuetext.Text = "+ Add to Queue"
+                                        end
+                                end)
+                                if _rebuildQueue then _rebuildQueue() end
+                        end)
                         UI.CreateSeparator(page)
                         UI.CreateText(page, "* Configuration *", 15, Enum.TextXAlignment.Center)
                         m.Config(page)
@@ -9198,6 +9537,10 @@ task.spawn(function()
                                                         if _danceInitialized and not DanceLoop[_CurrentDance] then
                                                                 if DanceShuffle and #DanceableDances > 0 then
                                                                         CurrentDance = DanceableDances[math.random(#DanceableDances)]
+                                                                elseif DanceQueueMode and #DanceQueue > 0 then
+                                                                        _queuePlayIndex = (_queuePlayIndex % #DanceQueue) + 1
+                                                                        CurrentDance = DanceQueue[_queuePlayIndex]
+                                                                        if _rebuildQueue then _rebuildQueue() end
                                                                 else
                                                                         CurrentDance = nil
                                                                 end
