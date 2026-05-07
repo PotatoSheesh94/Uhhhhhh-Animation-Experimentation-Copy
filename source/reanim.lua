@@ -4850,11 +4850,13 @@ function LimbReanimator.Start()
                                                         local rcMotor = rcContainer:FindFirstChild(v.Name)
                                                         if rcMotor and rcMotor:IsA("Motor6D") then
                                                                 local newCF = v.C0 * rcMotor.Transform * v.C1:Inverse()
-                                                                if map.CFrame and dt and dt > 0 then
-                                                                        local alpha = 1 - math.exp(-12 * dt)
-                                                                        map.CFrame = map.CFrame:Lerp(newCF, alpha)
-                                                                else
-                                                                        map.CFrame = newCF
+                                                                if dt ~= nil then
+                                                                        if map.CFrame and dt > 0 then
+                                                                                local alpha = 1 - math.exp(-8 * dt)
+                                                                                map.CFrame = map.CFrame:Lerp(newCF, alpha)
+                                                                        else
+                                                                                map.CFrame = newCF
+                                                                        end
                                                                 end
                                                         end
                                                 end
@@ -4879,15 +4881,17 @@ function LimbReanimator.Start()
                                                                 cf = baseC0 * transform * v.C1:Inverse()
                                                         end
                                                 end
-                                                if dorep or not map.CFrame then
-                                                        if map.CFrame and dt and dt > 0 then
-                                                                local alpha = 1 - math.exp(-60 * dt)
-                                                                map.CFrame = map.CFrame:Lerp(cf, alpha)
-                                                                map.BlendTimer = nil
-                                                        else
-                                                                map.CFrame = cf
-                                                                map.BlendTimer = nil
-                                                                map.PosVelocity = nil
+                                                if dt ~= nil then
+                                                        if dorep or not map.CFrame then
+                                                                if map.CFrame and dt > 0 then
+                                                                        local alpha = 1 - math.exp(-60 * dt)
+                                                                        map.CFrame = map.CFrame:Lerp(cf, alpha)
+                                                                        map.BlendTimer = nil
+                                                                else
+                                                                        map.CFrame = cf
+                                                                        map.BlendTimer = nil
+                                                                        map.PosVelocity = nil
+                                                                end
                                                         end
                                                 end
                                                 Util.SetMotor6DOffset(v, map.CFrame)
@@ -5045,7 +5049,7 @@ function LimbReanimator.Start()
                                 if Reanimate:ShouldRotationType() then
                                         Reanimate:CameraLockCharacter()
                                 end
-                                UpdateTransforms(ReanimCharacter, RootPart, rootcf, rootvel, flingtarget, flingcf, heartbeatDt)
+                                UpdateTransforms(ReanimCharacter, RootPart, rootcf, rootvel, flingtarget, flingcf, nil)
                         end
                 end
         end
@@ -8135,6 +8139,7 @@ local CurrentDance = nil
 local _CurrentDance = nil
 local DancePaused = false
 local OldReanimCharacter = nil
+local _danceItemLabels = {} -- maps dance object -> DancesPage list name label
 
 do -- Dance Player Popup
         local _watchedDance = nil
@@ -8382,6 +8387,18 @@ do -- Dance Player Popup
         AddToRenderStep(function()
                 -- Keep play/pause button text in sync with state
                 DancePopupPlayPause.Text = DancePaused and ">" or "||"
+                -- Update dance list labels to reflect playing/paused state
+                for dance, label in _danceItemLabels do
+                        if dance == CurrentDance then
+                                if DancePaused then
+                                        label.Text = "|| " .. dance.Name .. " &gt;"
+                                else
+                                        label.Text = "&gt; " .. dance.Name .. " &gt;"
+                                end
+                        else
+                                label.Text = dance.Name .. " &gt;"
+                        end
+                end
                 -- Watch for dance changes
                 if _watchedDance ~= CurrentDance then
                         _watchedDance = CurrentDance
@@ -8916,6 +8933,7 @@ local function AddDance(m)
                 local msdesc = UI.CreateText(item, string.split(m.Description, "\n")[1], 12, Enum.TextXAlignment.Left)
                 msname.Name = "LabelName"
                 msdesc.Name = "LabelDesc"
+                _danceItemLabels[m] = msname
                 item.Parent.Name = m.Name .. " " .. m.Description
                 Util.LinkDestroyI2C(item, item.Activated:Connect(function()
                         local page = UI.CreatePage()
