@@ -8154,10 +8154,14 @@ do -- Dance Player Popup
         DancePopupFrame.BackgroundTransparency = 0
         DancePopupFrame.BackgroundColor3 = Color3.new(0, 0, 0)
         DancePopupFrame.BorderSizePixel = 0
-        DancePopupFrame.ClipsDescendants = false
+        DancePopupFrame.ClipsDescendants = true
         DancePopupFrame.Visible = false
         DancePopupFrame.ZIndex = 10
         Stylize(DancePopupFrame, { Glow = true })
+
+        local _popupMinimized = false
+        local POPUP_FULL_H = 162
+        local POPUP_MIN_H  = 38
 
         local DancePopupClose = Util.Instance("TextButton", DancePopupFrame)
         DancePopupClose.AnchorPoint = Vector2.new(1, 0)
@@ -8172,6 +8176,29 @@ do -- Dance Player Popup
         Stylize(DancePopupClose)
         RegisterTextLabel(DancePopupClose)
 
+        local DancePopupMinimize = Util.Instance("TextButton", DancePopupFrame)
+        DancePopupMinimize.AnchorPoint = Vector2.new(1, 0)
+        DancePopupMinimize.Position = UDim2.new(1, -34, 0, 8)
+        DancePopupMinimize.Size = UDim2.new(0, 22, 0, 22)
+        DancePopupMinimize.BackgroundTransparency = 0
+        DancePopupMinimize.BorderSizePixel = 0
+        DancePopupMinimize.Text = "-"
+        DancePopupMinimize.Font = Enum.Font.GothamBold
+        DancePopupMinimize.TextSize = 15
+        DancePopupMinimize.ZIndex = 12
+        Stylize(DancePopupMinimize)
+        RegisterTextLabel(DancePopupMinimize)
+
+        DancePopupMinimize.Activated:Connect(function()
+                _popupMinimized = not _popupMinimized
+                DancePopupMinimize.Text = _popupMinimized and "+" or "-"
+                local targetH = _popupMinimized and POPUP_MIN_H or POPUP_FULL_H
+                TweenService:Create(DancePopupFrame,
+                        TweenInfo.new(0.28, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+                        { Size = UDim2.new(0, 320, 0, targetH) }
+                ):Play()
+        end)
+
         -- Transparent drag handle covering the header (title + description area)
         local DancePopupDragArea = Util.Instance("Frame", DancePopupFrame)
         DancePopupDragArea.Active = true
@@ -8183,7 +8210,7 @@ do -- Dance Player Popup
         local DancePopupName = Util.Instance("TextLabel", DancePopupFrame)
         DancePopupName.AnchorPoint = Vector2.new(0, 0)
         DancePopupName.Position = UDim2.new(0, 12, 0, 10)
-        DancePopupName.Size = UDim2.new(1, -46, 0, 26)
+        DancePopupName.Size = UDim2.new(1, -72, 0, 26)
         DancePopupName.BackgroundTransparency = 1
         DancePopupName.Font = Enum.Font.GothamBold
         DancePopupName.TextSize = 18
@@ -8250,6 +8277,12 @@ do -- Dance Player Popup
                 DancePopupDesc.Text = dance.Description
                 DancePaused = false
                 _soundWasPaused = false
+                -- Always expand fully when showing a dance
+                if _popupMinimized then
+                        _popupMinimized = false
+                        DancePopupMinimize.Text = "-"
+                        DancePopupFrame.Size = UDim2.new(0, 320, 0, POPUP_FULL_H)
+                end
                 DancePopupFrame.Visible = true
                 _popupVisible = true
                 TweenService:Create(DancePopupFrame,
