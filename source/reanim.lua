@@ -4917,12 +4917,14 @@ function LimbReanimator.Start()
                                                         map.PosVelocity = nil
                                                 end
                                         end
-                                        if LimbReanimator.Mode == 3 and map.OrigC1 then
+                                        if LimbReanimator.Mode == 3 and map.OrigC0 and map.OrigC1 then
                                                 v.C0 = map.CFrame * map.OrigC1
                                                 pcall(rawset, v, "Transform", CFrame.identity)
                                                 if v.MaxVelocity ~= 9e9 then v.MaxVelocity = 9e9 end
-                                                pcall(sethiddenproperty, v, "ReplicateCurrentOffset6D", Vector3.zero)
-                                                pcall(sethiddenproperty, v, "ReplicateCurrentAngle6D", Vector3.zero)
+                                                local replicateTransform = map.OrigC0:Inverse() * map.CFrame * map.OrigC1
+                                                local axis, tangle = replicateTransform:ToAxisAngle()
+                                                pcall(sethiddenproperty, v, "ReplicateCurrentOffset6D", replicateTransform.Position)
+                                                pcall(sethiddenproperty, v, "ReplicateCurrentAngle6D", axis * tangle)
                                         else
                                                 Util.SetMotor6DOffset(v, map.CFrame)
                                         end
