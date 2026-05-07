@@ -4364,28 +4364,17 @@ else
 end
 
 Util.SetMotor6DTransform = function(motor, transform)
+        local name = motor.Name
         motor.MaxVelocity = 9e9
         local _, _, angle = transform:ToEulerAngles(Enum.RotationOrder.ZYX)
         motor:SetDesiredAngle(angle)
-        local axis, tangle = transform:ToAxisAngle()
-        local newangle = axis * tangle
+        local axis, angle = transform:ToAxisAngle()
+        local newangle = axis * angle
         pcall(sethiddenproperty, motor, "ReplicateCurrentOffset6D", transform.Position)
         pcall(sethiddenproperty, motor, "ReplicateCurrentAngle6D", newangle)
-        motor.Transform = transform
 end
 Util.SetMotor6DOffset = function(motor, offset)
         Util.SetMotor6DTransform(motor, motor.C0:Inverse() * offset * motor.C1)
-end
-Util.SetMotor6DOffsetReplicate = function(motor, offset, origC0, origC1)
-        motor.MaxVelocity = 9e9
-        motor.C0 = offset * origC1
-        motor.Transform = CFrame.identity
-        local transform = origC0:Inverse() * offset * origC1
-        local _, _, angle = transform:ToEulerAngles(Enum.RotationOrder.ZYX)
-        motor:SetDesiredAngle(angle)
-        local axis, tangle = transform:ToAxisAngle()
-        pcall(sethiddenproperty, motor, "ReplicateCurrentOffset6D", transform.Position)
-        pcall(sethiddenproperty, motor, "ReplicateCurrentAngle6D", axis * tangle)
 end
 
 Util.ShowPartHitbox = function(part)
@@ -4484,10 +4473,6 @@ SaveData.Reanimator.LimbInitMode = SaveData.Reanimator.LimbInitMode or 2
 SaveData.Reanimator.LimbReplicateFPS10 = not not SaveData.Reanimator.LimbReplicateFPS10
 SaveData.Reanimator.LimbRoleplay = not not SaveData.Reanimator.LimbRoleplay
 SaveData.Reanimator.LimbUseNaNFling = not not SaveData.Reanimator.LimbUseNaNFling
-SaveData.Reanimator.LimbForceFreefall = not not SaveData.Reanimator.LimbForceFreefall
-SaveData.Reanimator.LimbSpeedLock = not not SaveData.Reanimator.LimbSpeedLock
-SaveData.Reanimator.LimbDisableDeath = not not SaveData.Reanimator.LimbDisableDeath
-SaveData.Reanimator.LimbNoSounds = not not SaveData.Reanimator.LimbNoSounds
 LimbReanimator.Mode = SaveData.Reanimator.LimbMode
 -- 0 = hide rootpart (defaults to 2 when streaming is enabled)
 -- 1 = put rootpart just under void (defaults to 2 when streaming is enabled)
@@ -4500,14 +4485,11 @@ LimbReanimator.Velocity = SaveData.Reanimator.LimbVelocity
 -- 2 = fling-y velocity
 LimbReanimator.InitMode = SaveData.Reanimator.LimbInitMode
 -- 0 = just reset
--- 1 = reset
+-- 1 = time permadeath, and reset
+-- 2 = time permadeath, "without reset"
 LimbReanimator.ReplicateFPS10 = SaveData.Reanimator.LimbReplicateFPS10
 LimbReanimator.FlingEnabled = not SaveData.Reanimator.LimbRoleplay
 LimbReanimator.UseNaNFling = SaveData.Reanimator.LimbUseNaNFling
-LimbReanimator.ForceFreefall = SaveData.Reanimator.LimbForceFreefall
-LimbReanimator.SpeedLock = SaveData.Reanimator.LimbSpeedLock
-LimbReanimator.DisableDeath = SaveData.Reanimator.LimbDisableDeath
-LimbReanimator.NoSounds = SaveData.Reanimator.LimbNoSounds
 LimbReanimator.FlingTargets = {}
 LimbReanimator._TempNotFling = {}
 function LimbReanimator.ShowHitboxes()
@@ -4561,8 +4543,7 @@ function LimbReanimator.SetRootPartMode(mode)
 end
 function LimbReanimator.Config(parent)
         UI.CreateText(parent, "as mentioned in the README, this only works for SOME games,\nbecause 'modern' games create the Animator automatically which breaks limb reanimation", 10, Enum.TextXAlignment.Center)
-        UI.CreateText(parent, "For others to see your animations, use Mode 3 or 4 below", 10, Enum.TextXAlignment.Center)
-        local dmode = UI.CreateDropdown(parent, "RootPart Mode", {"1 - Very void (invisible)", "2 - Void (invisible)", "3 - Streamed (invisible)", "4 - CurrentAngle (VISIBLE)", "5 - RootPart=Torso (VISIBLE)"}, LimbReanimator.Mode + 1)
+        local dmode = UI.CreateDropdown(parent, "RootPart Mode", {"RootPart in very void", "RootPart in void", "Keep RootPart Streamed", "CurrentAngle Style", "RootPart is Torso"}, LimbReanimator.Mode + 1)
         local dvel = UI.CreateDropdown(parent, "RootPart Velocity", {"No Velocity", "Follow Character", "Fling-like"}, LimbReanimator.Velocity + 1)
         local dinit = UI.CreateDropdown(parent, "Init Mode", {"Reset Character", "CDSB + Reset", "CDSB + SSE + Kill"}, LimbReanimator.InitMode + 1)
         dmode.Changed:Connect(function(val)
@@ -4577,7 +4558,6 @@ function LimbReanimator.Config(parent)
                 LimbReanimator.InitMode = val - 1
                 SaveData.Reanimator.LimbInitMode = val - 1
         end)
-        UI.CreateSeparator(parent)
         UI.CreateSwitch(parent, "Show me how I look!", LimbReanimator.ReplicateFPS10).Changed:Connect(function(val)
                 LimbReanimator.ReplicateFPS10 = val
                 SaveData.Reanimator.LimbReplicateFPS10 = val
@@ -4590,27 +4570,6 @@ function LimbReanimator.Config(parent)
         UI.CreateSwitch(parent, "Use NaN State Fling", LimbReanimator.UseNaNFling).Changed:Connect(function(val)
                 LimbReanimator.UseNaNFling = val
                 SaveData.Reanimator.LimbUseNaNFling = val
-        end)
-        UI.CreateText(parent, "locks NetworkHumanoidState to Freefall every frame, lighter than NaN fling", 10, Enum.TextXAlignment.Center)
-        UI.CreateSwitch(parent, "Force Freefall State", LimbReanimator.ForceFreefall).Changed:Connect(function(val)
-                LimbReanimator.ForceFreefall = val
-                SaveData.Reanimator.LimbForceFreefall = val
-        end)
-        UI.CreateSeparator(parent)
-        UI.CreateText(parent, "forces WalkSpeed=16 JumpPower=50 every frame so games can't zero them out", 10, Enum.TextXAlignment.Center)
-        UI.CreateSwitch(parent, "Speed Lock", LimbReanimator.SpeedLock).Changed:Connect(function(val)
-                LimbReanimator.SpeedLock = val
-                SaveData.Reanimator.LimbSpeedLock = val
-        end)
-        UI.CreateText(parent, "calls SetStateEnabled(Dead, false) every frame so the humanoid can't be killed", 10, Enum.TextXAlignment.Center)
-        UI.CreateSwitch(parent, "Disable Death State", LimbReanimator.DisableDeath).Changed:Connect(function(val)
-                LimbReanimator.DisableDeath = val
-                SaveData.Reanimator.LimbDisableDeath = val
-        end)
-        UI.CreateText(parent, "removes Sound instances from actual character on spawn to hide footstep audio", 10, Enum.TextXAlignment.Center)
-        UI.CreateSwitch(parent, "No Character Sounds", LimbReanimator.NoSounds).Changed:Connect(function(val)
-                LimbReanimator.NoSounds = val
-                SaveData.Reanimator.LimbNoSounds = val
         end)
         Util.LinkDestroyI2C(dmode, RunService.Heartbeat:Connect(function()
                 dmode.Value = LimbReanimator.Mode + 1
@@ -4690,8 +4649,6 @@ function LimbReanimator.Start()
                                 for _,map in LimbMapping do
                                         if map.Part0 == p0 and map.Part1 == p1 then
                                                 map.Reference = v
-                                                map.OrigC0 = v.C0
-                                                map.OrigC1 = v.C1
                                                 return
                                         end
                                 end
@@ -4770,22 +4727,14 @@ function LimbReanimator.Start()
                 table.clear(BaseParts)
                 table.clear(UnknownMotor6Ds)
                 for _,map in LimbMapping do
-                        if map.Reference and map.OrigC0 then
-                                pcall(function() map.Reference.C0 = map.OrigC0 end)
-                        end
                         map.Reference = nil
-                        map.CFrame = nil
-                        map.BlendTimer = nil
-                        map.PosVelocity = nil
-                        map.OrigC0 = nil
-                        map.OrigC1 = nil
                 end
                 character.DescendantAdded:Connect(CharOnDesc)
                 for _,v in character:GetDescendants() do
                         task.spawn(CharOnDesc, v)
                 end
                 local humanoid = character:WaitForChild("Humanoid", 5)
-                local stupid = humanoid and humanoid:FindFirstChildWhichIsA("Animator")
+                local stupid = humanoid:FindFirstChildWhichIsA("Animator")
                 if stupid then
                         stupid:Destroy()
                 end
@@ -4797,36 +4746,12 @@ function LimbReanimator.Start()
                         end
                         stupid:Destroy()
                 end
-                if LimbReanimator.NoSounds then
-                        for _, v in character:GetDescendants() do
-                                if v:IsA("Sound") then
-                                        v:Destroy()
-                                end
-                        end
-                end
         end)
         Player.CharacterAdded:Wait()
         Reanimate.CreateCharacter(InitCFrame)
 
-        Util.LinkDestroyI2C(Reanimate.Character, RunService.PreAnimation:Connect(function()
-                for _, map in LimbMapping do
-                        local v = map.Reference
-                        if v and map.CFrame then
-                                if map.OrigC0 and map.OrigC1 then
-                                        Util.SetMotor6DOffsetReplicate(v, map.CFrame, map.OrigC0, map.OrigC1)
-                                else
-                                        Util.SetMotor6DOffset(v, map.CFrame)
-                                end
-                        end
-                end
-                for _, v in UnknownMotor6Ds do
-                        Util.SetMotor6DTransform(v, CFrame.identity)
-                end
-        end))
-
         local lastrep = 0
-
-        local function UpdateTransforms(ReanimCharacter, RootPart, rootcf, rootvel, flingtarget, flingcf, dt)
+        local function UpdateTransforms(ReanimCharacter, RootPart, rootcf, rootvel, flingtarget, flingcf)
                 if not RootPart:IsGrounded() then
                         if flingtarget then
                                 if LimbReanimator.UseNaNFling then
@@ -4854,11 +4779,6 @@ function LimbReanimator.Start()
                                 lastrep = b - a
                         end
                 end
-                if not dorep and ReanimCharacter then
-                        if ReanimCharacter:GetAttribute("IsDancing") or ReanimCharacter:GetAttribute("MovementInit") then
-                                dorep = true
-                        end
-                end
                 for _,v in UnknownMotor6Ds do
                         Util.SetMotor6DTransform(v, CFrame.identity)
                 end
@@ -4866,9 +4786,7 @@ function LimbReanimator.Start()
                         local v = map.Reference
                         if v then
                                 if flingtarget then
-                                        if map.OrigC0 then v.C0 = map.OrigC0 end
-                                        if map.OrigC1 then v.C1 = map.OrigC1 end
-                                        v.Transform = CFrame.identity
+                                        Util.SetMotor6DTransform(v, CFrame.identity)
                                 else
                                         local cf = CFrame.identity
                                         local p0, p1 = ReanimCharacter:FindFirstChild(map.RPart0), ReanimCharacter:FindFirstChild(map.RPart1)
@@ -4883,28 +4801,13 @@ function LimbReanimator.Start()
                                                         local offset = map.Offset or CFrame.identity
                                                         local c0, c1 = CFrame.new(map.C0), CFrame.new(map.C1)
                                                         local transform = offset * (p0.CFrame * c0):ToObjectSpace(p1.CFrame * c1) * offset:Inverse()
-                                                        local baseC0 = map.OrigC0 or v.C0
-                                                        cf = baseC0 * transform * v.C1:Inverse()
+                                                        cf = v.C0 * transform * v.C1:Inverse()
                                                 end
                                         end
-                                        if dt ~= nil then
-                                                if dorep or not map.CFrame then
-                                                        if map.CFrame and dt > 0 then
-                                                                local alpha = 1 - math.exp(-60 * dt)
-                                                                map.CFrame = map.CFrame:Lerp(cf, alpha)
-                                                                map.BlendTimer = nil
-                                                        else
-                                                                map.CFrame = cf
-                                                                map.BlendTimer = nil
-                                                                map.PosVelocity = nil
-                                                        end
-                                                end
+                                        if dorep or not map.CFrame then
+                                                map.CFrame = cf
                                         end
-                                        if map.OrigC0 and map.OrigC1 then
-                                                Util.SetMotor6DOffsetReplicate(v, map.CFrame, map.OrigC0, map.OrigC1)
-                                        else
-                                                Util.SetMotor6DOffset(v, map.CFrame)
-                                        end
+                                        Util.SetMotor6DOffset(v, map.CFrame)
                                 end
                         end
                 end
@@ -4920,16 +4823,11 @@ function LimbReanimator.Start()
                         Humanoid = Character:FindFirstChildOfClass("Humanoid")
                         if Humanoid then
                                 Humanoid.AutoRotate = false
-                                if LimbReanimator.SpeedLock then
+                                if Humanoid.WalkSpeed < 1 then
                                         Humanoid.WalkSpeed = 16
+                                end
+                                if Humanoid.JumpPower < 1 then
                                         Humanoid.JumpPower = 50
-                                else
-                                        if Humanoid.WalkSpeed < 1 then
-                                                Humanoid.WalkSpeed = 16
-                                        end
-                                        if Humanoid.JumpPower < 1 then
-                                                Humanoid.JumpPower = 50
-                                        end
                                 end
                                 RootPart = Humanoid.RootPart
                                 if RootPart and Humanoid:GetState() ~= Enum.HumanoidStateType.Dead then
@@ -4996,7 +4894,7 @@ function LimbReanimator.Start()
                                 end
                         end
                         if Character and Humanoid and RootPart then
-                                local heartbeatDt = RunService.Heartbeat:Wait()
+                                RunService.Heartbeat:Wait()
                                 local t = os.clock()
                                 local flingtarget = LimbReanimator.FlingTargets[1]
                                 if flingtarget then
@@ -5017,30 +4915,23 @@ function LimbReanimator.Start()
                                                 flingtarget = nil
                                         end
                                 end
-                                UpdateTransforms(ReanimCharacter, RootPart, rootcf, rootvel, flingtarget, flingcf, heartbeatDt)
+                                UpdateTransforms(ReanimCharacter, RootPart, rootcf, rootvel, flingtarget, flingcf)
                                 if LimbReanimator.UseNaNFling then
                                         if os.clock() - lastspawn > 0.1 then
                                                 pcall(sethiddenproperty, Humanoid, "MoveDirectionInternal", Vector3.new(0/0, 0/0, 0/0))
                                         else
                                                 pcall(sethiddenproperty, Humanoid, "MoveDirectionInternal", Vector3.zero)
                                         end
-                                end
-                                if LimbReanimator.UseNaNFling or LimbReanimator.ForceFreefall then
                                         pcall(sethiddenproperty, Humanoid, "NetworkHumanoidState", Enum.HumanoidStateType.Freefall)
                                 else
-                                        pcall(sethiddenproperty, Humanoid, "NetworkHumanoidState", Enum.HumanoidStateType[({"Running", "PlatformStanding", "Jumping", "Physics"})[math.random(1, 4)]])
+                                        pcall(sethiddenproperty, Humanoid, "NetworkHumanoidState", Enum.HumanoidStateType[({"Running", "PlatformStanding", "Jumping", "Ragdoll", "Seated", "Physics"})[math.random(1, 6)]])
                                 end
-                                if LimbReanimator.DisableDeath then
-                                        pcall(function()
-                                                Humanoid:SetStateEnabled(Enum.HumanoidStateType.Dead, false)
-                                                Humanoid:SetStateEnabled(Enum.HumanoidStateType.GettingUp, false)
-                                        end)
-                                end
+
                                 RunService.PreRender:Wait()
                                 if Reanimate:ShouldRotationType() then
                                         Reanimate:CameraLockCharacter()
                                 end
-                                UpdateTransforms(ReanimCharacter, RootPart, rootcf, rootvel, flingtarget, flingcf, nil)
+                                UpdateTransforms(ReanimCharacter, RootPart, rootcf, rootvel, flingtarget, flingcf)
                         end
                 end
         end
