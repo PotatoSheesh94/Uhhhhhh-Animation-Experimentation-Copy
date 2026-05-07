@@ -4851,12 +4851,7 @@ function LimbReanimator.Start()
                                                         if rcMotor and rcMotor:IsA("Motor6D") then
                                                                 local newCF = v.C0 * rcMotor.Transform * v.C1:Inverse()
                                                                 if dt ~= nil then
-                                                                        if map.CFrame and dt > 0 then
-                                                                                local alpha = 1 - math.exp(-8 * dt)
-                                                                                map.CFrame = map.CFrame:Lerp(newCF, alpha)
-                                                                        else
-                                                                                map.CFrame = newCF
-                                                                        end
+                                                                        map.CFrame = newCF
                                                                 end
                                                         end
                                                 end
@@ -4947,7 +4942,7 @@ function LimbReanimator.Start()
                                 if LimbReanimator.Mode == 3 then
                                         local targetCF = RCRootPart.CFrame
                                         if smoothedRootCF then
-                                                smoothedRootCF = smoothedRootCF:Lerp(targetCF, 1 - math.exp(-25 * (1/60)))
+                                                smoothedRootCF = smoothedRootCF:Lerp(targetCF, 1 - math.exp(-80 * (1/60)))
                                         else
                                                 smoothedRootCF = targetCF
                                         end
@@ -4999,7 +4994,7 @@ function LimbReanimator.Start()
                                         if _rchrp then
                                                 local targetCF = _rchrp.CFrame
                                                 if smoothedRootCF and heartbeatDt > 0 then
-                                                        smoothedRootCF = smoothedRootCF:Lerp(targetCF, 1 - math.exp(-25 * heartbeatDt))
+                                                        smoothedRootCF = smoothedRootCF:Lerp(targetCF, 1 - math.exp(-80 * heartbeatDt))
                                                 else
                                                         smoothedRootCF = targetCF
                                                 end
@@ -8138,6 +8133,7 @@ local _MovementStyleIndex = nil
 local CurrentDance = nil
 local _CurrentDance = nil
 local DancePaused = false
+local _soundWasPaused = false
 local OldReanimCharacter = nil
 local _danceItemLabels = {} -- maps dance object -> DancesPage list name label
 
@@ -8149,7 +8145,6 @@ do -- Dance Player Popup
         local _popupDragStart = Vector2.zero
         local _popupDragStartOffset = Vector2.zero
         local _popupDragOffset = Vector2.zero
-        local _soundWasPaused = false
 
         local DancePopupFrame = Instance.new("Frame", UIMainFrame)
         DancePopupFrame.Active = true
@@ -8957,17 +8952,33 @@ local function AddDance(m)
                         UI.CreateText(page, m.Name, 20, Enum.TextXAlignment.Left)
                         UI.CreateText(page, m.Description, 15, Enum.TextXAlignment.Left)
                         local equip, equiptext = UI.CreateButton(page, "Play Dance", 20)
-                        if CurrentDance == m then
-                                equiptext.Text = "Stop Dance"
-                        end
-                        equip.Activated:Connect(function()
-                                if CurrentDance == m then
-                                        equiptext.Text = "Play Dance"
-                                        CurrentDance = nil
-                                else
+                        local function UpdateEquipText()
+                                if CurrentDance == m and not DancePaused then
                                         equiptext.Text = "Stop Dance"
+                                elseif CurrentDance == m and DancePaused then
+                                        equiptext.Text = "Dance"
+                                else
+                                        equiptext.Text = "Play Dance"
+                                end
+                        end
+                        UpdateEquipText()
+                        local equipRSConn = RunService.RenderStepped:Connect(UpdateEquipText)
+                        equip.Destroying:Connect(function() equipRSConn:Disconnect() end)
+                        equip.Activated:Connect(function()
+                                if CurrentDance == m and not DancePaused then
+                                        CurrentDance = nil
+                                elseif CurrentDance == m and DancePaused then
+                                        DancePaused = false
+                                        if _soundWasPaused then
+                                                UISound.DanceMusic:Resume()
+                                                _soundWasPaused = false
+                                        end
+                                else
+                                        DancePaused = false
+                                        _soundWasPaused = false
                                         CurrentDance = m
                                 end
+                                UpdateEquipText()
                         end)
                         UI.CreateSeparator(page)
                         UI.CreateText(page, "* Configuration *", 15, Enum.TextXAlignment.Center)
