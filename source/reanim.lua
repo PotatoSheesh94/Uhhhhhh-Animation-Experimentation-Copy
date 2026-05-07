@@ -4365,7 +4365,12 @@ Util.SetMotor6DTransform = function(motor, transform)
         if motor.MaxVelocity ~= 9e9 then
                 motor.MaxVelocity = 9e9
         end
-        pcall(rawset, motor, "Transform", transform)
+        local origC0 = motor:GetAttribute("_UhhhC0")
+        if origC0 ~= nil then
+                motor.C0 = origC0 * transform
+        else
+                pcall(rawset, motor, "Transform", transform)
+        end
         local _, _, angle = transform:ToEulerAngles(Enum.RotationOrder.ZYX)
         motor:SetDesiredAngle(angle)
         local axis, tangle = transform:ToAxisAngle()
@@ -4374,7 +4379,8 @@ Util.SetMotor6DTransform = function(motor, transform)
         pcall(sethiddenproperty, motor, "ReplicateCurrentAngle6D", newangle)
 end
 Util.SetMotor6DOffset = function(motor, offset)
-        Util.SetMotor6DTransform(motor, motor.C0:Inverse() * offset * motor.C1)
+        local origC0 = motor:GetAttribute("_UhhhC0")
+        Util.SetMotor6DTransform(motor, (origC0 or motor.C0):Inverse() * offset * motor.C1)
 end
 
 Util.ShowPartHitbox = function(part)
@@ -4681,6 +4687,7 @@ function LimbReanimator.Start()
                                                 map.Reference = v
                                                 map.OrigC0 = v.C0
                                                 map.OrigC1 = v.C1
+                                                pcall(function() v:SetAttribute("_UhhhC0", v.C0) end)
                                                 return
                                         end
                                 end
@@ -4849,7 +4856,8 @@ function LimbReanimator.Start()
                                                 if rcContainer then
                                                         local rcMotor = rcContainer:FindFirstChild(v.Name)
                                                         if rcMotor and rcMotor:IsA("Motor6D") then
-                                                                local newCF = v.C0 * rcMotor.Transform * v.C1:Inverse()
+                                                                local _m3origC0 = v:GetAttribute("_UhhhC0") or v.C0
+                                                                local newCF = _m3origC0 * rcMotor.Transform * v.C1:Inverse()
                                                                 if dt ~= nil then
                                                                         if map.CFrame and dt > 0 then
                                                                                 local alpha = 1 - math.exp(-20 * dt)
@@ -5037,7 +5045,7 @@ function LimbReanimator.Start()
                                 if LimbReanimator.UseNaNFling or LimbReanimator.ForceFreefall then
                                         pcall(sethiddenproperty, Humanoid, "NetworkHumanoidState", Enum.HumanoidStateType.Freefall)
                                 else
-                                        pcall(sethiddenproperty, Humanoid, "NetworkHumanoidState", Enum.HumanoidStateType[({"Running", "PlatformStanding", "Jumping", "Ragdoll", "Seated", "Physics"})[math.random(1, 6)]])
+                                        pcall(sethiddenproperty, Humanoid, "NetworkHumanoidState", Enum.HumanoidStateType[({"Running", "PlatformStanding", "Jumping", "Physics"})[math.random(1, 4)]])
                                 end
                                 if LimbReanimator.DisableDeath then
                                         pcall(function()
@@ -10726,21 +10734,29 @@ local d = function()
                         end)
                 end
 
-                -- Overhead BillboardGui tag
+                -- Overhead BillboardGui tag (client-local only: parented to SCREENGUI
+                -- with Adornee, so it is NEVER replicated to the server or visible
+                -- to players not running this same Uhhhhhh script)
+                local _overheadTags = {}  -- [player] = BillboardGui
                 local function AddOverheadTag(player, character)
                         task.spawn(function()
                                 pcall(function()
                                         local head = character:WaitForChild("Head", 5)
                                         if not head or not head.Parent then return end
-                                        local existing = head:FindFirstChild(P2P_TAG .. "_bb")
-                                        if existing then existing:Destroy() end
+                                        -- Remove stale tag if it exists
+                                        if _overheadTags[player] then
+                                                _overheadTags[player]:Destroy()
+                                                _overheadTags[player] = nil
+                                        end
                                         local bb = Instance.new("BillboardGui")
-                                        bb.Name = P2P_TAG .. "_bb"
+                                        bb.Name = P2P_TAG .. "_bb_" .. player.UserId
                                         bb.Size = UDim2.new(0, 240, 0, 28)
                                         bb.StudsOffset = Vector3.new(0, 2.8, 0)
                                         bb.AlwaysOnTop = false
                                         bb.ResetOnSpawn = false
-                                        bb.Parent = head
+                                        bb.Adornee = head
+                                        bb.Parent = SCREENGUI
+                                        _overheadTags[player] = bb
                                         local lbl = Instance.new("TextLabel", bb)
                                         lbl.Size = UDim2.new(1, 0, 1, 0)
                                         lbl.BackgroundTransparency = 1
@@ -10750,6 +10766,15 @@ local d = function()
                                         lbl.TextStrokeTransparency = 0
                                         lbl.Font = Enum.Font.GothamBold
                                         lbl.TextSize = 12
+                                        -- Clean up when player leaves or character is removed
+                                        character.AncestryChanged:Connect(function()
+                                                if not character.Parent then
+                                                        if _overheadTags[player] == bb then
+                                                                bb:Destroy()
+                                                                _overheadTags[player] = nil
+                                                        end
+                                                end
+                                        end)
                                 end)
                         end)
                 end
@@ -10811,6 +10836,93 @@ local d = function()
                         if p ~= Player then WatchOtherPlayer(p) end
                 end
                 Players.PlayerAdded:Connect(function(p) WatchOtherPlayer(p) end)
+                -- Clean up overhead tags when a player leaves
+                Players.PlayerRemoving:Connect(function(p)
+                        if _overheadTags[p] then
+                                _overheadTags[p]:Destroy()
+                                _overheadTags[p] = nil
+                        end
+                end)
+
+                -- ============================================================
+                -- Click-to-Outline (client-local only)
+                -- Left-click on any Uhhhhhh player in 3D to toggle a cyan outline.
+                -- Highlight is parented to SCREENGUI so it never replicates.
+                -- ============================================================
+                local _charOutlines = {}
+                local OUTLINE_CLR = Color3.new(0, 0.82, 1)
+
+                local function SetCharOutline(char, on)
+                        if not char then return end
+                        if on then
+                                if _charOutlines[char] then return end
+                                local h = Instance.new("Highlight")
+                                h.Adornee = char
+                                h.FillColor = OUTLINE_CLR
+                                h.FillTransparency = 0.72
+                                h.OutlineColor = OUTLINE_CLR
+                                h.OutlineTransparency = 0
+                                h.Parent = SCREENGUI
+                                _charOutlines[char] = h
+                                char.AncestryChanged:Connect(function()
+                                        if not char.Parent then
+                                                if _charOutlines[char] then
+                                                        _charOutlines[char]:Destroy()
+                                                        _charOutlines[char] = nil
+                                                end
+                                        end
+                                end)
+                        else
+                                if _charOutlines[char] then
+                                        _charOutlines[char]:Destroy()
+                                        _charOutlines[char] = nil
+                                end
+                        end
+                end
+
+                local function IsCharOutlined(char)
+                        return _charOutlines[char] ~= nil
+                end
+
+                -- 3D left-click detection
+                UserInputService.InputBegan:Connect(function(input, gpe)
+                        if gpe then return end
+                        if input.UserInputType ~= Enum.UserInputType.MouseButton1 then return end
+                        local cam = workspace.CurrentCamera
+                        if not cam then return end
+                        local ray = cam:ViewportPointToRay(input.Position.X, input.Position.Y)
+                        local rcp = RaycastParams.new()
+                        rcp.FilterDescendantsInstances = { Player.Character or workspace }
+                        rcp.FilterType = Enum.RaycastFilterType.Exclude
+                        local result = workspace:Raycast(ray.Origin, ray.Direction * 512, rcp)
+                        if not result then return end
+                        local hit = result.Instance
+                        if not hit then return end
+                        local hitChar = nil
+                        local inst = hit
+                        while inst and inst ~= workspace do
+                                if inst:IsA("Model") and inst:FindFirstChildOfClass("Humanoid") then
+                                        hitChar = inst
+                                        break
+                                end
+                                inst = inst.Parent
+                        end
+                        if not hitChar then return end
+                        local sv = GetP2PMarker(hitChar)
+                        if not sv then return end
+                        local _, _, valid = P2PDecode(sv.Value)
+                        if not valid then return end
+                        SetCharOutline(hitChar, not IsCharOutlined(hitChar))
+                        local pname = ""
+                        for _, p in Players:GetPlayers() do
+                                if p.Character == hitChar then pname = p.Name break end
+                        end
+                        Util.UINotify(
+                                IsCharOutlined(hitChar)
+                                and ("Outline ON: " .. pname)
+                                or  ("Outline OFF: " .. pname)
+                        )
+                end)
 
                 -- ============================================================
                 -- Players Panel UI
@@ -10926,7 +11038,7 @@ local d = function()
                 SyncCtx.Active = true
                 SyncCtx.AnchorPoint = Vector2.new(0, 0)
                 SyncCtx.Position = UDim2.new(0, 0, 0, 0)
-                SyncCtx.Size = UDim2.new(0, 204, 0, 88)
+                SyncCtx.Size = UDim2.new(0, 204, 0, 120)
                 SyncCtx.BackgroundTransparency = 0
                 SyncCtx.BackgroundColor3 = Color3.new(0, 0, 0)
                 SyncCtx.BorderSizePixel = 0
@@ -10978,13 +11090,25 @@ local d = function()
                 Stylize(SyncCtxDo)
                 RegisterTextLabel(SyncCtxDo)
 
+                local SyncCtxOutline = Util.Instance("TextButton", SyncCtx)
+                SyncCtxOutline.AnchorPoint = Vector2.new(1, 0)
+                SyncCtxOutline.Position = UDim2.new(1, -8, 0, 50)
+                SyncCtxOutline.Size = UDim2.new(0.5, -12, 0, 28)
+                SyncCtxOutline.BackgroundTransparency = 0
+                SyncCtxOutline.BorderSizePixel = 0
+                SyncCtxOutline.Text = "Outline OFF"
+                SyncCtxOutline.Font = Enum.Font.GothamBold
+                SyncCtxOutline.TextSize = 11
+                SyncCtxOutline.ZIndex = 22
+                Stylize(SyncCtxOutline)
+                RegisterTextLabel(SyncCtxOutline)
+
                 local SyncCtxCancel = Util.Instance("TextButton", SyncCtx)
-                SyncCtxCancel.AnchorPoint = Vector2.new(1, 0)
-                SyncCtxCancel.Position = UDim2.new(1, -8, 0, 50)
-                SyncCtxCancel.Size = UDim2.new(0.5, -12, 0, 28)
+                SyncCtxCancel.Position = UDim2.new(0, 8, 0, 84)
+                SyncCtxCancel.Size = UDim2.new(1, -16, 0, 28)
                 SyncCtxCancel.BackgroundTransparency = 0
                 SyncCtxCancel.BorderSizePixel = 0
-                SyncCtxCancel.Text = "Cancel"
+                SyncCtxCancel.Text = "Close"
                 SyncCtxCancel.Font = Enum.Font.GothamBold
                 SyncCtxCancel.TextSize = 11
                 SyncCtxCancel.ZIndex = 22
@@ -10995,6 +11119,15 @@ local d = function()
                 SyncCtxCancel.Activated:Connect(function()
                         SyncCtx.Visible = false
                         _syncCtxTarget = nil
+                end)
+                SyncCtxOutline.Activated:Connect(function()
+                        local target = _syncCtxTarget
+                        if not target then return end
+                        local char = target.Character
+                        if not char then return end
+                        SetCharOutline(char, not IsCharOutlined(char))
+                        SyncCtxOutline.Text = IsCharOutlined(char) and "Outline ON" or "Outline OFF"
+                        SyncCtxOutline.TextColor3 = IsCharOutlined(char) and Color3.new(0, 0.82, 1) or nil
                 end)
                 SyncCtxDo.Activated:Connect(function()
                         local target = _syncCtxTarget
@@ -11101,6 +11234,9 @@ local d = function()
                                         SyncCtxName.Text = cp.Name .. (cok and "" or " [sync disabled]")
                                         SyncCtxInfo.Text = cname ~= "" and ("Dancing: " .. cname) or "Not dancing"
                                         SyncCtxDo.Text = cok and "Sync Dance" or "Sync Disabled"
+                                        local outlined = cp.Character and IsCharOutlined(cp.Character)
+                                        SyncCtxOutline.Text = outlined and "Outline ON" or "Outline OFF"
+                                        SyncCtxOutline.TextColor3 = outlined and Color3.new(0, 0.82, 1) or Color3.new(1, 1, 1)
                                         local fp = PnlFrame.AbsolutePosition
                                         local fs = PnlFrame.AbsoluteSize
                                         local sx = fp.X + fs.X + 6
