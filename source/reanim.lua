@@ -8282,12 +8282,11 @@ do -- Dance Player Popup
                 return b
         end
 
-        -- 5 buttons: Prev, Play/Pause, Next, Loop, Shuffle — 50px center-to-center spacing
-        local DancePopupPrev      = MakeCtrlBtn("|<",  -100)
-        local DancePopupPlayPause = MakeCtrlBtn("||",   -50)
-        local DancePopupNext      = MakeCtrlBtn(">|",     0)
-        local DancePopupLoop      = MakeCtrlBtn("\xe2\x86\xbb",  50)
-        local DancePopupShuffle   = MakeCtrlBtn("~",    100)
+        -- 4 buttons: Prev, Play/Pause, Next, Shuffle — evenly spaced
+        local DancePopupPrev      = MakeCtrlBtn("|<",  -75)
+        local DancePopupPlayPause = MakeCtrlBtn("||",  -25)
+        local DancePopupNext      = MakeCtrlBtn(">|",   25)
+        local DancePopupShuffle   = MakeCtrlBtn("~",    75)
 
         local function GetShownPos()
                 return UDim2.new(0.5, _popupDragOffset.X, 1, -20 + _popupDragOffset.Y)
@@ -8363,14 +8362,6 @@ do -- Dance Player Popup
                 HideDancePopup()
         end)
 
-        DancePopupLoop.Activated:Connect(function()
-                local dance = CurrentDance or _popupLastDance
-                if not dance then return end
-                DanceLoop[dance] = not DanceLoop[dance]
-                if type(SaveData.DanceLoop) ~= "table" then SaveData.DanceLoop = {} end
-                SaveData.DanceLoop[dance.Hash] = DanceLoop[dance]
-        end)
-
         DancePopupShuffle.Activated:Connect(function()
                 DanceShuffle = not DanceShuffle
                 SaveData.DanceShuffle = DanceShuffle
@@ -8430,9 +8421,6 @@ do -- Dance Player Popup
         AddToRenderStep(function()
                 -- Keep play/pause button text in sync with state
                 DancePopupPlayPause.Text = DancePaused and ">" or "||"
-                -- Keep loop button in sync: ↻ = looping, 1x = play once
-                local _loopDance = CurrentDance or _popupLastDance
-                DancePopupLoop.Text = (_loopDance and DanceLoop[_loopDance] == false) and "1x" or "\xe2\x86\xbb"
                 -- Keep shuffle button in sync: ~~ = on, ~ = off
                 DancePopupShuffle.Text = DanceShuffle and "~~" or "~"
                 -- Update dance list labels to reflect playing/paused state
@@ -8471,7 +8459,7 @@ do -- Dance Queue Panel
         local _queueDragStart = Vector2.zero
         local _queueDragStartOffset = Vector2.zero
         local _queueDragOffset = Vector2.zero
-        local QUEUE_FULL_H = 204
+        local QUEUE_FULL_H = 240
         local QUEUE_MIN_H  = 38
 
         local QueueFrame = Instance.new("Frame", UIMainFrame)
@@ -8562,6 +8550,19 @@ do -- Dance Queue Panel
         QueueSep2.BackgroundColor3 = Color3.new(1, 1, 1)
         QueueSep2.BorderSizePixel = 0
         QueueSep2.ZIndex = 11
+
+        local QueueStartBtn = Util.Instance("TextButton", QueueFrame)
+        QueueStartBtn.AnchorPoint = Vector2.new(0.5, 0)
+        QueueStartBtn.Position = UDim2.new(0.5, 0, 0, 167)
+        QueueStartBtn.Size = UDim2.new(1, -16, 0, 26)
+        QueueStartBtn.BackgroundTransparency = 0
+        QueueStartBtn.BorderSizePixel = 0
+        QueueStartBtn.Text = "\xe2\x96\xb6 Start Queue"
+        QueueStartBtn.Font = Enum.Font.GothamBold
+        QueueStartBtn.TextSize = 12
+        QueueStartBtn.ZIndex = 12
+        Stylize(QueueStartBtn)
+        RegisterTextLabel(QueueStartBtn)
 
         local QueueModeBtn = Util.Instance("TextButton", QueueFrame)
         QueueModeBtn.AnchorPoint = Vector2.new(0, 1)
@@ -8749,6 +8750,16 @@ do -- Dance Queue Panel
         end)
 
         QueueClose.Activated:Connect(function() HideQueuePanel() end)
+
+        QueueStartBtn.Activated:Connect(function()
+                if #DanceQueue == 0 then return end
+                DanceQueueMode = true
+                _queuePlayIndex = 1
+                CurrentDance = DanceQueue[1]
+                DancePaused = false
+                SaveData.DanceQueueMode = DanceQueueMode
+                RebuildQueueList()
+        end)
 
         QueueModeBtn.Activated:Connect(function()
                 DanceQueueMode = not DanceQueueMode
