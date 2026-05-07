@@ -4371,6 +4371,7 @@ Util.SetMotor6DTransform = function(motor, transform)
         local newangle = axis * tangle
         pcall(sethiddenproperty, motor, "ReplicateCurrentOffset6D", transform.Position)
         pcall(sethiddenproperty, motor, "ReplicateCurrentAngle6D", newangle)
+        motor.Transform = transform
 end
 Util.SetMotor6DOffset = function(motor, offset)
         Util.SetMotor6DTransform(motor, motor.C0:Inverse() * offset * motor.C1)
@@ -4794,6 +4795,18 @@ function LimbReanimator.Start()
         end)
         Player.CharacterAdded:Wait()
         Reanimate.CreateCharacter(InitCFrame)
+
+        Util.LinkDestroyI2C(Reanimate.Character, RunService.PreAnimation:Connect(function()
+                for _, map in LimbMapping do
+                        local v = map.Reference
+                        if v and map.CFrame then
+                                Util.SetMotor6DOffset(v, map.CFrame)
+                        end
+                end
+                for _, v in UnknownMotor6Ds do
+                        Util.SetMotor6DTransform(v, CFrame.identity)
+                end
+        end))
 
         local lastrep = 0
 
