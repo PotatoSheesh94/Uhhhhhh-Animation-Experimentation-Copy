@@ -4986,25 +4986,33 @@ function LimbReanimator.Start()
                                         Util.SetMotor6DTransform(v, CFrame.identity)
                                 else
                                         if LimbReanimator.Mode == 3 then
-                                                -- Read motor transform from RC (driven by RC's Animator).
-                                                -- Directly copy the transform each frame (no lerp) to prevent
-                                                -- lag/glitch on the client.  Use SetMotor6DTransform so that
-                                                -- C0 is set (replicated) AND ReplicateCurrentAngle6D is set
-                                                -- so the server and other players see the animations.
-                                                local rcContainer = ReanimCharacter:FindFirstChild(map.RPart0 == "ROOT" and "HumanoidRootPart" or map.RPart0)
-                                                if rcContainer then
-                                                        local rcMotor = rcContainer:FindFirstChild(v.Name)
-                                                        if rcMotor and rcMotor:IsA("Motor6D") then
-                                                                if dt ~= nil then
-                                                                        map.CFrame = rcMotor.Transform
-                                                                end
+                                                -- Compute from RC part world-space positions so ALL animations
+                                                -- are captured: both Animator-driven and dances/movesets that
+                                                -- set part CFrames directly (not through the Animator).
+                                                -- No lerp to prevent client glitch.
+                                                -- SetMotor6DOffset updates C0 (replicated) and
+                                                -- ReplicateCurrentAngle6D so server/others see animations.
+                                                local cf = CFrame.identity
+                                                local p0, p1 = ReanimCharacter:FindFirstChild(map.RPart0), ReanimCharacter:FindFirstChild(map.RPart1)
+                                                if map.RPart0 == "ROOT" then
+                                                        p0 = RootPart
+                                                end
+                                                if p0 and p1 then
+                                                        if map.Type == 1 then
+                                                                cf = p0.CFrame:ToObjectSpace(p1.CFrame)
+                                                        end
+                                                        if map.Type == 2 then
+                                                                local offset = map.Offset or CFrame.identity
+                                                                local c0, c1 = CFrame.new(map.C0), CFrame.new(map.C1)
+                                                                local transform = offset * (p0.CFrame * c0):ToObjectSpace(p1.CFrame * c1) * offset:Inverse()
+                                                                local baseC0 = map.OrigC0 or v.C0
+                                                                cf = baseC0 * transform * v.C1:Inverse()
                                                         end
                                                 end
-                                                if map.CFrame then
-                                                        local transform = map.CFrame
-                                                        pcall(rawset, v, "Transform", transform)
-                                                        Util.SetMotor6DTransform(v, transform)
+                                                if dt ~= nil then
+                                                        map.CFrame = cf
                                                 end
+                                                Util.SetMotor6DOffset(v, map.CFrame)
                                         else
                                                 local cf = CFrame.identity
                                                 local p0, p1 = ReanimCharacter:FindFirstChild(map.RPart0), ReanimCharacter:FindFirstChild(map.RPart1)
