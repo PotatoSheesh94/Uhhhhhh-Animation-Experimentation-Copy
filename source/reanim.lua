@@ -4843,35 +4843,48 @@ function LimbReanimator.Start()
                                 if flingtarget then
                                         Util.SetMotor6DTransform(v, CFrame.identity)
                                 else
-                                        local cf = CFrame.identity
-                                        local p0, p1 = ReanimCharacter:FindFirstChild(map.RPart0), ReanimCharacter:FindFirstChild(map.RPart1)
-                                        if map.RPart0 == "ROOT" then
-                                                p0 = RootPart
-                                        end
-                                        if p0 and p1 then
-                                                if map.Type == 1 then
-                                                        cf = p0.CFrame:ToObjectSpace(p1.CFrame)
+                                        if LimbReanimator.Mode == 3 then
+                                                local rcContainer = ReanimCharacter:FindFirstChild(map.RPart0 == "ROOT" and "HumanoidRootPart" or map.RPart0)
+                                                if rcContainer then
+                                                        local rcMotor = rcContainer:FindFirstChild(v.Name)
+                                                        if rcMotor and rcMotor:IsA("Motor6D") then
+                                                                map.CFrame = v.C0 * rcMotor.Transform * v.C1:Inverse()
+                                                        end
                                                 end
-                                                if map.Type == 2 then
-                                                        local offset = map.Offset or CFrame.identity
-                                                        local c0, c1 = CFrame.new(map.C0), CFrame.new(map.C1)
-                                                        local transform = offset * (p0.CFrame * c0):ToObjectSpace(p1.CFrame * c1) * offset:Inverse()
-                                                        local baseC0 = map.OrigC0 or v.C0
-                                                        cf = baseC0 * transform * v.C1:Inverse()
+                                                if map.CFrame then
+                                                        Util.SetMotor6DOffset(v, map.CFrame)
                                                 end
-                                        end
-                                        if LimbReanimator.Mode == 3 or dorep or not map.CFrame then
-                                                if map.CFrame and dt and dt > 0 then
-                                                        local alpha = 1 - math.exp(-60 * dt)
-                                                        map.CFrame = map.CFrame:Lerp(cf, alpha)
-                                                        map.BlendTimer = nil
-                                                else
-                                                        map.CFrame = cf
-                                                        map.BlendTimer = nil
-                                                        map.PosVelocity = nil
+                                        else
+                                                local cf = CFrame.identity
+                                                local p0, p1 = ReanimCharacter:FindFirstChild(map.RPart0), ReanimCharacter:FindFirstChild(map.RPart1)
+                                                if map.RPart0 == "ROOT" then
+                                                        p0 = RootPart
                                                 end
+                                                if p0 and p1 then
+                                                        if map.Type == 1 then
+                                                                cf = p0.CFrame:ToObjectSpace(p1.CFrame)
+                                                        end
+                                                        if map.Type == 2 then
+                                                                local offset = map.Offset or CFrame.identity
+                                                                local c0, c1 = CFrame.new(map.C0), CFrame.new(map.C1)
+                                                                local transform = offset * (p0.CFrame * c0):ToObjectSpace(p1.CFrame * c1) * offset:Inverse()
+                                                                local baseC0 = map.OrigC0 or v.C0
+                                                                cf = baseC0 * transform * v.C1:Inverse()
+                                                        end
+                                                end
+                                                if dorep or not map.CFrame then
+                                                        if map.CFrame and dt and dt > 0 then
+                                                                local alpha = 1 - math.exp(-60 * dt)
+                                                                map.CFrame = map.CFrame:Lerp(cf, alpha)
+                                                                map.BlendTimer = nil
+                                                        else
+                                                                map.CFrame = cf
+                                                                map.BlendTimer = nil
+                                                                map.PosVelocity = nil
+                                                        end
+                                                end
+                                                Util.SetMotor6DOffset(v, map.CFrame)
                                         end
-                                        Util.SetMotor6DOffset(v, map.CFrame)
                                 end
                         end
                 end
@@ -4964,6 +4977,10 @@ function LimbReanimator.Start()
                         end
                         if Character and Humanoid and RootPart then
                                 local heartbeatDt = RunService.Heartbeat:Wait()
+                                if LimbReanimator.Mode == 3 and ReanimCharacter then
+                                        local _rchrp = ReanimCharacter:FindFirstChild("HumanoidRootPart")
+                                        if _rchrp then rootcf = _rchrp.CFrame end
+                                end
                                 local t = os.clock()
                                 local flingtarget = LimbReanimator.FlingTargets[1]
                                 if flingtarget then
