@@ -5004,10 +5004,12 @@ function LimbReanimator.Start()
                                                 end
                                                 if map.CFrame then
                                                         local transform = map.CFrame
+                                                        -- Only rawset Transform + hidden properties.
+                                                        -- Do NOT also set C0 here: C0 * Transform would
+                                                        -- double-apply every rotation, causing the
+                                                        -- exaggerated/glitchy movement the user sees.
+                                                        -- ReplicateCurrentAngle6D handles replication.
                                                         pcall(rawset, v, "Transform", transform)
-                                                        if map.OrigC0 then
-                                                                pcall(function() v.C0 = map.OrigC0 * transform end)
-                                                        end
                                                         local axis, tangle = transform:ToAxisAngle()
                                                         local newangle = axis * tangle
                                                         pcall(sethiddenproperty, v, "ReplicateCurrentOffset6D", transform.Position)
