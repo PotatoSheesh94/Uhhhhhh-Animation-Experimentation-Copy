@@ -4608,6 +4608,7 @@ function LimbReanimator.Config(parent)
 end
 function LimbReanimator.Start()
         local LimbNames = {"Head", "Torso", "Left Arm", "Right Arm", "Left Leg", "Right Leg"}
+        local smoothedRootCF = nil
         local rootposition = Vector3.new(
                 math.random(-65536, 65536),
                 math.random(-70000, -60000),
@@ -4850,7 +4851,7 @@ function LimbReanimator.Start()
                                                         if rcMotor and rcMotor:IsA("Motor6D") then
                                                                 local newCF = v.C0 * rcMotor.Transform * v.C1:Inverse()
                                                                 if map.CFrame and dt and dt > 0 then
-                                                                        local alpha = 1 - math.exp(-60 * dt)
+                                                                        local alpha = 1 - math.exp(-12 * dt)
                                                                         map.CFrame = map.CFrame:Lerp(newCF, alpha)
                                                                 else
                                                                         map.CFrame = newCF
@@ -4940,7 +4941,13 @@ function LimbReanimator.Start()
                                         rootcf = CFrame.new(RCRootPart.Position + Vector3.new(0, -16, 0))
                                 end
                                 if LimbReanimator.Mode == 3 then
-                                        rootcf = RCRootPart.CFrame
+                                        local targetCF = RCRootPart.CFrame
+                                        if smoothedRootCF then
+                                                smoothedRootCF = smoothedRootCF:Lerp(targetCF, 1 - math.exp(-25 * (1/60)))
+                                        else
+                                                smoothedRootCF = targetCF
+                                        end
+                                        rootcf = smoothedRootCF
                                 end
                                 if LimbReanimator.Mode == 4 then
                                         rootcf = RCTorso.CFrame
@@ -4985,7 +4992,15 @@ function LimbReanimator.Start()
                                 local heartbeatDt = RunService.Heartbeat:Wait()
                                 if LimbReanimator.Mode == 3 and ReanimCharacter then
                                         local _rchrp = ReanimCharacter:FindFirstChild("HumanoidRootPart")
-                                        if _rchrp then rootcf = _rchrp.CFrame end
+                                        if _rchrp then
+                                                local targetCF = _rchrp.CFrame
+                                                if smoothedRootCF and heartbeatDt > 0 then
+                                                        smoothedRootCF = smoothedRootCF:Lerp(targetCF, 1 - math.exp(-25 * heartbeatDt))
+                                                else
+                                                        smoothedRootCF = targetCF
+                                                end
+                                                rootcf = smoothedRootCF
+                                        end
                                 end
                                 local t = os.clock()
                                 local flingtarget = LimbReanimator.FlingTargets[1]
