@@ -8135,6 +8135,7 @@ local _CurrentDance = nil
 local DancePaused = false
 local _soundWasPaused = false
 local DanceLoop = {}
+local DanceShuffle = false
 local OldReanimCharacter = nil
 local _danceItemLabels = {} -- maps dance object -> DancesPage list name label
 
@@ -8248,23 +8249,24 @@ do -- Dance Player Popup
                 local b = Util.Instance("TextButton", DancePopupFrame)
                 b.AnchorPoint = Vector2.new(0.5, 0)
                 b.Position = UDim2.new(0.5, xOff, 0, 108)
-                b.Size = UDim2.new(0, 56, 0, 36)
+                b.Size = UDim2.new(0, 48, 0, 36)
                 b.BackgroundTransparency = 0
                 b.BorderSizePixel = 0
                 b.Text = label
                 b.Font = Enum.Font.GothamBold
-                b.TextSize = 15
+                b.TextSize = 14
                 b.ZIndex = 12
                 Stylize(b)
                 RegisterTextLabel(b)
                 return b
         end
 
-        -- 4 buttons: Prev, Play/Pause, Next, Loop — 64px center-to-center spacing
-        local DancePopupPrev      = MakeCtrlBtn("|<", -96)
-        local DancePopupPlayPause = MakeCtrlBtn("||", -32)
-        local DancePopupNext      = MakeCtrlBtn(">|",  32)
-        local DancePopupLoop      = MakeCtrlBtn("\xe2\x86\xbb",  96)
+        -- 5 buttons: Prev, Play/Pause, Next, Loop, Shuffle — 50px center-to-center spacing
+        local DancePopupPrev      = MakeCtrlBtn("|<",  -100)
+        local DancePopupPlayPause = MakeCtrlBtn("||",   -50)
+        local DancePopupNext      = MakeCtrlBtn(">|",     0)
+        local DancePopupLoop      = MakeCtrlBtn("\xe2\x86\xbb",  50)
+        local DancePopupShuffle   = MakeCtrlBtn("~",    100)
 
         local function GetShownPos()
                 return UDim2.new(0.5, _popupDragOffset.X, 1, -20 + _popupDragOffset.Y)
@@ -8348,6 +8350,11 @@ do -- Dance Player Popup
                 SaveData.DanceLoop[dance.Hash] = DanceLoop[dance]
         end)
 
+        DancePopupShuffle.Activated:Connect(function()
+                DanceShuffle = not DanceShuffle
+                SaveData.DanceShuffle = DanceShuffle
+        end)
+
         DancePopupPlayPause.Activated:Connect(function()
                 if DancePaused then
                         DancePaused = false
@@ -8369,9 +8376,14 @@ do -- Dance Player Popup
 
         DancePopupPrev.Activated:Connect(function()
                 if #DanceableDances == 0 then return end
-                local cur = CurrentDance or _popupLastDance
-                local idx = (cur and table.find(DanceableDances, cur)) or 1
-                idx = ((idx - 2) % #DanceableDances) + 1
+                local idx
+                if DanceShuffle then
+                        idx = math.random(#DanceableDances)
+                else
+                        local cur = CurrentDance or _popupLastDance
+                        idx = (cur and table.find(DanceableDances, cur)) or 1
+                        idx = ((idx - 2) % #DanceableDances) + 1
+                end
                 CurrentDance = DanceableDances[idx]
                 DancePaused = false
                 _soundWasPaused = false
@@ -8380,9 +8392,14 @@ do -- Dance Player Popup
 
         DancePopupNext.Activated:Connect(function()
                 if #DanceableDances == 0 then return end
-                local cur = CurrentDance or _popupLastDance
-                local idx = (cur and table.find(DanceableDances, cur)) or 0
-                idx = (idx % #DanceableDances) + 1
+                local idx
+                if DanceShuffle then
+                        idx = math.random(#DanceableDances)
+                else
+                        local cur = CurrentDance or _popupLastDance
+                        idx = (cur and table.find(DanceableDances, cur)) or 0
+                        idx = (idx % #DanceableDances) + 1
+                end
                 CurrentDance = DanceableDances[idx]
                 DancePaused = false
                 _soundWasPaused = false
@@ -8395,6 +8412,8 @@ do -- Dance Player Popup
                 -- Keep loop button in sync: ↻ = looping, 1x = play once
                 local _loopDance = CurrentDance or _popupLastDance
                 DancePopupLoop.Text = (_loopDance and DanceLoop[_loopDance] == false) and "1x" or "\xe2\x86\xbb"
+                -- Keep shuffle button in sync: ~~ = on, ~ = off
+                DancePopupShuffle.Text = DanceShuffle and "~~" or "~"
                 -- Update dance list labels to reflect playing/paused state
                 for dance, label in _danceItemLabels do
                         if dance == CurrentDance then
@@ -8422,6 +8441,7 @@ end
 if type(SaveData.MovesetIndex) == "number" then
         MovementStyleIndex = SaveData.MovesetIndex
 end
+DanceShuffle = not not SaveData.DanceShuffle
 
 local MovesetsPage = UI.CreateItemListPage()
 MovesetsPage.ZIndex = 1
@@ -9041,6 +9061,18 @@ local function AddDance(m)
                                 SaveData.DanceLoop[m.Hash] = DanceLoop[m]
                                 UpdateLoopText()
                         end)
+                        local shufflebtn, shuffletext = UI.CreateButton(page, "Shuffle: OFF", 20)
+                        local function UpdateShuffleText()
+                                shuffletext.Text = DanceShuffle and "Shuffle: ON" or "Shuffle: OFF"
+                        end
+                        UpdateShuffleText()
+                        local shuffleRSConn = RunService.RenderStepped:Connect(UpdateShuffleText)
+                        shufflebtn.Destroying:Connect(function() shuffleRSConn:Disconnect() end)
+                        shufflebtn.Activated:Connect(function()
+                                DanceShuffle = not DanceShuffle
+                                SaveData.DanceShuffle = DanceShuffle
+                                UpdateShuffleText()
+                        end)
                         UI.CreateSeparator(page)
                         UI.CreateText(page, "* Configuration *", 15, Enum.TextXAlignment.Center)
                         m.Config(page)
@@ -9164,7 +9196,11 @@ task.spawn(function()
                                                         end
                                                 else
                                                         if _danceInitialized and not DanceLoop[_CurrentDance] then
-                                                                CurrentDance = nil
+                                                                if DanceShuffle and #DanceableDances > 0 then
+                                                                        CurrentDance = DanceableDances[math.random(#DanceableDances)]
+                                                                else
+                                                                        CurrentDance = nil
+                                                                end
                                                         elseif AssetEnsure(_CurrentDance.Assets) then
                                                                 _danceInitialized = true
                                                                 ReanimCharacter:SetAttribute("IsDancing", true)
