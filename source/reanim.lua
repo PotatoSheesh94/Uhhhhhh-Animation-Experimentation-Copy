@@ -4848,7 +4848,13 @@ function LimbReanimator.Start()
                                                 if rcContainer then
                                                         local rcMotor = rcContainer:FindFirstChild(v.Name)
                                                         if rcMotor and rcMotor:IsA("Motor6D") then
-                                                                map.CFrame = v.C0 * rcMotor.Transform * v.C1:Inverse()
+                                                                local newCF = v.C0 * rcMotor.Transform * v.C1:Inverse()
+                                                                if map.CFrame and dt and dt > 0 then
+                                                                        local alpha = 1 - math.exp(-60 * dt)
+                                                                        map.CFrame = map.CFrame:Lerp(newCF, alpha)
+                                                                else
+                                                                        map.CFrame = newCF
+                                                                end
                                                         end
                                                 end
                                                 if map.CFrame then
