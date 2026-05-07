@@ -4695,8 +4695,15 @@ function LimbReanimator.Start()
                         end
                         table.insert(UnknownMotor6Ds, v)
                 elseif v:IsA("Animator") then
-                        task.defer(v.Destroy, v)
+                        -- In Mode 3 we keep the Animator alive so Roblox replicates joint
+                        -- angles natively; every other mode destroys it.
+                        if LimbReanimator.Mode ~= 3 then
+                                task.defer(v.Destroy, v)
+                        end
                 elseif v:IsA("LocalScript") and v.Parent == Player.Character then
+                        -- Keep "Animate" script alive in Mode 3 so walking/idle animations
+                        -- drive the motor transforms and replicate to the server naturally.
+                        if LimbReanimator.Mode == 3 and v.Name == "Animate" then return end
                         v.Enabled = false
                         v:GetPropertyChangedSignal("Enabled"):Connect(function()
                                 if v.Enabled then v.Enabled = false end
@@ -4786,7 +4793,10 @@ function LimbReanimator.Start()
                 local humanoid = character:WaitForChild("Humanoid", 5)
                 local stupid = humanoid and humanoid:FindFirstChildWhichIsA("Animator")
                 if stupid then
-                        stupid:Destroy()
+                        -- Mode 3 keeps the Animator so Roblox replicates joint angles natively
+                        if LimbReanimator.Mode ~= 3 then
+                                stupid:Destroy()
+                        end
                 end
                 if not Reanimate.UseLoadAnimationHook then
                         stupid = character:FindFirstChild("Animate")
@@ -4794,7 +4804,10 @@ function LimbReanimator.Start()
                                 character.ChildAdded:Wait()
                                 stupid = character:FindFirstChild("Animate")
                         end
-                        stupid:Destroy()
+                        -- Mode 3 keeps the Animate script so walk/idle animations drive motors
+                        if LimbReanimator.Mode ~= 3 then
+                                stupid:Destroy()
+                        end
                 end
                 if LimbReanimator.NoSounds then
                         for _, v in character:GetDescendants() do
@@ -4823,7 +4836,16 @@ function LimbReanimator.Start()
                         else
                                 local appliedCF = rootcf
                                 RootPart.CFrame = appliedCF + Vector3.new(0, 0, math.random(0, 1) * 0.005)
-                                RootPart.Velocity, RootPart.RotVelocity = rootvel, Vector3.zero
+                                if LimbReanimator.Mode == 3 then
+                                        -- Mirror RC velocity so the Animate script detects movement and
+                                        -- plays walk/run animations instead of treating the character as idle.
+                                        local rchrp = ReanimCharacter and ReanimCharacter:FindFirstChild("HumanoidRootPart")
+                                        local rcvel = rchrp and rchrp.AssemblyLinearVelocity or rootvel
+                                        RootPart.Velocity, RootPart.RotVelocity = rcvel, Vector3.zero
+                                        pcall(function() RootPart.AssemblyLinearVelocity = rcvel end)
+                                else
+                                        RootPart.Velocity, RootPart.RotVelocity = rootvel, Vector3.zero
+                                end
                                 pcall(sethiddenproperty, RootPart, "PhysicsRepRootPart", nil)
                         end
                 end
@@ -4853,28 +4875,13 @@ function LimbReanimator.Start()
                                         Util.SetMotor6DTransform(v, CFrame.identity)
                                 else
                                         if LimbReanimator.Mode == 3 then
-                                                local rcContainer = ReanimCharacter:FindFirstChild(map.RPart0 == "ROOT" and "HumanoidRootPart" or map.RPart0)
-                                                if rcContainer then
-                                                        local rcMotor = rcContainer:FindFirstChild(v.Name)
-                                                        if rcMotor and rcMotor:IsA("Motor6D") then
-                                                                local targetTransform = rcMotor.Transform
-                                                                if dt ~= nil then
-                                                                        if map.CFrame and dt > 0 then
-                                                                                local alpha = 1 - math.exp(-20 * dt)
-                                                                                map.CFrame = map.CFrame:Lerp(targetTransform, alpha)
-                                                                        else
-                                                                                map.CFrame = targetTransform
-                                                                        end
-                                                                end
-                                                        end
-                                                end
-                                                if map.CFrame then
-                                                        local transform = map.CFrame
-                                                        pcall(rawset, v, "Transform", transform)
-                                                        local axis, tangle = transform:ToAxisAngle()
-                                                        local newangle = axis * tangle
-                                                        pcall(sethiddenproperty, v, "ReplicateCurrentOffset6D", transform.Position)
-                                                        pcall(sethiddenproperty, v, "ReplicateCurrentAngle6D", newangle)
+                                                -- Mode 3 keeps the real character's Animator alive.
+                                                -- The Animator drives Motor6D.Transform each frame and Roblox
+                                                -- replicates joint angles to the server natively – no manual
+                                                -- transform copy or ReplicateCurrentAngle6D needed here.
+                                                -- Restore C0 to original so the Animator's offsets are correct.
+                                                if map.OrigC0 and v.C0 ~= map.OrigC0 then
+                                                        pcall(function() v.C0 = map.OrigC0 end)
                                                 end
                                         else
                                                 local cf = CFrame.identity
@@ -4937,7 +4944,11 @@ function LimbReanimator.Start()
                                 end
                                 RootPart = Humanoid.RootPart
                                 if RootPart and Humanoid:GetState() ~= Enum.HumanoidStateType.Dead then
-                                        Humanoid:ChangeState(Enum.HumanoidStateType.Freefall)
+                                        -- Mode 3 lets the Humanoid determine its own state so the
+                                        -- Animate script can play correct walk/idle/jump animations.
+                                        if LimbReanimator.Mode ~= 3 then
+                                                Humanoid:ChangeState(Enum.HumanoidStateType.Freefall)
+                                        end
                                         ReanimOkay = LimbReanimator.FlingTargets[1] == nil
                                 end
                         end
@@ -4958,13 +4969,10 @@ function LimbReanimator.Start()
                                         rootcf = CFrame.new(RCRootPart.Position + Vector3.new(0, -16, 0))
                                 end
                                 if LimbReanimator.Mode == 3 then
-                                        local targetCF = RCRootPart.CFrame
-                                        if smoothedRootCF then
-                                                smoothedRootCF = smoothedRootCF:Lerp(targetCF, 1 - math.exp(-80 * (1/60)))
-                                        else
-                                                smoothedRootCF = targetCF
-                                        end
-                                        rootcf = smoothedRootCF
+                                        -- smoothedRootCF is updated once per frame after Heartbeat (below),
+                                        -- using the real dt.  Do NOT update it here too with a fixed 1/60 dt
+                                        -- – double-updating caused rapid over-convergence and visible jitter.
+                                        rootcf = smoothedRootCF or RCRootPart.CFrame
                                 end
                                 if LimbReanimator.Mode == 4 then
                                         rootcf = RCTorso.CFrame
@@ -10724,25 +10732,35 @@ local d = function()
                 end
                 -- Locate the marker; checks HumanoidRootPart first (server-replicated), then character
                 local function GetP2PMarker(character)
+                        -- Check character model first (new placement); then HRP for backwards compat
+                        local sv = character:FindFirstChild(P2P_TAG)
+                        if sv then return sv end
                         local hrp = character:FindFirstChild("HumanoidRootPart")
                         if hrp then
-                                local sv = hrp:FindFirstChild(P2P_TAG)
-                                if sv then return sv end
+                                local sv2 = hrp:FindFirstChild(P2P_TAG)
+                                if sv2 then return sv2 end
                         end
-                        return character:FindFirstChild(P2P_TAG)
+                        return nil
                 end
 
-                -- Place detection marker under HumanoidRootPart (client network-owns it → replicates to server)
+                -- Place detection marker directly on the character Model.
+                -- Placing it on HRP caused the marker to be invisible to other clients
+                -- when StreamingEnabled moved HRP out of range (character in the void).
+                -- The character Model itself is always replicated regardless of distance.
                 local function PlaceMarker(character)
                         pcall(function()
-                                local hrp = character:WaitForChild("HumanoidRootPart", 5)
-                                if not hrp then return end
-                                local old = hrp:FindFirstChild(P2P_TAG)
-                                if old then old:Destroy() end
+                                -- Clean up old marker from either location
+                                local oldOnChar = character:FindFirstChild(P2P_TAG)
+                                if oldOnChar then oldOnChar:Destroy() end
+                                local hrp = character:FindFirstChild("HumanoidRootPart")
+                                if hrp then
+                                        local oldOnHrp = hrp:FindFirstChild(P2P_TAG)
+                                        if oldOnHrp then oldOnHrp:Destroy() end
+                                end
                                 local sv = Instance.new("StringValue")
                                 sv.Name = P2P_TAG
                                 sv.Value = P2PEncode("", P2PSyncAllowed)
-                                sv.Parent = hrp
+                                sv.Parent = character
                         end)
                 end
 
