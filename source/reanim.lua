@@ -8162,7 +8162,7 @@ do -- Dance Player Popup
         DancePopupFrame.Active = true
         DancePopupFrame.AnchorPoint = Vector2.new(0.5, 1)
         DancePopupFrame.Position = UDim2.new(0.5, 0, 1, 80)
-        DancePopupFrame.Size = UDim2.new(0, 320, 0, 162)
+        DancePopupFrame.Size = UDim2.new(0, 320, 0, 152)
         DancePopupFrame.BackgroundTransparency = 0
         DancePopupFrame.BackgroundColor3 = Color3.new(0, 0, 0)
         DancePopupFrame.BorderSizePixel = 0
@@ -8172,7 +8172,7 @@ do -- Dance Player Popup
         Stylize(DancePopupFrame, { Glow = true })
 
         local _popupMinimized = false
-        local POPUP_FULL_H = 162
+        local POPUP_FULL_H = 152
         local POPUP_MIN_H  = 38
 
         local DancePopupClose = Util.Instance("TextButton", DancePopupFrame)
@@ -8722,13 +8722,19 @@ do -- Dance Queue Panel
         end
         _rebuildQueue = RebuildQueueList
 
-        -- Drag
-        QueueDragArea.InputBegan:Connect(function(input)
+        -- Drag (uses global InputBegan with bounds check so transparency/ZIndex don't block it)
+        UserInputService.InputBegan:Connect(function(input, gpe)
+                if gpe then return end
                 if _queueDragRef then return end
-                if input.UserInputState ~= Enum.UserInputState.Begin then return end
-                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                if not _queueVisible then return end
+                if input.UserInputType ~= Enum.UserInputType.MouseButton1 and input.UserInputType ~= Enum.UserInputType.Touch then return end
+                local mousePos = Vector2.new(input.Position.X, input.Position.Y)
+                local framePos = QueueFrame.AbsolutePosition
+                local frameSize = QueueFrame.AbsoluteSize
+                if mousePos.X >= framePos.X and mousePos.X <= framePos.X + frameSize.X - 60
+                        and mousePos.Y >= framePos.Y and mousePos.Y <= framePos.Y + 38 then
                         _queueDragRef = input
-                        _queueDragStart = Vector2.new(input.Position.X, input.Position.Y)
+                        _queueDragStart = mousePos
                         _queueDragStartOffset = _queueDragOffset
                 end
         end)
