@@ -4792,12 +4792,10 @@ function LimbReanimator.Start()
                 end
                 if LimbReanimator.Mode == 3 then
                         task.defer(function()
-                                local hum = character:FindFirstChildOfClass("Humanoid")
-                                if hum then
-                                        if replicatesignal then
-                                                pcall(replicatesignal, hum.ServerBreakJoints)
+                                for _, m in character:GetDescendants() do
+                                        if m:IsA("Motor6D") then
+                                                m.Enabled = false
                                         end
-                                        pcall(function() hum:BreakJoints() end)
                                 end
                         end)
                 end
