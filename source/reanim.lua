@@ -8149,7 +8149,172 @@ local MovementStyleIndex = 2
 local _MovementStyleIndex = nil
 local CurrentDance = nil
 local _CurrentDance = nil
+local DancePaused = false
 local OldReanimCharacter = nil
+
+do -- Dance Player Popup
+        local _watchedDance = nil
+        local _popupLastDance = nil
+        local _popupVisible = false
+
+        local DancePopupFrame = Instance.new("Frame", UIMainFrame)
+        DancePopupFrame.AnchorPoint = Vector2.new(0.5, 1)
+        DancePopupFrame.Position = UDim2.new(0.5, 0, 1, 80)
+        DancePopupFrame.Size = UDim2.new(0, 320, 0, 162)
+        DancePopupFrame.BackgroundTransparency = 0
+        DancePopupFrame.BackgroundColor3 = Color3.new(0, 0, 0)
+        DancePopupFrame.BorderSizePixel = 0
+        DancePopupFrame.ClipsDescendants = false
+        DancePopupFrame.Visible = false
+        DancePopupFrame.ZIndex = 10
+        Stylize(DancePopupFrame, { Glow = true })
+
+        local DancePopupClose = Util.Instance("TextButton", DancePopupFrame)
+        DancePopupClose.AnchorPoint = Vector2.new(1, 0)
+        DancePopupClose.Position = UDim2.new(1, -8, 0, 8)
+        DancePopupClose.Size = UDim2.new(0, 22, 0, 22)
+        DancePopupClose.BackgroundTransparency = 0
+        DancePopupClose.BorderSizePixel = 0
+        DancePopupClose.Text = "x"
+        DancePopupClose.Font = Enum.Font.GothamBold
+        DancePopupClose.TextSize = 13
+        DancePopupClose.ZIndex = 12
+        Stylize(DancePopupClose)
+        RegisterTextLabel(DancePopupClose)
+
+        local DancePopupName = Util.Instance("TextLabel", DancePopupFrame)
+        DancePopupName.AnchorPoint = Vector2.new(0, 0)
+        DancePopupName.Position = UDim2.new(0, 12, 0, 10)
+        DancePopupName.Size = UDim2.new(1, -46, 0, 26)
+        DancePopupName.BackgroundTransparency = 1
+        DancePopupName.Font = Enum.Font.GothamBold
+        DancePopupName.TextSize = 18
+        DancePopupName.TextXAlignment = Enum.TextXAlignment.Left
+        DancePopupName.TextTruncate = Enum.TextTruncate.AtEnd
+        DancePopupName.ZIndex = 12
+        DancePopupName.Text = ""
+        RegisterTextLabel(DancePopupName)
+
+        local DancePopupDesc = Util.Instance("TextLabel", DancePopupFrame)
+        DancePopupDesc.AnchorPoint = Vector2.new(0, 0)
+        DancePopupDesc.Position = UDim2.new(0, 12, 0, 40)
+        DancePopupDesc.Size = UDim2.new(1, -24, 0, 52)
+        DancePopupDesc.BackgroundTransparency = 1
+        DancePopupDesc.Font = Enum.Font.Gotham
+        DancePopupDesc.TextSize = 13
+        DancePopupDesc.TextXAlignment = Enum.TextXAlignment.Left
+        DancePopupDesc.TextYAlignment = Enum.TextYAlignment.Top
+        DancePopupDesc.TextWrapped = true
+        DancePopupDesc.ZIndex = 12
+        DancePopupDesc.Text = ""
+        RegisterTextLabel(DancePopupDesc)
+
+        local DancePopupSep = Instance.new("Frame", DancePopupFrame)
+        DancePopupSep.AnchorPoint = Vector2.new(0.5, 0)
+        DancePopupSep.Position = UDim2.new(0.5, 0, 0, 98)
+        DancePopupSep.Size = UDim2.new(1, -24, 0, 1)
+        DancePopupSep.BackgroundTransparency = 0.6
+        DancePopupSep.BackgroundColor3 = Color3.new(1, 1, 1)
+        DancePopupSep.BorderSizePixel = 0
+        DancePopupSep.ZIndex = 11
+
+        local function MakeCtrlBtn(label, xOff)
+                local b = Util.Instance("TextButton", DancePopupFrame)
+                b.AnchorPoint = Vector2.new(0.5, 0)
+                b.Position = UDim2.new(0.5, xOff, 0, 108)
+                b.Size = UDim2.new(0, 56, 0, 36)
+                b.BackgroundTransparency = 0
+                b.BorderSizePixel = 0
+                b.Text = label
+                b.Font = Enum.Font.GothamBold
+                b.TextSize = 15
+                b.ZIndex = 12
+                Stylize(b)
+                RegisterTextLabel(b)
+                return b
+        end
+
+        -- Each button 56px wide, 6px gap → total span 4*56+3*6=242px, centered offsets: -93 -31 31 93
+        local DancePopupPrev  = MakeCtrlBtn("|<", -93)
+        local DancePopupPause = MakeCtrlBtn("||", -31)
+        local DancePopupPlay  = MakeCtrlBtn(">",   31)
+        local DancePopupNext  = MakeCtrlBtn(">|",  93)
+
+        local function ShowDancePopup(dance)
+                _popupLastDance = dance
+                DancePopupName.Text = dance.Name
+                DancePopupDesc.Text = dance.Description
+                DancePaused = false
+                DancePopupFrame.Visible = true
+                _popupVisible = true
+                TweenService:Create(DancePopupFrame,
+                        TweenInfo.new(0.45, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
+                        { Position = UDim2.new(0.5, 0, 1, -20) }
+                ):Play()
+        end
+
+        local function HideDancePopup()
+                _popupVisible = false
+                local t = TweenService:Create(DancePopupFrame,
+                        TweenInfo.new(0.3, Enum.EasingStyle.Cubic, Enum.EasingDirection.In),
+                        { Position = UDim2.new(0.5, 0, 1, 80) }
+                )
+                t:Play()
+                t.Completed:Connect(function()
+                        if not _popupVisible then
+                                DancePopupFrame.Visible = false
+                        end
+                end)
+        end
+
+        DancePopupClose.Activated:Connect(function()
+                CurrentDance = nil
+                DancePaused = false
+                HideDancePopup()
+        end)
+
+        DancePopupPause.Activated:Connect(function()
+                DancePaused = true
+        end)
+
+        DancePopupPlay.Activated:Connect(function()
+                DancePaused = false
+                if not CurrentDance and _popupLastDance then
+                        CurrentDance = _popupLastDance
+                end
+        end)
+
+        DancePopupPrev.Activated:Connect(function()
+                if #DanceableDances == 0 then return end
+                local cur = CurrentDance or _popupLastDance
+                local idx = (cur and table.find(DanceableDances, cur)) or 1
+                idx = ((idx - 2) % #DanceableDances) + 1
+                CurrentDance = DanceableDances[idx]
+                DancePaused = false
+                ShowDancePopup(CurrentDance)
+        end)
+
+        DancePopupNext.Activated:Connect(function()
+                if #DanceableDances == 0 then return end
+                local cur = CurrentDance or _popupLastDance
+                local idx = (cur and table.find(DanceableDances, cur)) or 0
+                idx = (idx % #DanceableDances) + 1
+                CurrentDance = DanceableDances[idx]
+                DancePaused = false
+                ShowDancePopup(CurrentDance)
+        end)
+
+        AddToRenderStep(function()
+                if _watchedDance ~= CurrentDance then
+                        _watchedDance = CurrentDance
+                        if CurrentDance then
+                                ShowDancePopup(CurrentDance)
+                        elseif _popupVisible then
+                                HideDancePopup()
+                        end
+                end
+        end)
+end
 
 if type(SaveData.MovesetIndex) == "number" then
         MovementStyleIndex = SaveData.MovesetIndex
@@ -8824,7 +8989,9 @@ task.spawn(function()
                                         end
                                         if _CurrentDance then
                                                 if ReanimCharacter:GetAttribute("IsDancing") then
-                                                        _CurrentDance.Update(dt, ReanimCharacter)
+                                                        if not DancePaused then
+                                                                _CurrentDance.Update(dt, ReanimCharacter)
+                                                        end
                                                 else
                                                         if AssetEnsure(_CurrentDance.Assets) then
                                                                 ReanimCharacter:SetAttribute("IsDancing", true)
