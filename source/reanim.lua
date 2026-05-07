@@ -8140,8 +8140,14 @@ do -- Dance Player Popup
         local _watchedDance = nil
         local _popupLastDance = nil
         local _popupVisible = false
+        local _popupDragRef = nil
+        local _popupDragStart = Vector2.zero
+        local _popupDragStartOffset = Vector2.zero
+        local _popupDragOffset = Vector2.zero
+        local _soundWasPaused = false
 
         local DancePopupFrame = Instance.new("Frame", UIMainFrame)
+        DancePopupFrame.Active = true
         DancePopupFrame.AnchorPoint = Vector2.new(0.5, 1)
         DancePopupFrame.Position = UDim2.new(0.5, 0, 1, 80)
         DancePopupFrame.Size = UDim2.new(0, 320, 0, 162)
@@ -8165,6 +8171,14 @@ do -- Dance Player Popup
         DancePopupClose.ZIndex = 12
         Stylize(DancePopupClose)
         RegisterTextLabel(DancePopupClose)
+
+        -- Transparent drag handle covering the header (title + description area)
+        local DancePopupDragArea = Util.Instance("Frame", DancePopupFrame)
+        DancePopupDragArea.Active = true
+        DancePopupDragArea.Position = UDim2.new(0, 0, 0, 0)
+        DancePopupDragArea.Size = UDim2.new(1, 0, 0, 97)
+        DancePopupDragArea.BackgroundTransparency = 1
+        DancePopupDragArea.ZIndex = 11
 
         local DancePopupName = Util.Instance("TextLabel", DancePopupFrame)
         DancePopupName.AnchorPoint = Vector2.new(0, 0)
@@ -8218,30 +8232,37 @@ do -- Dance Player Popup
                 return b
         end
 
-        -- Each button 56px wide, 6px gap → total span 4*56+3*6=242px, centered offsets: -93 -31 31 93
-        local DancePopupPrev  = MakeCtrlBtn("|<", -93)
-        local DancePopupPause = MakeCtrlBtn("||", -31)
-        local DancePopupPlay  = MakeCtrlBtn(">",   31)
-        local DancePopupNext  = MakeCtrlBtn(">|",  93)
+        -- 3 buttons: Prev, Play/Pause toggle, Next — 64px center-to-center spacing
+        local DancePopupPrev      = MakeCtrlBtn("|<", -64)
+        local DancePopupPlayPause = MakeCtrlBtn("||",   0)
+        local DancePopupNext      = MakeCtrlBtn(">|",  64)
+
+        local function GetShownPos()
+                return UDim2.new(0.5, _popupDragOffset.X, 1, -20 + _popupDragOffset.Y)
+        end
+        local function GetHiddenPos()
+                return UDim2.new(0.5, _popupDragOffset.X, 1, 80 + _popupDragOffset.Y)
+        end
 
         local function ShowDancePopup(dance)
                 _popupLastDance = dance
                 DancePopupName.Text = dance.Name
                 DancePopupDesc.Text = dance.Description
                 DancePaused = false
+                _soundWasPaused = false
                 DancePopupFrame.Visible = true
                 _popupVisible = true
                 TweenService:Create(DancePopupFrame,
-                        TweenInfo.new(0.45, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
-                        { Position = UDim2.new(0.5, 0, 1, -20) }
+                        TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
+                        { Position = GetShownPos() }
                 ):Play()
         end
 
         local function HideDancePopup()
                 _popupVisible = false
                 local t = TweenService:Create(DancePopupFrame,
-                        TweenInfo.new(0.3, Enum.EasingStyle.Cubic, Enum.EasingDirection.In),
-                        { Position = UDim2.new(0.5, 0, 1, 80) }
+                        TweenInfo.new(0.22, Enum.EasingStyle.Quad, Enum.EasingDirection.In),
+                        { Position = GetHiddenPos() }
                 )
                 t:Play()
                 t.Completed:Connect(function()
@@ -8251,20 +8272,55 @@ do -- Dance Player Popup
                 end)
         end
 
+        -- Drag: grab anywhere in the header/description area
+        DancePopupDragArea.InputBegan:Connect(function(input)
+                if _popupDragRef then return end
+                if input.UserInputState ~= Enum.UserInputState.Begin then return end
+                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                        _popupDragRef = input
+                        _popupDragStart = Vector2.new(input.Position.X, input.Position.Y)
+                        _popupDragStartOffset = _popupDragOffset
+                end
+        end)
+        UserInputService.InputChanged:Connect(function(input)
+                if not _popupDragRef then return end
+                if input.UserInputType == Enum.UserInputType.MouseMovement or (input.UserInputType == Enum.UserInputType.Touch and _popupDragRef == input) then
+                        local delta = Vector2.new(input.Position.X, input.Position.Y) - _popupDragStart
+                        _popupDragOffset = _popupDragStartOffset + delta
+                        DancePopupFrame.Position = GetShownPos()
+                end
+        end)
+        UserInputService.InputEnded:Connect(function(input)
+                if _popupDragRef and _popupDragRef == input then
+                        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                                _popupDragRef = nil
+                        end
+                end
+        end)
+
         DancePopupClose.Activated:Connect(function()
                 CurrentDance = nil
                 DancePaused = false
+                _soundWasPaused = false
                 HideDancePopup()
         end)
 
-        DancePopupPause.Activated:Connect(function()
-                DancePaused = true
-        end)
-
-        DancePopupPlay.Activated:Connect(function()
-                DancePaused = false
-                if not CurrentDance and _popupLastDance then
-                        CurrentDance = _popupLastDance
+        DancePopupPlayPause.Activated:Connect(function()
+                if DancePaused then
+                        DancePaused = false
+                        if _soundWasPaused then
+                                UISound.DanceMusic:Resume()
+                                _soundWasPaused = false
+                        end
+                        if not CurrentDance and _popupLastDance then
+                                CurrentDance = _popupLastDance
+                        end
+                else
+                        DancePaused = true
+                        if UISound.DanceMusic.IsPlaying then
+                                UISound.DanceMusic:Pause()
+                                _soundWasPaused = true
+                        end
                 end
         end)
 
@@ -8275,6 +8331,7 @@ do -- Dance Player Popup
                 idx = ((idx - 2) % #DanceableDances) + 1
                 CurrentDance = DanceableDances[idx]
                 DancePaused = false
+                _soundWasPaused = false
                 ShowDancePopup(CurrentDance)
         end)
 
@@ -8285,10 +8342,14 @@ do -- Dance Player Popup
                 idx = (idx % #DanceableDances) + 1
                 CurrentDance = DanceableDances[idx]
                 DancePaused = false
+                _soundWasPaused = false
                 ShowDancePopup(CurrentDance)
         end)
 
         AddToRenderStep(function()
+                -- Keep play/pause button text in sync with state
+                DancePopupPlayPause.Text = DancePaused and ">" or "||"
+                -- Watch for dance changes
                 if _watchedDance ~= CurrentDance then
                         _watchedDance = CurrentDance
                         if CurrentDance then
