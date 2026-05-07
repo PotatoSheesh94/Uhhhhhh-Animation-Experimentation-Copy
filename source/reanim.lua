@@ -8282,11 +8282,12 @@ do -- Dance Player Popup
                 return b
         end
 
-        -- 4 buttons: Prev, Play/Pause, Next, Shuffle — evenly spaced
-        local DancePopupPrev      = MakeCtrlBtn("|<",  -75)
-        local DancePopupPlayPause = MakeCtrlBtn("||",  -25)
-        local DancePopupNext      = MakeCtrlBtn(">|",   25)
-        local DancePopupShuffle   = MakeCtrlBtn("~",    75)
+        -- 5 buttons: Prev, Play/Pause, Next, Loop, Shuffle — 50px center-to-center spacing
+        local DancePopupPrev      = MakeCtrlBtn("|<",  -100)
+        local DancePopupPlayPause = MakeCtrlBtn("||",   -50)
+        local DancePopupNext      = MakeCtrlBtn(">|",     0)
+        local DancePopupLoop      = MakeCtrlBtn("\xe2\x86\xbb",  50)
+        local DancePopupShuffle   = MakeCtrlBtn("~",    100)
 
         local function GetShownPos()
                 return UDim2.new(0.5, _popupDragOffset.X, 1, -20 + _popupDragOffset.Y)
@@ -8362,6 +8363,14 @@ do -- Dance Player Popup
                 HideDancePopup()
         end)
 
+        DancePopupLoop.Activated:Connect(function()
+                local dance = CurrentDance or _popupLastDance
+                if not dance then return end
+                DanceLoop[dance] = not DanceLoop[dance]
+                if type(SaveData.DanceLoop) ~= "table" then SaveData.DanceLoop = {} end
+                SaveData.DanceLoop[dance.Hash] = DanceLoop[dance]
+        end)
+
         DancePopupShuffle.Activated:Connect(function()
                 DanceShuffle = not DanceShuffle
                 SaveData.DanceShuffle = DanceShuffle
@@ -8421,8 +8430,11 @@ do -- Dance Player Popup
         AddToRenderStep(function()
                 -- Keep play/pause button text in sync with state
                 DancePopupPlayPause.Text = DancePaused and ">" or "||"
-                -- Keep shuffle button in sync: ~~ = on, ~ = off
-                DancePopupShuffle.Text = DanceShuffle and "~~" or "~"
+                -- Keep loop button in sync: ↻ = looping, 1x = play once
+                local _loopDance = CurrentDance or _popupLastDance
+                DancePopupLoop.Text = (_loopDance and DanceLoop[_loopDance] == false) and "1x" or "\xe2\x86\xbb"
+                -- Shuffle button always shows ~
+                DancePopupShuffle.Text = "~"
                 -- Update dance list labels to reflect playing/paused state
                 for dance, label in _danceItemLabels do
                         if dance == CurrentDance then
