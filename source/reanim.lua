@@ -4851,7 +4851,12 @@ function LimbReanimator.Start()
                                                         if rcMotor and rcMotor:IsA("Motor6D") then
                                                                 local newCF = v.C0 * rcMotor.Transform * v.C1:Inverse()
                                                                 if dt ~= nil then
-                                                                        map.CFrame = newCF
+                                                                        if map.CFrame and dt > 0 then
+                                                                                local alpha = 1 - math.exp(-20 * dt)
+                                                                                map.CFrame = map.CFrame:Lerp(newCF, alpha)
+                                                                        else
+                                                                                map.CFrame = newCF
+                                                                        end
                                                                 end
                                                         end
                                                 end
@@ -8282,12 +8287,11 @@ do -- Dance Player Popup
                 return b
         end
 
-        -- 5 buttons: Prev, Play/Pause, Next, Loop, Shuffle — 50px center-to-center spacing
-        local DancePopupPrev      = MakeCtrlBtn("|<",  -100)
-        local DancePopupPlayPause = MakeCtrlBtn("||",   -50)
-        local DancePopupNext      = MakeCtrlBtn(">|",     0)
-        local DancePopupLoop      = MakeCtrlBtn("\xe2\x86\xbb",  50)
-        local DancePopupShuffle   = MakeCtrlBtn("~",    100)
+        -- 4 buttons: Prev, Play/Pause, Next, Loop — evenly spaced
+        local DancePopupPrev      = MakeCtrlBtn("|<",  -75)
+        local DancePopupPlayPause = MakeCtrlBtn("||",  -25)
+        local DancePopupNext      = MakeCtrlBtn(">|",   25)
+        local DancePopupLoop      = MakeCtrlBtn("LP",   75)
 
         local function GetShownPos()
                 return UDim2.new(0.5, _popupDragOffset.X, 1, -20 + _popupDragOffset.Y)
@@ -8371,11 +8375,6 @@ do -- Dance Player Popup
                 SaveData.DanceLoop[dance.Hash] = DanceLoop[dance]
         end)
 
-        DancePopupShuffle.Activated:Connect(function()
-                DanceShuffle = not DanceShuffle
-                SaveData.DanceShuffle = DanceShuffle
-        end)
-
         DancePopupPlayPause.Activated:Connect(function()
                 if DancePaused then
                         DancePaused = false
@@ -8430,11 +8429,9 @@ do -- Dance Player Popup
         AddToRenderStep(function()
                 -- Keep play/pause button text in sync with state
                 DancePopupPlayPause.Text = DancePaused and ">" or "||"
-                -- Keep loop button in sync: ↻ = looping, 1x = play once
+                -- Keep loop button in sync: LP = looping, 1x = play once
                 local _loopDance = CurrentDance or _popupLastDance
-                DancePopupLoop.Text = (_loopDance and DanceLoop[_loopDance] == false) and "1x" or "\xe2\x86\xbb"
-                -- Shuffle button always shows ~
-                DancePopupShuffle.Text = "~"
+                DancePopupLoop.Text = (_loopDance and DanceLoop[_loopDance] == false) and "1x" or "LP"
                 -- Update dance list labels to reflect playing/paused state
                 for dance, label in _danceItemLabels do
                         if dance == CurrentDance then
