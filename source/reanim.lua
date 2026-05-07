@@ -4022,10 +4022,6 @@ Reanimate.CameraLockCharacter = function()
                 RCRootPart.CFrame = CFrame.fromEulerAngles(bx, ay, bz, Enum.RotationOrder.YXZ) + rcf.Position
         end
 end
--- Populated in LimbReanimator's CharConn just before the Animate script is
--- destroyed; consumed inside Reanimate.CreateCharacter to give the RC Animator
--- the game's actual animation IDs for Mode 3.
-local _mode3AnimIds = nil
 Reanimate.CreateCharacter = function(InitCFrame)
         local RC = Reanimate.Character
         local cf = CFrame.new(Camera.Focus.Position)
@@ -4093,107 +4089,6 @@ Reanimate.CreateCharacter = function(InitCFrame)
         pcall(function() RC:SetAttribute("_UhhhhhRC_Owner", tostring(Player.UserId)) end)
         RCRootPart.RootPriority = 67
         RCRootPart.CFrame = cf
-
-        -- ── Mode 3 RC animation system ──────────────────────────────────────────
-        -- We add an Animator to the RC's Humanoid and load the game's actual
-        -- animation IDs (captured from the character's Animate script just before
-        -- it was destroyed) directly from our executor context.  Because we are the
-        -- executor, checkcaller() is true → the LoadAnimation hook is bypassed →
-        -- the animations load on the RC Humanoid for real.
-        -- Mode 3 then reads rcMotor.Transform each frame and copies it to the real
-        -- character's Motor6D via rawset + ReplicateCurrentAngle6D.
-        do
-                local RCAnimator = Instance.new("Animator")
-                RCAnimator.Parent = RCHumanoid
-
-                local defaultIds = {
-                        idle  = "rbxassetid://180435571",
-                        walk  = "rbxassetid://180426354",
-                        jump  = "rbxassetid://125750702",
-                        fall  = "rbxassetid://180436148",
-                        climb = "rbxassetid://180436334",
-                }
-                local ids = _mode3AnimIds or defaultIds
-                -- Fill in any missing entries from defaults
-                for k, v in defaultIds do
-                        ids[k] = ids[k] or v
-                end
-
-                local function loadTrack(id, priority, looped)
-                        if not id or id == "" then return nil end
-                        local ok, track = pcall(function()
-                                local anim = Instance.new("Animation")
-                                anim.AnimationId = id
-                                local t = RCAnimator:LoadAnimation(anim)
-                                t.Priority = priority or Enum.AnimationPriority.Core
-                                t.Looped = looped ~= false
-                                return t
-                        end)
-                        return ok and track or nil
-                end
-
-                local tIdle  = loadTrack(ids.idle,  Enum.AnimationPriority.Idle,       true)
-                local tWalk  = loadTrack(ids.walk,  Enum.AnimationPriority.Core,       true)
-                local tJump  = loadTrack(ids.jump,  Enum.AnimationPriority.Action,     false)
-                local tFall  = loadTrack(ids.fall,  Enum.AnimationPriority.Core,       true)
-                local tClimb = loadTrack(ids.climb, Enum.AnimationPriority.Core,       true)
-
-                if tIdle then tIdle:Play(0) end
-
-                local function stopAll()
-                        if tIdle  then tIdle:Stop(0.1)  end
-                        if tWalk  then tWalk:Stop(0.1)  end
-                        if tJump  then tJump:Stop(0.1)  end
-                        if tFall  then tFall:Stop(0.1)  end
-                        if tClimb then tClimb:Stop(0.1) end
-                end
-
-                Util.LinkDestroyI2C(RC, RCHumanoid.Running:Connect(function(speed)
-                        stopAll()
-                        if speed > 0.5 then
-                                if tWalk then tWalk:Play(0.1) end
-                        else
-                                if tIdle then tIdle:Play(0.1) end
-                        end
-                end))
-                Util.LinkDestroyI2C(RC, RCHumanoid.Jumping:Connect(function(active)
-                        if active then
-                                stopAll()
-                                if tJump then tJump:Play(0.05) end
-                        end
-                end))
-                Util.LinkDestroyI2C(RC, RCHumanoid.FreeFalling:Connect(function(active)
-                        if active then
-                                stopAll()
-                                if tFall then tFall:Play(0.2) end
-                        else
-                                if tIdle then tIdle:Play(0.1) end
-                        end
-                end))
-                Util.LinkDestroyI2C(RC, RCHumanoid.Climbing:Connect(function(speed)
-                        stopAll()
-                        if math.abs(speed) > 0.1 then
-                                if tClimb then tClimb:Play(0.1) end
-                        else
-                                if tIdle then tIdle:Play(0.1) end
-                        end
-                end))
-
-                -- Store unscaled motor transforms each PreRender so Mode 3 can read
-                -- clean (scale=1) transforms regardless of RC scale setting.
-                Util.LinkDestroyI2C(RC, RunService.PreRender:Connect(function()
-                        for _, motor in RC:GetDescendants() do
-                                if motor:IsA("Motor6D") then
-                                        local scale = RC:GetScale()
-                                        local unscaled = if scale ~= 1
-                                                then Util.ScaleCFrame(motor.Transform, 1 / scale)
-                                                else motor.Transform
-                                        motor:SetAttribute("_UhhhM3T", unscaled)
-                                end
-                        end
-                end))
-        end
-        -- ────────────────────────────────────────────────────────────────────────
 
         local SafeY = cf.Y
         local IsFloat = false
@@ -4469,15 +4364,7 @@ else
 end
 
 Util.SetMotor6DTransform = function(motor, transform)
-        if motor.MaxVelocity ~= 9e9 then
-                motor.MaxVelocity = 9e9
-        end
-        local origC0 = motor:GetAttribute("_UhhhC0")
-        if origC0 ~= nil then
-                motor.C0 = origC0 * transform
-        else
-                pcall(rawset, motor, "Transform", transform)
-        end
+        motor.MaxVelocity = 9e9
         local _, _, angle = transform:ToEulerAngles(Enum.RotationOrder.ZYX)
         motor:SetDesiredAngle(angle)
         local axis, tangle = transform:ToAxisAngle()
@@ -4486,8 +4373,7 @@ Util.SetMotor6DTransform = function(motor, transform)
         pcall(sethiddenproperty, motor, "ReplicateCurrentAngle6D", newangle)
 end
 Util.SetMotor6DOffset = function(motor, offset)
-        local origC0 = motor:GetAttribute("_UhhhC0")
-        Util.SetMotor6DTransform(motor, (origC0 or motor.C0):Inverse() * offset * motor.C1)
+        Util.SetMotor6DTransform(motor, motor.C0:Inverse() * offset * motor.C1)
 end
 
 Util.ShowPartHitbox = function(part)
@@ -4721,7 +4607,6 @@ function LimbReanimator.Config(parent)
 end
 function LimbReanimator.Start()
         local LimbNames = {"Head", "Torso", "Left Arm", "Right Arm", "Left Leg", "Right Leg"}
-        local smoothedRootCF = nil
         local rootposition = Vector3.new(
                 math.random(-65536, 65536),
                 math.random(-70000, -60000),
@@ -4794,7 +4679,6 @@ function LimbReanimator.Start()
                                                 map.Reference = v
                                                 map.OrigC0 = v.C0
                                                 map.OrigC1 = v.C1
-                                                pcall(function() v:SetAttribute("_UhhhC0", v.C0) end)
                                                 return
                                         end
                                 end
@@ -4872,8 +4756,6 @@ function LimbReanimator.Start()
                 lastspawn = os.clock()
                 table.clear(BaseParts)
                 table.clear(UnknownMotor6Ds)
-                smoothedRootCF = nil
-                smoothedRootVel = Vector3.zero
                 for _,map in LimbMapping do
                         if map.Reference and map.OrigC0 then
                                 pcall(function() map.Reference.C0 = map.OrigC0 end)
@@ -4900,24 +4782,6 @@ function LimbReanimator.Start()
                                 character.ChildAdded:Wait()
                                 stupid = character:FindFirstChild("Animate")
                         end
-                        -- Capture animation IDs from the Animate script before destroying it.
-                        -- These are the game's actual animation IDs (walk, idle, jump, fall…)
-                        -- which we then load onto the RC's Animator from our executor context,
-                        -- bypassing the LoadAnimation hook that blocks game-script calls.
-                        do
-                                local ids = {}
-                                for _, folder in stupid:GetChildren() do
-                                        for _, a in folder:GetChildren() do
-                                                if a:IsA("Animation") and a.AnimationId ~= "" then
-                                                        ids[folder.Name:lower()] = ids[folder.Name:lower()] or a.AnimationId
-                                                end
-                                        end
-                                        if folder:IsA("Animation") and folder.AnimationId ~= "" then
-                                                ids[folder.Name:lower()] = ids[folder.Name:lower()] or folder.AnimationId
-                                        end
-                                end
-                                _mode3AnimIds = ids
-                        end
                         stupid:Destroy()
                 end
                 if LimbReanimator.NoSounds then
@@ -4934,7 +4798,7 @@ function LimbReanimator.Start()
         local lastrep = 0
 
         local function UpdateTransforms(ReanimCharacter, RootPart, rootcf, rootvel, flingtarget, flingcf, dt)
-                if not RootPart:IsGrounded() or LimbReanimator.Mode == 3 then
+                if not RootPart:IsGrounded() then
                         if flingtarget then
                                 if LimbReanimator.UseNaNFling then
                                         RootPart.CFrame = CFrame.new(flingcf.Position + Vector3.new(0, 0, math.random(0, 1) * 0.005)) * CFrame.Angles(0, os.clock() * 15, 0)
@@ -4945,18 +4809,8 @@ function LimbReanimator.Start()
                                 end
                                 pcall(sethiddenproperty, RootPart, "PhysicsRepRootPart", Reanimate.UsePhysicsRepRootPart and Util.PredictionFlingPart(flingtarget.Target) or nil)
                         else
-                                local appliedCF = rootcf
-                                RootPart.CFrame = appliedCF + Vector3.new(0, 0, math.random(0, 1) * 0.005)
-                                if LimbReanimator.Mode == 3 then
-                                        -- Mirror RC velocity so the Animate script detects movement and
-                                        -- plays walk/run animations instead of treating the character as idle.
-                                        local rchrp = ReanimCharacter and ReanimCharacter:FindFirstChild("HumanoidRootPart")
-                                        local rcvel = rchrp and rchrp.AssemblyLinearVelocity or rootvel
-                                        RootPart.Velocity, RootPart.RotVelocity = rcvel, Vector3.zero
-                                        pcall(function() RootPart.AssemblyLinearVelocity = rcvel end)
-                                else
-                                        RootPart.Velocity, RootPart.RotVelocity = rootvel, Vector3.zero
-                                end
+                                RootPart.CFrame = rootcf + Vector3.new(0, 0, math.random(0, 1) * 0.005)
+                                RootPart.Velocity, RootPart.RotVelocity = rootvel, Vector3.zero
                                 pcall(sethiddenproperty, RootPart, "PhysicsRepRootPart", nil)
                         end
                 end
@@ -4985,69 +4839,37 @@ function LimbReanimator.Start()
                                 if flingtarget then
                                         Util.SetMotor6DTransform(v, CFrame.identity)
                                 else
-                                        if LimbReanimator.Mode == 3 then
-                                                -- Read the unscaled motor transform stored by the PreRender
-                                                -- hook (captures Animator + any rawset done by dances).
-                                                -- Direct assignment, no lerp, to prevent client glitch.
-                                                -- Apply via rawset + C0 + ReplicateCurrentAngle6D hidden
-                                                -- property — the CurrentAngle replication method — so the
-                                                -- server and other players see the correct animations.
-                                                local rcContainer = ReanimCharacter:FindFirstChild(map.RPart0 == "ROOT" and "HumanoidRootPart" or map.RPart0)
-                                                if rcContainer then
-                                                        local rcMotor = rcContainer:FindFirstChild(v.Name)
-                                                        if rcMotor and rcMotor:IsA("Motor6D") then
-                                                                local targetTransform = rcMotor:GetAttribute("_UhhhM3T") or rcMotor.Transform
-                                                                if dt ~= nil then
-                                                                        map.CFrame = targetTransform
-                                                                end
-                                                        end
-                                                end
-                                                if map.CFrame then
-                                                        local transform = map.CFrame
-                                                        -- Only rawset Transform + hidden properties.
-                                                        -- Do NOT also set C0 here: C0 * Transform would
-                                                        -- double-apply every rotation, causing the
-                                                        -- exaggerated/glitchy movement the user sees.
-                                                        -- ReplicateCurrentAngle6D handles replication.
-                                                        pcall(rawset, v, "Transform", transform)
-                                                        local axis, tangle = transform:ToAxisAngle()
-                                                        local newangle = axis * tangle
-                                                        pcall(sethiddenproperty, v, "ReplicateCurrentOffset6D", transform.Position)
-                                                        pcall(sethiddenproperty, v, "ReplicateCurrentAngle6D", newangle)
-                                                end
-                                        else
-                                                local cf = CFrame.identity
-                                                local p0, p1 = ReanimCharacter:FindFirstChild(map.RPart0), ReanimCharacter:FindFirstChild(map.RPart1)
-                                                if map.RPart0 == "ROOT" then
-                                                        p0 = RootPart
-                                                end
-                                                if p0 and p1 then
-                                                        if map.Type == 1 then
-                                                                cf = p0.CFrame:ToObjectSpace(p1.CFrame)
-                                                        end
-                                                        if map.Type == 2 then
-                                                                local offset = map.Offset or CFrame.identity
-                                                                local c0, c1 = CFrame.new(map.C0), CFrame.new(map.C1)
-                                                                local transform = offset * (p0.CFrame * c0):ToObjectSpace(p1.CFrame * c1) * offset:Inverse()
-                                                                local baseC0 = map.OrigC0 or v.C0
-                                                                cf = baseC0 * transform * v.C1:Inverse()
-                                                        end
-                                                end
-                                                if dt ~= nil then
-                                                        if dorep or not map.CFrame then
-                                                                if map.CFrame and dt > 0 then
-                                                                        local alpha = 1 - math.exp(-60 * dt)
-                                                                        map.CFrame = map.CFrame:Lerp(cf, alpha)
-                                                                        map.BlendTimer = nil
-                                                                else
-                                                                        map.CFrame = cf
-                                                                        map.BlendTimer = nil
-                                                                        map.PosVelocity = nil
-                                                                end
-                                                        end
-                                                end
-                                                Util.SetMotor6DOffset(v, map.CFrame)
+                                        local cf = CFrame.identity
+                                        local p0, p1 = ReanimCharacter:FindFirstChild(map.RPart0), ReanimCharacter:FindFirstChild(map.RPart1)
+                                        if map.RPart0 == "ROOT" then
+                                                p0 = RootPart
                                         end
+                                        if p0 and p1 then
+                                                if map.Type == 1 then
+                                                        cf = p0.CFrame:ToObjectSpace(p1.CFrame)
+                                                end
+                                                if map.Type == 2 then
+                                                        local offset = map.Offset or CFrame.identity
+                                                        local c0, c1 = CFrame.new(map.C0), CFrame.new(map.C1)
+                                                        local transform = offset * (p0.CFrame * c0):ToObjectSpace(p1.CFrame * c1) * offset:Inverse()
+                                                        local baseC0 = map.OrigC0 or v.C0
+                                                        cf = baseC0 * transform * v.C1:Inverse()
+                                                end
+                                        end
+                                        if dt ~= nil then
+                                                if dorep or not map.CFrame then
+                                                        if map.CFrame and dt > 0 then
+                                                                local alpha = 1 - math.exp(-60 * dt)
+                                                                map.CFrame = map.CFrame:Lerp(cf, alpha)
+                                                                map.BlendTimer = nil
+                                                        else
+                                                                map.CFrame = cf
+                                                                map.BlendTimer = nil
+                                                                map.PosVelocity = nil
+                                                        end
+                                                end
+                                        end
+                                        Util.SetMotor6DOffset(v, map.CFrame)
                                 end
                         end
                 end
@@ -5097,10 +4919,7 @@ function LimbReanimator.Start()
                                         rootcf = CFrame.new(RCRootPart.Position + Vector3.new(0, -16, 0))
                                 end
                                 if LimbReanimator.Mode == 3 then
-                                        -- smoothedRootCF is updated once per frame after Heartbeat (below),
-                                        -- using the real dt.  Do NOT update it here too with a fixed 1/60 dt
-                                        -- – double-updating caused rapid over-convergence and visible jitter.
-                                        rootcf = smoothedRootCF or RCRootPart.CFrame
+                                        rootcf = RCRootPart.CFrame
                                 end
                                 if LimbReanimator.Mode == 4 then
                                         rootcf = RCTorso.CFrame
@@ -5143,18 +4962,6 @@ function LimbReanimator.Start()
                         end
                         if Character and Humanoid and RootPart then
                                 local heartbeatDt = RunService.Heartbeat:Wait()
-                                if LimbReanimator.Mode == 3 and ReanimCharacter then
-                                        local _rchrp = ReanimCharacter:FindFirstChild("HumanoidRootPart")
-                                        if _rchrp then
-                                                local targetCF = _rchrp.CFrame
-                                                if smoothedRootCF and heartbeatDt > 0 then
-                                                        smoothedRootCF = smoothedRootCF:Lerp(targetCF, 1 - math.exp(-80 * heartbeatDt))
-                                                else
-                                                        smoothedRootCF = targetCF
-                                                end
-                                                rootcf = smoothedRootCF
-                                        end
-                                end
                                 local t = os.clock()
                                 local flingtarget = LimbReanimator.FlingTargets[1]
                                 if flingtarget then
@@ -5185,13 +4992,6 @@ function LimbReanimator.Start()
                                 end
                                 if LimbReanimator.UseNaNFling or LimbReanimator.ForceFreefall then
                                         pcall(sethiddenproperty, Humanoid, "NetworkHumanoidState", Enum.HumanoidStateType.Freefall)
-                                elseif LimbReanimator.Mode == 3 and ReanimCharacter then
-                                        local _rcHum3 = ReanimCharacter:FindFirstChildOfClass("Humanoid")
-                                        if _rcHum3 then
-                                                pcall(sethiddenproperty, Humanoid, "NetworkHumanoidState", _rcHum3:GetState())
-                                        else
-                                                pcall(sethiddenproperty, Humanoid, "NetworkHumanoidState", Enum.HumanoidStateType.Running)
-                                        end
                                 else
                                         pcall(sethiddenproperty, Humanoid, "NetworkHumanoidState", Enum.HumanoidStateType[({"Running", "PlatformStanding", "Jumping", "Physics"})[math.random(1, 4)]])
                                 end
