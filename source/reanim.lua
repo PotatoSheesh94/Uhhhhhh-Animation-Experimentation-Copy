@@ -11199,11 +11199,394 @@ local d = function()
                         end
                 end)
 
+                -- ================================================================
+                -- Global Players System (cross-game presence via ntfy.sh relay)
+                -- Each Uhhhhhh instance POSTs a signed beacon every 45s and polls
+                -- every 15s for a list of everyone currently online in any game.
+                -- ================================================================
+                local GLOBAL_TOPIC   = "uhhhhhh-r-global-v1-7f2c"
+                local GLOBAL_POST    = "https://ntfy.sh/" .. GLOBAL_TOPIC
+                local GLOBAL_POLL    = "https://ntfy.sh/" .. GLOBAL_TOPIC .. "/json?since=90s&poll=1"
+                local BEACON_IVMIN   = 45
+                local POLL_IVMIN     = 15
+                local _globalPlayers = {}
+                local _gpLastBeacon  = 0
+                local _gpLastPoll    = 0
+                local _gpConnected   = false
+
+                local function GlobalBeacon()
+                        if not request then return end
+                        pcall(function()
+                                local body = HttpService:JSONEncode({
+                                        sig   = "UHH1",
+                                        name  = Player.Name,
+                                        uid   = tostring(Player.UserId),
+                                        game  = tostring(game.PlaceId),
+                                        dance = CurrentDance and CurrentDance.Name or "",
+                                        sync  = P2PSyncAllowed and 1 or 0,
+                                })
+                                request({ Url = GLOBAL_POST, Method = "POST", Body = body,
+                                        Headers = { ["Content-Type"] = "application/json" } })
+                                _gpConnected = true
+                        end)
+                        _gpLastBeacon = os.clock()
+                end
+
+                local function GlobalPoll()
+                        if not request then return end
+                        local ok, res = pcall(request, { Url = GLOBAL_POLL, Method = "GET" })
+                        if not ok or not res or type(res.Body) ~= "string" then return end
+                        local lines = {}
+                        for ln in res.Body:gmatch("[^\n]+") do table.insert(lines, ln) end
+                        local seen, players = {}, {}
+                        for i = #lines, 1, -1 do
+                                local ok2, obj = pcall(HttpService.JSONDecode, HttpService, lines[i])
+                                if ok2 and type(obj) == "table" and obj.message then
+                                        local ok3, d = pcall(HttpService.JSONDecode, HttpService, obj.message)
+                                        if ok3 and type(d) == "table" and d.sig == "UHH1"
+                                                        and d.uid and d.name and not seen[d.uid] then
+                                                seen[d.uid] = true
+                                                if d.uid ~= tostring(Player.UserId) then
+                                                        table.insert(players, {
+                                                                name  = tostring(d.name),
+                                                                uid   = tostring(d.uid),
+                                                                game  = tostring(d.game or ""),
+                                                                dance = tostring(d.dance or ""),
+                                                                sync  = d.sync == 1,
+                                                        })
+                                                end
+                                        end
+                                end
+                        end
+                        _globalPlayers = players
+                        _gpLastPoll = os.clock()
+                        _gpConnected = true
+                end
+
+                -- Background task: send beacon + poll
+                task.spawn(function()
+                        task.wait(3)
+                        GlobalBeacon()
+                        GlobalPoll()
+                        while true do
+                                task.wait(5)
+                                local now = os.clock()
+                                if now - _gpLastBeacon >= BEACON_IVMIN then GlobalBeacon() end
+                                if now - _gpLastPoll   >= POLL_IVMIN   then GlobalPoll()  end
+                        end
+                end)
+                -- Re-beacon immediately on dance change
+                task.spawn(function()
+                        local _lastGD = nil
+                        while true do
+                                task.wait(2)
+                                if CurrentDance ~= _lastGD then
+                                        _lastGD = CurrentDance
+                                        if os.clock() - _gpLastBeacon > 5 then GlobalBeacon() end
+                                end
+                        end
+                end)
+
+                -- ============================================================
+                -- Global Players Panel UI
+                -- ============================================================
+                local _gpnlVisible = false
+                local _gpnlDragOffset = Vector2.zero
+                local _gpnlDragRef = nil
+                local _gpnlDragStart = Vector2.zero
+                local _gpnlDragStartOff = Vector2.zero
+                local _gpnlDragLive = false
+                local _gpnlMinimized = false
+                local GPNL_W      = 292
+                local GPNL_FULL_H = 286
+                local GPNL_MIN_H  = 38
+
+                local GpnlFrame = Instance.new("Frame", UIMainFrame)
+                GpnlFrame.Active = true
+                GpnlFrame.AnchorPoint = Vector2.new(0, 1)
+                GpnlFrame.Position = UDim2.new(0, -500, 1, -20)
+                GpnlFrame.Size = UDim2.new(0, GPNL_W, 0, GPNL_FULL_H)
+                GpnlFrame.BackgroundTransparency = 0
+                GpnlFrame.BackgroundColor3 = Color3.new(0, 0, 0)
+                GpnlFrame.BorderSizePixel = 0
+                GpnlFrame.ClipsDescendants = true
+                GpnlFrame.Visible = false
+                GpnlFrame.ZIndex = 10
+                Stylize(GpnlFrame, { Glow = true })
+
+                local GpnlTitle = Util.Instance("TextLabel", GpnlFrame)
+                GpnlTitle.Position = UDim2.new(0, 12, 0, 9)
+                GpnlTitle.Size = UDim2.new(1, -90, 0, 20)
+                GpnlTitle.BackgroundTransparency = 1
+                GpnlTitle.Font = Enum.Font.GothamBold
+                GpnlTitle.TextSize = 14
+                GpnlTitle.TextXAlignment = Enum.TextXAlignment.Left
+                GpnlTitle.ZIndex = 12
+                GpnlTitle.Text = "Global Players (0)"
+                RegisterTextLabel(GpnlTitle)
+
+                local GpnlClose = Util.Instance("TextButton", GpnlFrame)
+                GpnlClose.AnchorPoint = Vector2.new(1, 0)
+                GpnlClose.Position = UDim2.new(1, -8, 0, 8)
+                GpnlClose.Size = UDim2.new(0, 22, 0, 22)
+                GpnlClose.BackgroundTransparency = 0
+                GpnlClose.BorderSizePixel = 0
+                GpnlClose.Text = "x"
+                GpnlClose.Font = Enum.Font.GothamBold
+                GpnlClose.TextSize = 13
+                GpnlClose.ZIndex = 12
+                Stylize(GpnlClose)
+                RegisterTextLabel(GpnlClose)
+
+                local GpnlMinimize = Util.Instance("TextButton", GpnlFrame)
+                GpnlMinimize.AnchorPoint = Vector2.new(1, 0)
+                GpnlMinimize.Position = UDim2.new(1, -34, 0, 8)
+                GpnlMinimize.Size = UDim2.new(0, 22, 0, 22)
+                GpnlMinimize.BackgroundTransparency = 0
+                GpnlMinimize.BorderSizePixel = 0
+                GpnlMinimize.Text = "-"
+                GpnlMinimize.Font = Enum.Font.GothamBold
+                GpnlMinimize.TextSize = 15
+                GpnlMinimize.ZIndex = 12
+                Stylize(GpnlMinimize)
+                RegisterTextLabel(GpnlMinimize)
+
+                local GpnlSep1 = Instance.new("Frame", GpnlFrame)
+                GpnlSep1.AnchorPoint = Vector2.new(0.5, 0)
+                GpnlSep1.Position = UDim2.new(0.5, 0, 0, 38)
+                GpnlSep1.Size = UDim2.new(1, -24, 0, 1)
+                GpnlSep1.BackgroundTransparency = 0.6
+                GpnlSep1.BackgroundColor3 = Color3.new(1, 1, 1)
+                GpnlSep1.BorderSizePixel = 0
+                GpnlSep1.ZIndex = 11
+
+                local GpnlScroll = Instance.new("ScrollingFrame", GpnlFrame)
+                GpnlScroll.Position = UDim2.new(0, 4, 0, 41)
+                GpnlScroll.Size = UDim2.new(1, -8, 0, 196)
+                GpnlScroll.BackgroundTransparency = 1
+                GpnlScroll.BorderSizePixel = 0
+                GpnlScroll.ScrollBarThickness = 4
+                GpnlScroll.ScrollBarImageColor3 = Color3.new(1, 1, 1)
+                GpnlScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+                GpnlScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+                GpnlScroll.ZIndex = 11
+                local GpnlLayout = Instance.new("UIListLayout", GpnlScroll)
+                GpnlLayout.SortOrder = Enum.SortOrder.LayoutOrder
+                GpnlLayout.Padding = UDim.new(0, 2)
+
+                local GpnlSep2 = Instance.new("Frame", GpnlFrame)
+                GpnlSep2.AnchorPoint = Vector2.new(0.5, 0)
+                GpnlSep2.Position = UDim2.new(0.5, 0, 0, 241)
+                GpnlSep2.Size = UDim2.new(1, -24, 0, 1)
+                GpnlSep2.BackgroundTransparency = 0.6
+                GpnlSep2.BackgroundColor3 = Color3.new(1, 1, 1)
+                GpnlSep2.BorderSizePixel = 0
+                GpnlSep2.ZIndex = 11
+
+                local GpnlRefresh = Util.Instance("TextButton", GpnlFrame)
+                GpnlRefresh.AnchorPoint = Vector2.new(0, 1)
+                GpnlRefresh.Position = UDim2.new(0, 8, 1, -28)
+                GpnlRefresh.Size = UDim2.new(1, -16, 0, 24)
+                GpnlRefresh.BackgroundTransparency = 0
+                GpnlRefresh.BorderSizePixel = 0
+                GpnlRefresh.Text = "Refresh"
+                GpnlRefresh.Font = Enum.Font.GothamBold
+                GpnlRefresh.TextSize = 11
+                GpnlRefresh.ZIndex = 12
+                Stylize(GpnlRefresh)
+                RegisterTextLabel(GpnlRefresh)
+
+                local GpnlStatus = Util.Instance("TextLabel", GpnlFrame)
+                GpnlStatus.AnchorPoint = Vector2.new(0.5, 1)
+                GpnlStatus.Position = UDim2.new(0.5, 0, 1, -6)
+                GpnlStatus.Size = UDim2.new(1, -16, 0, 14)
+                GpnlStatus.BackgroundTransparency = 1
+                GpnlStatus.Font = Enum.Font.Gotham
+                GpnlStatus.TextSize = 10
+                GpnlStatus.TextColor3 = Color3.new(0.45, 0.45, 0.45)
+                GpnlStatus.TextXAlignment = Enum.TextXAlignment.Center
+                GpnlStatus.ZIndex = 12
+                GpnlStatus.Text = "connecting..."
+                RegisterTextLabel(GpnlStatus)
+
+                local function RebuildGpnlList()
+                        for _, c in GpnlScroll:GetChildren() do
+                                if not c:IsA("UIListLayout") then c:Destroy() end
+                        end
+                        local list = _globalPlayers
+                        if #list == 0 then
+                                local emptyLbl = Util.Instance("TextLabel", GpnlScroll)
+                                emptyLbl.Size = UDim2.new(1, 0, 0, 60)
+                                emptyLbl.BackgroundTransparency = 1
+                                emptyLbl.Font = Enum.Font.Gotham
+                                emptyLbl.TextSize = 11
+                                emptyLbl.TextColor3 = Color3.new(0.5, 0.5, 0.5)
+                                emptyLbl.TextWrapped = true
+                                emptyLbl.ZIndex = 13
+                                emptyLbl.Text = _gpConnected
+                                        and "No other Uhhhhhh players online globally"
+                                        or  "Connecting to global relay..."
+                                RegisterTextLabel(emptyLbl)
+                        else
+                                for i, d in list do
+                                        local row = Instance.new("Frame", GpnlScroll)
+                                        row.Size = UDim2.new(1, 0, 0, 52)
+                                        row.BackgroundTransparency = 0.88
+                                        row.BackgroundColor3 = Color3.new(0.06, 0.06, 0.1)
+                                        row.BorderSizePixel = 0
+                                        row.LayoutOrder = i
+                                        row.ZIndex = 12
+
+                                        local nameLbl = Util.Instance("TextLabel", row)
+                                        nameLbl.Position = UDim2.new(0, 7, 0, 4)
+                                        nameLbl.Size = UDim2.new(1, -78, 0, 18)
+                                        nameLbl.BackgroundTransparency = 1
+                                        nameLbl.Font = Enum.Font.GothamBold
+                                        nameLbl.TextSize = 13
+                                        nameLbl.TextXAlignment = Enum.TextXAlignment.Left
+                                        nameLbl.TextTruncate = Enum.TextTruncate.AtEnd
+                                        nameLbl.ZIndex = 13
+                                        nameLbl.Text = d.name
+                                        RegisterTextLabel(nameLbl)
+
+                                        local gameLbl = Util.Instance("TextLabel", row)
+                                        gameLbl.Position = UDim2.new(0, 7, 0, 24)
+                                        gameLbl.Size = UDim2.new(1, -78, 0, 13)
+                                        gameLbl.BackgroundTransparency = 1
+                                        gameLbl.Font = Enum.Font.Gotham
+                                        gameLbl.TextSize = 10
+                                        gameLbl.TextXAlignment = Enum.TextXAlignment.Left
+                                        gameLbl.TextTruncate = Enum.TextTruncate.AtEnd
+                                        gameLbl.ZIndex = 13
+                                        gameLbl.Text = "Game " .. d.game
+                                        gameLbl.TextColor3 = Color3.new(0.55, 0.55, 0.55)
+                                        RegisterTextLabel(gameLbl)
+
+                                        local danceLbl = Util.Instance("TextLabel", row)
+                                        danceLbl.Position = UDim2.new(0, 7, 0, 37)
+                                        danceLbl.Size = UDim2.new(1, -78, 0, 12)
+                                        danceLbl.BackgroundTransparency = 1
+                                        danceLbl.Font = Enum.Font.Gotham
+                                        danceLbl.TextSize = 10
+                                        danceLbl.TextXAlignment = Enum.TextXAlignment.Left
+                                        danceLbl.TextTruncate = Enum.TextTruncate.AtEnd
+                                        danceLbl.ZIndex = 13
+                                        danceLbl.Text = d.dance ~= "" and ("Dancing: " .. d.dance) or "Not dancing"
+                                        danceLbl.TextColor3 = d.dance ~= "" and Color3.new(0.4, 1, 0.45) or Color3.new(0.45, 0.45, 0.45)
+                                        RegisterTextLabel(danceLbl)
+
+                                        local syncTag = Util.Instance("TextLabel", row)
+                                        syncTag.AnchorPoint = Vector2.new(1, 0.5)
+                                        syncTag.Position = UDim2.new(1, -6, 0.5, 0)
+                                        syncTag.Size = UDim2.new(0, 68, 0, 16)
+                                        syncTag.BackgroundTransparency = 1
+                                        syncTag.Font = Enum.Font.Gotham
+                                        syncTag.TextSize = 10
+                                        syncTag.TextXAlignment = Enum.TextXAlignment.Right
+                                        syncTag.ZIndex = 13
+                                        syncTag.Text = d.sync and "sync ON" or "sync OFF"
+                                        syncTag.TextColor3 = d.sync and Color3.new(0.3, 1, 0.4) or Color3.new(1, 0.35, 0.35)
+                                        RegisterTextLabel(syncTag)
+                                end
+                        end
+                        GpnlTitle.Text = "Global Players (" .. #list .. ")"
+                        local ago = math.floor(os.clock() - _gpLastPoll)
+                        GpnlStatus.Text = _gpConnected
+                                and ("updated " .. ago .. "s ago  •  " .. (request and "online" or "no http"))
+                                or  "connecting..."
+                end
+
+                local function GetGpnlShownPos()
+                        return UDim2.new(0, 322 + _gpnlDragOffset.X, 1, -20 + _gpnlDragOffset.Y)
+                end
+                local function GetGpnlHiddenPos()
+                        return UDim2.new(0, 322 + _gpnlDragOffset.X, 1, 80 + _gpnlDragOffset.Y)
+                end
+                local function ShowGpnl()
+                        RebuildGpnlList()
+                        GpnlFrame.Visible = true
+                        _gpnlVisible = true
+                        TweenService:Create(GpnlFrame, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
+                                { Position = GetGpnlShownPos() }):Play()
+                end
+                local function HideGpnl()
+                        _gpnlVisible = false
+                        local t = TweenService:Create(GpnlFrame, TweenInfo.new(0.22, Enum.EasingStyle.Quad, Enum.EasingDirection.In),
+                                { Position = GetGpnlHiddenPos() })
+                        t:Play()
+                        t.Completed:Connect(function() if not _gpnlVisible then GpnlFrame.Visible = false end end)
+                end
+
+                GpnlClose.Activated:Connect(function() HideGpnl() end)
+                GpnlMinimize.Activated:Connect(function()
+                        _gpnlMinimized = not _gpnlMinimized
+                        GpnlMinimize.Text = _gpnlMinimized and "+" or "-"
+                        TweenService:Create(GpnlFrame, TweenInfo.new(0.28, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+                                { Size = UDim2.new(0, GPNL_W, 0, _gpnlMinimized and GPNL_MIN_H or GPNL_FULL_H) }):Play()
+                end)
+                GpnlRefresh.Activated:Connect(function()
+                        if _gpnlVisible then
+                                GpnlStatus.Text = "refreshing..."
+                                task.spawn(function()
+                                        GlobalBeacon()
+                                        GlobalPoll()
+                                        if _gpnlVisible then RebuildGpnlList() end
+                                end)
+                        end
+                end)
+
+                -- Auto-refresh every 15s while open
+                task.spawn(function()
+                        while true do
+                                task.wait(15)
+                                if _gpnlVisible then pcall(RebuildGpnlList) end
+                        end
+                end)
+
+                -- Full-panel drag
+                UserInputService.InputBegan:Connect(function(input, gpe)
+                        if gpe then return end
+                        if _gpnlDragRef then return end
+                        if not _gpnlVisible then return end
+                        if input.UserInputType ~= Enum.UserInputType.MouseButton1 and input.UserInputType ~= Enum.UserInputType.Touch then return end
+                        local mp = Vector2.new(input.Position.X, input.Position.Y)
+                        local fp = GpnlFrame.AbsolutePosition
+                        local fs = GpnlFrame.AbsoluteSize
+                        if mp.X >= fp.X and mp.X <= fp.X + fs.X and mp.Y >= fp.Y and mp.Y <= fp.Y + fs.Y then
+                                _gpnlDragRef = input
+                                _gpnlDragLive = false
+                                _gpnlDragStart = mp
+                                _gpnlDragStartOff = _gpnlDragOffset
+                        end
+                end)
+                UserInputService.InputChanged:Connect(function(input)
+                        if not _gpnlDragRef then return end
+                        if input.UserInputType == Enum.UserInputType.MouseMovement or (input.UserInputType == Enum.UserInputType.Touch and _gpnlDragRef == input) then
+                                local mp = Vector2.new(input.Position.X, input.Position.Y)
+                                local delta = mp - _gpnlDragStart
+                                if not _gpnlDragLive and delta.Magnitude < 6 then return end
+                                _gpnlDragLive = true
+                                _gpnlDragOffset = _gpnlDragStartOff + delta
+                                if _gpnlVisible then GpnlFrame.Position = GetGpnlShownPos() end
+                        end
+                end)
+                UserInputService.InputEnded:Connect(function(input)
+                        if _gpnlDragRef and _gpnlDragRef == input then
+                                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                                        _gpnlDragRef = nil
+                                        _gpnlDragLive = false
+                                end
+                        end
+                end)
+
                 -- Sync section in main menu
                 UI.CreateSeparator(MainPage)
                 UI.CreateText(MainPage, "* Sync *", 15, Enum.TextXAlignment.Center)
                 UI.CreateButton(MainPage, "Uhhhhhh Players >", 20).Activated:Connect(function()
                         if _pnlVisible then HidePnl() else ShowPnl() end
+                end)
+                UI.CreateButton(MainPage, "Global Players >", 20).Activated:Connect(function()
+                        if _gpnlVisible then HideGpnl() else ShowGpnl() end
                 end)
                 local _syncSwitch = UI.CreateSwitch(MainPage, "Allow Others to Sync With Me", P2PSyncAllowed)
                 _syncSwitch.Changed:Connect(function(val)
