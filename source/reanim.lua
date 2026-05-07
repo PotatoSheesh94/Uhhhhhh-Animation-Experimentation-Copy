@@ -10685,6 +10685,499 @@ local d = function()
                         end
                 end
         end
+        do -- P2P Sync System
+                local P2P_TAG = "_UhhhhhP2P"
+                local P2PSyncAllowed = SaveData.P2PSyncAllowed ~= false
+
+                local function P2PEncode(hash, syncOk)
+                        return (hash or "") .. "|" .. (syncOk and "1" or "0")
+                end
+                local function P2PDecode(val)
+                        if type(val) ~= "string" then return "", true end
+                        local sep = val:find("|")
+                        if not sep then return val, true end
+                        return val:sub(1, sep - 1), val:sub(sep + 1) == "1"
+                end
+
+                -- Place detection marker on local character
+                local function PlaceMarker(character)
+                        pcall(function()
+                                local old = character:FindFirstChild(P2P_TAG)
+                                if old then old:Destroy() end
+                                local sv = Instance.new("StringValue")
+                                sv.Name = P2P_TAG
+                                sv.Value = P2PEncode("", P2PSyncAllowed)
+                                sv.Parent = character
+                        end)
+                end
+
+                -- Overhead BillboardGui tag
+                local function AddOverheadTag(player, character)
+                        task.spawn(function()
+                                pcall(function()
+                                        local head = character:WaitForChild("Head", 5)
+                                        if not head or not head.Parent then return end
+                                        local existing = head:FindFirstChild(P2P_TAG .. "_bb")
+                                        if existing then existing:Destroy() end
+                                        local bb = Instance.new("BillboardGui")
+                                        bb.Name = P2P_TAG .. "_bb"
+                                        bb.Size = UDim2.new(0, 240, 0, 28)
+                                        bb.StudsOffset = Vector3.new(0, 2.8, 0)
+                                        bb.AlwaysOnTop = false
+                                        bb.ResetOnSpawn = false
+                                        bb.Parent = head
+                                        local lbl = Instance.new("TextLabel", bb)
+                                        lbl.Size = UDim2.new(1, 0, 1, 0)
+                                        lbl.BackgroundTransparency = 1
+                                        lbl.Text = "[Uhhhhh Reanimation] " .. player.Name
+                                        lbl.TextColor3 = Color3.new(1, 0.88, 0.2)
+                                        lbl.TextStrokeColor3 = Color3.new(0, 0, 0)
+                                        lbl.TextStrokeTransparency = 0
+                                        lbl.Font = Enum.Font.GothamBold
+                                        lbl.TextSize = 12
+                                end)
+                        end)
+                end
+
+                -- Place marker + tag on local character, re-place on respawn
+                local lchar = Player.Character
+                if lchar then PlaceMarker(lchar) AddOverheadTag(Player, lchar) end
+                Player.CharacterAdded:Connect(function(char)
+                        task.wait()
+                        PlaceMarker(char)
+                        AddOverheadTag(Player, char)
+                end)
+
+                -- Keep marker value up-to-date every 0.5s
+                task.spawn(function()
+                        while true do
+                                task.wait(0.5)
+                                pcall(function()
+                                        local char = Player.Character
+                                        if not char then return end
+                                        local sv = char:FindFirstChild(P2P_TAG)
+                                        if not sv then PlaceMarker(char) sv = char:FindFirstChild(P2P_TAG) end
+                                        if sv then sv.Value = P2PEncode(CurrentDance and CurrentDance.Hash or "", P2PSyncAllowed) end
+                                end)
+                        end
+                end)
+
+                -- Watch other players: add overhead tags when their marker appears
+                local function WatchOtherPlayer(p)
+                        local function onChar(char)
+                                task.wait(1)
+                                if not char or not char.Parent then return end
+                                if char:FindFirstChild(P2P_TAG) then AddOverheadTag(p, char) end
+                                char.ChildAdded:Connect(function(child)
+                                        if child.Name == P2P_TAG then AddOverheadTag(p, char) end
+                                end)
+                        end
+                        if p.Character then task.spawn(onChar, p.Character) end
+                        p.CharacterAdded:Connect(onChar)
+                end
+                for _, p in Players:GetPlayers() do
+                        if p ~= Player then WatchOtherPlayer(p) end
+                end
+                Players.PlayerAdded:Connect(function(p) WatchOtherPlayer(p) end)
+
+                -- ============================================================
+                -- Players Panel UI
+                -- ============================================================
+                local _pnlVisible = false
+                local _pnlDragOffset = Vector2.zero
+                local _pnlDragRef = nil
+                local _pnlDragStart = Vector2.zero
+                local _pnlDragStartOff = Vector2.zero
+                local _pnlDragLive = false
+                local _pnlMinimized = false
+                local PNL_W = 292
+                local PNL_FULL_H = 258
+                local PNL_MIN_H  = 38
+
+                local PnlFrame = Instance.new("Frame", UIMainFrame)
+                PnlFrame.Active = true
+                PnlFrame.AnchorPoint = Vector2.new(0, 1)
+                PnlFrame.Position = UDim2.new(0, -400, 1, -20)
+                PnlFrame.Size = UDim2.new(0, PNL_W, 0, PNL_FULL_H)
+                PnlFrame.BackgroundTransparency = 0
+                PnlFrame.BackgroundColor3 = Color3.new(0, 0, 0)
+                PnlFrame.BorderSizePixel = 0
+                PnlFrame.ClipsDescendants = true
+                PnlFrame.Visible = false
+                PnlFrame.ZIndex = 10
+                Stylize(PnlFrame, { Glow = true })
+
+                local PnlTitle = Util.Instance("TextLabel", PnlFrame)
+                PnlTitle.Position = UDim2.new(0, 12, 0, 9)
+                PnlTitle.Size = UDim2.new(1, -90, 0, 20)
+                PnlTitle.BackgroundTransparency = 1
+                PnlTitle.Font = Enum.Font.GothamBold
+                PnlTitle.TextSize = 14
+                PnlTitle.TextXAlignment = Enum.TextXAlignment.Left
+                PnlTitle.ZIndex = 12
+                PnlTitle.Text = "Uhhhhhh Players (0)"
+                RegisterTextLabel(PnlTitle)
+
+                local PnlClose = Util.Instance("TextButton", PnlFrame)
+                PnlClose.AnchorPoint = Vector2.new(1, 0)
+                PnlClose.Position = UDim2.new(1, -8, 0, 8)
+                PnlClose.Size = UDim2.new(0, 22, 0, 22)
+                PnlClose.BackgroundTransparency = 0
+                PnlClose.BorderSizePixel = 0
+                PnlClose.Text = "x"
+                PnlClose.Font = Enum.Font.GothamBold
+                PnlClose.TextSize = 13
+                PnlClose.ZIndex = 12
+                Stylize(PnlClose)
+                RegisterTextLabel(PnlClose)
+
+                local PnlMinimize = Util.Instance("TextButton", PnlFrame)
+                PnlMinimize.AnchorPoint = Vector2.new(1, 0)
+                PnlMinimize.Position = UDim2.new(1, -34, 0, 8)
+                PnlMinimize.Size = UDim2.new(0, 22, 0, 22)
+                PnlMinimize.BackgroundTransparency = 0
+                PnlMinimize.BorderSizePixel = 0
+                PnlMinimize.Text = "-"
+                PnlMinimize.Font = Enum.Font.GothamBold
+                PnlMinimize.TextSize = 15
+                PnlMinimize.ZIndex = 12
+                Stylize(PnlMinimize)
+                RegisterTextLabel(PnlMinimize)
+
+                local PnlSep1 = Instance.new("Frame", PnlFrame)
+                PnlSep1.AnchorPoint = Vector2.new(0.5, 0)
+                PnlSep1.Position = UDim2.new(0.5, 0, 0, 38)
+                PnlSep1.Size = UDim2.new(1, -24, 0, 1)
+                PnlSep1.BackgroundTransparency = 0.6
+                PnlSep1.BackgroundColor3 = Color3.new(1, 1, 1)
+                PnlSep1.BorderSizePixel = 0
+                PnlSep1.ZIndex = 11
+
+                local PnlScroll = Instance.new("ScrollingFrame", PnlFrame)
+                PnlScroll.Position = UDim2.new(0, 4, 0, 41)
+                PnlScroll.Size = UDim2.new(1, -8, 0, 175)
+                PnlScroll.BackgroundTransparency = 1
+                PnlScroll.BorderSizePixel = 0
+                PnlScroll.ScrollBarThickness = 4
+                PnlScroll.ScrollBarImageColor3 = Color3.new(1, 1, 1)
+                PnlScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+                PnlScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+                PnlScroll.ZIndex = 11
+                local PnlLayout = Instance.new("UIListLayout", PnlScroll)
+                PnlLayout.SortOrder = Enum.SortOrder.LayoutOrder
+                PnlLayout.Padding = UDim.new(0, 2)
+
+                local PnlSep2 = Instance.new("Frame", PnlFrame)
+                PnlSep2.AnchorPoint = Vector2.new(0.5, 0)
+                PnlSep2.Position = UDim2.new(0.5, 0, 0, 220)
+                PnlSep2.Size = UDim2.new(1, -24, 0, 1)
+                PnlSep2.BackgroundTransparency = 0.6
+                PnlSep2.BackgroundColor3 = Color3.new(1, 1, 1)
+                PnlSep2.BorderSizePixel = 0
+                PnlSep2.ZIndex = 11
+
+                local PnlRefresh = Util.Instance("TextButton", PnlFrame)
+                PnlRefresh.AnchorPoint = Vector2.new(0, 1)
+                PnlRefresh.Position = UDim2.new(0, 8, 1, -8)
+                PnlRefresh.Size = UDim2.new(1, -16, 0, 26)
+                PnlRefresh.BackgroundTransparency = 0
+                PnlRefresh.BorderSizePixel = 0
+                PnlRefresh.Text = "Refresh List"
+                PnlRefresh.Font = Enum.Font.GothamBold
+                PnlRefresh.TextSize = 11
+                PnlRefresh.ZIndex = 12
+                Stylize(PnlRefresh)
+                RegisterTextLabel(PnlRefresh)
+
+                -- Sync context popup
+                local SyncCtx = Instance.new("Frame", UIMainFrame)
+                SyncCtx.Active = true
+                SyncCtx.AnchorPoint = Vector2.new(0, 0)
+                SyncCtx.Position = UDim2.new(0, 0, 0, 0)
+                SyncCtx.Size = UDim2.new(0, 204, 0, 88)
+                SyncCtx.BackgroundTransparency = 0
+                SyncCtx.BackgroundColor3 = Color3.new(0, 0, 0)
+                SyncCtx.BorderSizePixel = 0
+                SyncCtx.ClipsDescendants = true
+                SyncCtx.Visible = false
+                SyncCtx.ZIndex = 20
+                Stylize(SyncCtx, { Glow = true })
+
+                local SyncCtxName = Util.Instance("TextLabel", SyncCtx)
+                SyncCtxName.Position = UDim2.new(0, 8, 0, 7)
+                SyncCtxName.Size = UDim2.new(1, -16, 0, 17)
+                SyncCtxName.BackgroundTransparency = 1
+                SyncCtxName.Font = Enum.Font.GothamBold
+                SyncCtxName.TextSize = 13
+                SyncCtxName.TextXAlignment = Enum.TextXAlignment.Left
+                SyncCtxName.ZIndex = 21
+                SyncCtxName.Text = ""
+                RegisterTextLabel(SyncCtxName)
+
+                local SyncCtxInfo = Util.Instance("TextLabel", SyncCtx)
+                SyncCtxInfo.Position = UDim2.new(0, 8, 0, 26)
+                SyncCtxInfo.Size = UDim2.new(1, -16, 0, 14)
+                SyncCtxInfo.BackgroundTransparency = 1
+                SyncCtxInfo.Font = Enum.Font.Gotham
+                SyncCtxInfo.TextSize = 11
+                SyncCtxInfo.TextXAlignment = Enum.TextXAlignment.Left
+                SyncCtxInfo.ZIndex = 21
+                SyncCtxInfo.Text = ""
+                SyncCtxInfo.TextColor3 = Color3.new(0.65, 0.65, 0.65)
+                RegisterTextLabel(SyncCtxInfo)
+
+                local SyncCtxSep = Instance.new("Frame", SyncCtx)
+                SyncCtxSep.Position = UDim2.new(0, 8, 0, 44)
+                SyncCtxSep.Size = UDim2.new(1, -16, 0, 1)
+                SyncCtxSep.BackgroundTransparency = 0.6
+                SyncCtxSep.BackgroundColor3 = Color3.new(1, 1, 1)
+                SyncCtxSep.BorderSizePixel = 0
+                SyncCtxSep.ZIndex = 21
+
+                local SyncCtxDo = Util.Instance("TextButton", SyncCtx)
+                SyncCtxDo.Position = UDim2.new(0, 8, 0, 50)
+                SyncCtxDo.Size = UDim2.new(0.5, -12, 0, 28)
+                SyncCtxDo.BackgroundTransparency = 0
+                SyncCtxDo.BorderSizePixel = 0
+                SyncCtxDo.Text = "Sync Dance"
+                SyncCtxDo.Font = Enum.Font.GothamBold
+                SyncCtxDo.TextSize = 11
+                SyncCtxDo.ZIndex = 22
+                Stylize(SyncCtxDo)
+                RegisterTextLabel(SyncCtxDo)
+
+                local SyncCtxCancel = Util.Instance("TextButton", SyncCtx)
+                SyncCtxCancel.AnchorPoint = Vector2.new(1, 0)
+                SyncCtxCancel.Position = UDim2.new(1, -8, 0, 50)
+                SyncCtxCancel.Size = UDim2.new(0.5, -12, 0, 28)
+                SyncCtxCancel.BackgroundTransparency = 0
+                SyncCtxCancel.BorderSizePixel = 0
+                SyncCtxCancel.Text = "Cancel"
+                SyncCtxCancel.Font = Enum.Font.GothamBold
+                SyncCtxCancel.TextSize = 11
+                SyncCtxCancel.ZIndex = 22
+                Stylize(SyncCtxCancel)
+                RegisterTextLabel(SyncCtxCancel)
+
+                local _syncCtxTarget = nil
+                SyncCtxCancel.Activated:Connect(function()
+                        SyncCtx.Visible = false
+                        _syncCtxTarget = nil
+                end)
+                SyncCtxDo.Activated:Connect(function()
+                        local target = _syncCtxTarget
+                        SyncCtx.Visible = false
+                        _syncCtxTarget = nil
+                        if not target then return end
+                        local char = target.Character
+                        if not char then Util.UINotify(target.Name .. " has no character") return end
+                        local sv = char:FindFirstChild(P2P_TAG)
+                        if not sv then Util.UINotify(target.Name .. " is not running Uhhhhhh") return end
+                        local hash, syncOk = P2PDecode(sv.Value)
+                        if not syncOk then Util.UINotify(target.Name .. " has sync disabled") return end
+                        if hash == "" then Util.UINotify(target.Name .. " is not dancing") return end
+                        for _, dance in DanceableDances do
+                                if dance.Hash == hash then
+                                        CurrentDance = dance
+                                        DancePaused = false
+                                        Util.UINotify("Syncing with " .. target.Name .. ": " .. dance.Name)
+                                        return
+                                end
+                        end
+                        Util.UINotify("Dance not installed locally")
+                end)
+
+                -- Build the scrollable player list
+                local function RebuildPnlList()
+                        for _, c in PnlScroll:GetChildren() do
+                                if not c:IsA("UIListLayout") then c:Destroy() end
+                        end
+                        local count = 0
+                        for _, p in Players:GetPlayers() do
+                                if p == Player then continue end
+                                local char = p.Character
+                                if not char then continue end
+                                local sv = char:FindFirstChild(P2P_TAG)
+                                if not sv then continue end
+                                count += 1
+                                local hash, syncOk = P2PDecode(sv.Value)
+                                local danceName = ""
+                                if hash ~= "" then
+                                        for _, dance in DanceableDances do
+                                                if dance.Hash == hash then danceName = dance.Name break end
+                                        end
+                                        if danceName == "" then danceName = "Unknown" end
+                                end
+
+                                local row = Instance.new("Frame", PnlScroll)
+                                row.Size = UDim2.new(1, 0, 0, 46)
+                                row.BackgroundTransparency = 0.88
+                                row.BackgroundColor3 = Color3.new(0.08, 0.08, 0.08)
+                                row.BorderSizePixel = 0
+                                row.LayoutOrder = count
+                                row.ZIndex = 12
+
+                                local nameLbl = Util.Instance("TextLabel", row)
+                                nameLbl.Position = UDim2.new(0, 7, 0, 5)
+                                nameLbl.Size = UDim2.new(1, -78, 0, 18)
+                                nameLbl.BackgroundTransparency = 1
+                                nameLbl.Font = Enum.Font.GothamBold
+                                nameLbl.TextSize = 13
+                                nameLbl.TextXAlignment = Enum.TextXAlignment.Left
+                                nameLbl.TextTruncate = Enum.TextTruncate.AtEnd
+                                nameLbl.ZIndex = 13
+                                nameLbl.Text = p.Name
+                                RegisterTextLabel(nameLbl)
+
+                                local statusLbl = Util.Instance("TextLabel", row)
+                                statusLbl.Position = UDim2.new(0, 7, 0, 25)
+                                statusLbl.Size = UDim2.new(1, -78, 0, 14)
+                                statusLbl.BackgroundTransparency = 1
+                                statusLbl.Font = Enum.Font.Gotham
+                                statusLbl.TextSize = 11
+                                statusLbl.TextXAlignment = Enum.TextXAlignment.Left
+                                statusLbl.TextTruncate = Enum.TextTruncate.AtEnd
+                                statusLbl.ZIndex = 13
+                                statusLbl.Text = danceName ~= "" and ("Dancing: " .. danceName) or "Not dancing"
+                                statusLbl.TextColor3 = danceName ~= "" and Color3.new(0.4, 1, 0.45) or Color3.new(0.5, 0.5, 0.5)
+                                RegisterTextLabel(statusLbl)
+
+                                local syncTag = Util.Instance("TextLabel", row)
+                                syncTag.AnchorPoint = Vector2.new(1, 0.5)
+                                syncTag.Position = UDim2.new(1, -6, 0.5, 0)
+                                syncTag.Size = UDim2.new(0, 68, 0, 16)
+                                syncTag.BackgroundTransparency = 1
+                                syncTag.Font = Enum.Font.Gotham
+                                syncTag.TextSize = 10
+                                syncTag.TextXAlignment = Enum.TextXAlignment.Right
+                                syncTag.ZIndex = 13
+                                syncTag.Text = syncOk and "sync ON" or "sync OFF"
+                                syncTag.TextColor3 = syncOk and Color3.new(0.3, 1, 0.4) or Color3.new(1, 0.35, 0.35)
+                                RegisterTextLabel(syncTag)
+
+                                local rowBtn = Util.Instance("TextButton", row)
+                                rowBtn.Position = UDim2.new(0, 0, 0, 0)
+                                rowBtn.Size = UDim2.new(1, 0, 1, 0)
+                                rowBtn.BackgroundTransparency = 1
+                                rowBtn.Text = ""
+                                rowBtn.ZIndex = 14
+                                local cp, cname, cok = p, danceName, syncOk
+                                rowBtn.Activated:Connect(function()
+                                        _syncCtxTarget = cp
+                                        SyncCtxName.Text = cp.Name .. (cok and "" or " [sync disabled]")
+                                        SyncCtxInfo.Text = cname ~= "" and ("Dancing: " .. cname) or "Not dancing"
+                                        SyncCtxDo.Text = cok and "Sync Dance" or "Sync Disabled"
+                                        local fp = PnlFrame.AbsolutePosition
+                                        local fs = PnlFrame.AbsoluteSize
+                                        local sx = fp.X + fs.X + 6
+                                        local sy = fp.Y
+                                        local scr = Util.GetScreenSize()
+                                        if sx + 204 > scr.X then sx = fp.X - 210 end
+                                        SyncCtx.Position = UDim2.new(0, sx, 0, sy)
+                                        SyncCtx.Visible = true
+                                end)
+                        end
+                        if count == 0 then
+                                local emptyLbl = Util.Instance("TextLabel", PnlScroll)
+                                emptyLbl.Size = UDim2.new(1, 0, 0, 55)
+                                emptyLbl.BackgroundTransparency = 1
+                                emptyLbl.Font = Enum.Font.Gotham
+                                emptyLbl.TextSize = 11
+                                emptyLbl.TextColor3 = Color3.new(0.5, 0.5, 0.5)
+                                emptyLbl.TextWrapped = true
+                                emptyLbl.ZIndex = 13
+                                emptyLbl.Text = "No Uhhhhhh players detected"
+                                RegisterTextLabel(emptyLbl)
+                        end
+                        PnlTitle.Text = "Uhhhhhh Players (" .. count .. ")"
+                end
+
+                local function GetPnlShownPos()
+                        return UDim2.new(0, 20 + _pnlDragOffset.X, 1, -20 + _pnlDragOffset.Y)
+                end
+                local function GetPnlHiddenPos()
+                        return UDim2.new(0, 20 + _pnlDragOffset.X, 1, 80 + _pnlDragOffset.Y)
+                end
+                local function ShowPnl()
+                        RebuildPnlList()
+                        PnlFrame.Visible = true
+                        _pnlVisible = true
+                        TweenService:Create(PnlFrame, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { Position = GetPnlShownPos() }):Play()
+                end
+                local function HidePnl()
+                        _pnlVisible = false
+                        SyncCtx.Visible = false
+                        local t = TweenService:Create(PnlFrame, TweenInfo.new(0.22, Enum.EasingStyle.Quad, Enum.EasingDirection.In), { Position = GetPnlHiddenPos() })
+                        t:Play()
+                        t.Completed:Connect(function() if not _pnlVisible then PnlFrame.Visible = false end end)
+                end
+
+                PnlClose.Activated:Connect(function() HidePnl() end)
+                PnlMinimize.Activated:Connect(function()
+                        _pnlMinimized = not _pnlMinimized
+                        PnlMinimize.Text = _pnlMinimized and "+" or "-"
+                        TweenService:Create(PnlFrame, TweenInfo.new(0.28, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+                                { Size = UDim2.new(0, PNL_W, 0, _pnlMinimized and PNL_MIN_H or PNL_FULL_H) }):Play()
+                end)
+                PnlRefresh.Activated:Connect(function() if _pnlVisible then RebuildPnlList() end end)
+
+                -- Full-panel drag
+                UserInputService.InputBegan:Connect(function(input, gpe)
+                        if gpe then return end
+                        if _pnlDragRef then return end
+                        if not _pnlVisible then return end
+                        if input.UserInputType ~= Enum.UserInputType.MouseButton1 and input.UserInputType ~= Enum.UserInputType.Touch then return end
+                        local mp = Vector2.new(input.Position.X, input.Position.Y)
+                        local fp = PnlFrame.AbsolutePosition
+                        local fs = PnlFrame.AbsoluteSize
+                        if mp.X >= fp.X and mp.X <= fp.X + fs.X and mp.Y >= fp.Y and mp.Y <= fp.Y + fs.Y then
+                                _pnlDragRef = input
+                                _pnlDragLive = false
+                                _pnlDragStart = mp
+                                _pnlDragStartOff = _pnlDragOffset
+                        end
+                end)
+                UserInputService.InputChanged:Connect(function(input)
+                        if not _pnlDragRef then return end
+                        if input.UserInputType == Enum.UserInputType.MouseMovement or (input.UserInputType == Enum.UserInputType.Touch and _pnlDragRef == input) then
+                                local mp = Vector2.new(input.Position.X, input.Position.Y)
+                                local delta = mp - _pnlDragStart
+                                if not _pnlDragLive and delta.Magnitude < 6 then return end
+                                _pnlDragLive = true
+                                _pnlDragOffset = _pnlDragStartOff + delta
+                                if _pnlVisible then PnlFrame.Position = GetPnlShownPos() end
+                        end
+                end)
+                UserInputService.InputEnded:Connect(function(input)
+                        if _pnlDragRef and _pnlDragRef == input then
+                                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                                        _pnlDragRef = nil
+                                        _pnlDragLive = false
+                                end
+                        end
+                end)
+
+                -- Auto-refresh list every 3s while panel is open
+                task.spawn(function()
+                        while true do
+                                task.wait(3)
+                                if _pnlVisible then pcall(RebuildPnlList) end
+                        end
+                end)
+
+                -- Sync section in main menu
+                UI.CreateSeparator(MainPage)
+                UI.CreateText(MainPage, "* Sync *", 15, Enum.TextXAlignment.Center)
+                UI.CreateButton(MainPage, "Uhhhhhh Players >", 20).Activated:Connect(function()
+                        if _pnlVisible then HidePnl() else ShowPnl() end
+                end)
+                local _syncSwitch = UI.CreateSwitch(MainPage, "Allow Others to Sync With Me", P2PSyncAllowed)
+                _syncSwitch.Changed:Connect(function(val)
+                        P2PSyncAllowed = val
+                        SaveData.P2PSyncAllowed = val
+                end)
+        end -- P2P Sync System
+
         if WebSocket and WebSocket.connect then while task.wait(1) do
                 local look = WebSocket.connect("wss://ws-us2.pusher.com:443/app/00da9a105aadacead35f?client=lua&protocol=5&version=1.0.0")
                 if look then
