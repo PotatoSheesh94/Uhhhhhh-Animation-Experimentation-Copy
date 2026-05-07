@@ -4799,21 +4799,10 @@ function LimbReanimator.Start()
         Reanimate.CreateCharacter(InitCFrame)
 
         local lastrep = 0
-        local smoothedRootCF = nil
-        local smoothedRootVel = Vector3.zero
-        local lastAppliedRootCF = nil
-        local jointSpeedMult = {
-                ["Torso"]     = 1.00,
-                ["Head"]      = 0.93,
-                ["Left Arm"]  = 0.92,
-                ["Right Arm"] = 0.92,
-                ["Left Leg"]  = 0.97,
-                ["Right Leg"] = 0.97,
-        }
+
         local function UpdateTransforms(ReanimCharacter, RootPart, rootcf, rootvel, flingtarget, flingcf, dt)
                 if not RootPart:IsGrounded() or LimbReanimator.Mode == 3 then
                         if flingtarget then
-                                smoothedRootCF = nil
                                 if LimbReanimator.UseNaNFling then
                                         RootPart.CFrame = CFrame.new(flingcf.Position + Vector3.new(0, 0, math.random(0, 1) * 0.005)) * CFrame.Angles(0, os.clock() * 15, 0)
                                         RootPart.Velocity, RootPart.RotVelocity = Vector3.zero, Vector3.zero
@@ -4823,26 +4812,7 @@ function LimbReanimator.Start()
                                 end
                                 pcall(sethiddenproperty, RootPart, "PhysicsRepRootPart", Reanimate.UsePhysicsRepRootPart and Util.PredictionFlingPart(flingtarget.Target) or nil)
                         else
-                                local appliedCF
-                                if LimbReanimator.Mode == 3 and dt and dt > 0 then
-                                        if smoothedRootCF ~= rootcf then
-                                                local frameVel = smoothedRootCF
-                                                        and (rootcf.Position - smoothedRootCF.Position) / dt
-                                                        or Vector3.zero
-                                                smoothedRootCF = rootcf
-                                                local forwardSpd = math.clamp(frameVel:Dot(rootcf.LookVector),  -50, 50)
-                                                local lateralSpd = math.clamp(frameVel:Dot(rootcf.RightVector), -50, 50)
-                                                local targetLean = Vector3.new(-forwardSpd * 0.004, 0, -lateralSpd * 0.003)
-                                                smoothedRootVel = smoothedRootVel:Lerp(targetLean, 1 - math.exp(-14 * dt))
-                                                lastAppliedRootCF = rootcf * CFrame.Angles(smoothedRootVel.X, 0, smoothedRootVel.Z)
-                                        end
-                                        appliedCF = lastAppliedRootCF or rootcf
-                                else
-                                        smoothedRootCF = nil
-                                        smoothedRootVel = Vector3.zero
-                                        lastAppliedRootCF = nil
-                                        appliedCF = rootcf
-                                end
+                                local appliedCF = rootcf
                                 RootPart.CFrame = appliedCF + Vector3.new(0, 0, math.random(0, 1) * 0.005)
                                 RootPart.Velocity, RootPart.RotVelocity = rootvel, Vector3.zero
                                 pcall(sethiddenproperty, RootPart, "PhysicsRepRootPart", nil)
@@ -4893,7 +4863,7 @@ function LimbReanimator.Start()
                                         if dorep or not map.CFrame then
                                                 if map.CFrame and dt and dt > 0 then
                                                         if LimbReanimator.Mode == 3 then
-                                                                local alpha = 1 - math.exp(-100 * dt)
+                                                                local alpha = 1 - math.exp(-25 * dt)
                                                                 map.CFrame = map.CFrame:Lerp(cf, alpha)
                                                                 map.BlendTimer = nil
                                                         else
