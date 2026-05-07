@@ -4986,36 +4986,24 @@ function LimbReanimator.Start()
                                         Util.SetMotor6DTransform(v, CFrame.identity)
                                 else
                                         if LimbReanimator.Mode == 3 then
-                                                -- Read motor transform from RC (now driven by RC's Animator).
-                                                -- The RC Animator is loaded from our executor context so it
-                                                -- bypasses the LoadAnimation hook.  We copy the resulting
-                                                -- transform to the real character's motor via rawset and
-                                                -- ReplicateCurrentAngle6D so the server sees the animation.
+                                                -- Read motor transform from RC (driven by RC's Animator).
+                                                -- Directly copy the transform each frame (no lerp) to prevent
+                                                -- lag/glitch on the client.  Use SetMotor6DTransform so that
+                                                -- C0 is set (replicated) AND ReplicateCurrentAngle6D is set
+                                                -- so the server and other players see the animations.
                                                 local rcContainer = ReanimCharacter:FindFirstChild(map.RPart0 == "ROOT" and "HumanoidRootPart" or map.RPart0)
                                                 if rcContainer then
                                                         local rcMotor = rcContainer:FindFirstChild(v.Name)
                                                         if rcMotor and rcMotor:IsA("Motor6D") then
-                                                                local targetTransform = rcMotor:GetAttribute("_UhhhM3T") or rcMotor.Transform
                                                                 if dt ~= nil then
-                                                                        if map.CFrame and dt > 0 then
-                                                                                local alpha = 1 - math.exp(-30 * dt)
-                                                                                map.CFrame = map.CFrame:Lerp(targetTransform, alpha)
-                                                                        else
-                                                                                map.CFrame = targetTransform
-                                                                        end
+                                                                        map.CFrame = rcMotor.Transform
                                                                 end
                                                         end
                                                 end
                                                 if map.CFrame then
                                                         local transform = map.CFrame
                                                         pcall(rawset, v, "Transform", transform)
-                                                        if map.OrigC0 then
-                                                                pcall(function() v.C0 = map.OrigC0 * transform end)
-                                                        end
-                                                        local axis, tangle = transform:ToAxisAngle()
-                                                        local newangle = axis * tangle
-                                                        pcall(sethiddenproperty, v, "ReplicateCurrentOffset6D", transform.Position)
-                                                        pcall(sethiddenproperty, v, "ReplicateCurrentAngle6D", newangle)
+                                                        Util.SetMotor6DTransform(v, transform)
                                                 end
                                         else
                                                 local cf = CFrame.identity
@@ -10845,20 +10833,16 @@ local d = function()
         end
         do -- P2P Sync System
                 local P2P_TAG = "_UhhhhhP2P"
-                local P2PSyncAllowed = SaveData.P2PSyncAllowed ~= false
 
                 local P2P_PREFIX = "UHH1|"
-                local function P2PEncode(hash, syncOk)
-                        return P2P_PREFIX .. (hash or "") .. "|" .. (syncOk and "1" or "0")
+                local function P2PEncode(hash)
+                        return P2P_PREFIX .. (hash or "")
                 end
-                -- Returns hash, syncOk, isValid. isValid=false means wrong script/version.
+                -- Returns hash, isValid. isValid=false means wrong script/version.
                 local function P2PDecode(val)
-                        if type(val) ~= "string" then return "", true, false end
-                        if val:sub(1, #P2P_PREFIX) ~= P2P_PREFIX then return "", true, false end
-                        val = val:sub(#P2P_PREFIX + 1)
-                        local sep = val:find("|")
-                        if not sep then return val, true, true end
-                        return val:sub(1, sep - 1), val:sub(sep + 1) == "1", true
+                        if type(val) ~= "string" then return "", false end
+                        if val:sub(1, #P2P_PREFIX) ~= P2P_PREFIX then return "", false end
+                        return val:sub(#P2P_PREFIX + 1), true
                 end
                 -- Locate the marker; checks HumanoidRootPart first (server-replicated), then character
                 local function GetP2PMarker(character)
@@ -10889,103 +10873,17 @@ local d = function()
                                 end
                                 local sv = Instance.new("StringValue")
                                 sv.Name = P2P_TAG
-                                sv.Value = P2PEncode("", P2PSyncAllowed)
+                                sv.Value = P2PEncode("")
                                 sv.Parent = character
                         end)
                 end
 
-                -- Overhead BillboardGui tag (client-local only: parented to SCREENGUI
-                -- with Adornee pointing at the visible ReanimCharacter head, so it is
-                -- NEVER replicated to the server but IS visible to any Uhhhhhh user
-                -- who detects the P2P marker on another player's real character)
-                local _overheadTags = {}  -- [player] = BillboardGui
-                local function AddOverheadTag(player, character)
-                        task.spawn(function()
-                                pcall(function()
-                                        local head = nil
-                                        if player == Player then
-                                                -- For ourselves: wait for the visible ReanimCharacter head
-                                                -- (real character is in the void; RC head is what's on-screen)
-                                                local deadline = os.clock() + 12
-                                                while os.clock() < deadline do
-                                                        if Reanimate.Character then
-                                                                head = Reanimate.Character:FindFirstChild("Head")
-                                                                if head and head.Parent then break end
-                                                        end
-                                                        task.wait(0.1)
-                                                end
-                                        else
-                                                -- For other Uhhhhhh users: find their RC by the owner attribute
-                                                -- so the tag appears above their visible animated model, not
-                                                -- their void-character
-                                                local deadline = os.clock() + 6
-                                                while os.clock() < deadline do
-                                                        for _, model in workspace:GetChildren() do
-                                                                if model:IsA("Model")
-                                                                        and tostring(model:GetAttribute("_UhhhhhRC_Owner")) == tostring(player.UserId) then
-                                                                        local h = model:FindFirstChild("Head")
-                                                                        if h and h.Parent then
-                                                                                head = h
-                                                                                break
-                                                                        end
-                                                                end
-                                                        end
-                                                        if head then break end
-                                                        task.wait(0.5)
-                                                end
-                                                -- Fallback: real character head (may be in void on old versions)
-                                                if not head then
-                                                        head = character:FindFirstChild("Head")
-                                                end
-                                        end
-                                        if not head or not head.Parent then return end
-                                        -- Remove stale tag if it exists
-                                        if _overheadTags[player] then
-                                                _overheadTags[player]:Destroy()
-                                                _overheadTags[player] = nil
-                                        end
-                                        local bb = Instance.new("BillboardGui")
-                                        bb.Name = P2P_TAG .. "_bb_" .. player.UserId
-                                        bb.Size = UDim2.new(0, 240, 0, 28)
-                                        bb.StudsOffset = Vector3.new(0, 2.8, 0)
-                                        bb.AlwaysOnTop = false
-                                        bb.ResetOnSpawn = false
-                                        bb.Adornee = head
-                                        bb.Parent = SCREENGUI
-                                        _overheadTags[player] = bb
-                                        local lbl = Instance.new("TextLabel", bb)
-                                        lbl.Size = UDim2.new(1, 0, 1, 0)
-                                        lbl.BackgroundTransparency = 1
-                                        lbl.Text = "[Uhhhhh Reanimation] " .. player.Name
-                                        lbl.TextColor3 = Color3.new(1, 0.88, 0.2)
-                                        lbl.TextStrokeColor3 = Color3.new(0, 0, 0)
-                                        lbl.TextStrokeTransparency = 0
-                                        lbl.Font = Enum.Font.GothamBold
-                                        lbl.TextSize = 12
-                                        -- Clean up when the adorned head or the real character leaves
-                                        local function cleanup()
-                                                if _overheadTags[player] == bb then
-                                                        bb:Destroy()
-                                                        _overheadTags[player] = nil
-                                                end
-                                        end
-                                        character.AncestryChanged:Connect(function()
-                                                if not character.Parent then cleanup() end
-                                        end)
-                                        head.AncestryChanged:Connect(function()
-                                                if not head.Parent then cleanup() end
-                                        end)
-                                end)
-                        end)
-                end
-
-                -- Place marker + tag on local character, re-place on respawn
+                -- Place marker on local character, re-place on respawn
                 local lchar = Player.Character
-                if lchar then PlaceMarker(lchar) AddOverheadTag(Player, lchar) end
+                if lchar then PlaceMarker(lchar) end
                 Player.CharacterAdded:Connect(function(char)
                         task.wait()
                         PlaceMarker(char)
-                        AddOverheadTag(Player, char)
                 end)
 
                 -- Keep marker value up-to-date every 0.5s (checks HRP first, re-places if missing)
@@ -10997,27 +10895,20 @@ local d = function()
                                         if not char then return end
                                         local sv = GetP2PMarker(char)
                                         if not sv then PlaceMarker(char) sv = GetP2PMarker(char) end
-                                        if sv then sv.Value = P2PEncode(CurrentDance and CurrentDance.Hash or "", P2PSyncAllowed) end
+                                        if sv then sv.Value = P2PEncode(CurrentDance and CurrentDance.Hash or "") end
                                 end)
                         end
                 end)
 
-                -- Watch other players: add overhead tags when their Uhhhhhh marker appears
+                -- Watch other players: detect their Uhhhhhh marker
                 local function WatchOtherPlayer(p)
                         local function onChar(char)
                                 task.wait(1)
                                 if not char or not char.Parent then return end
-                                -- Check immediately (marker may already be present if server-replicated)
-                                if GetP2PMarker(char) then
-                                        local sv = GetP2PMarker(char)
-                                        local _, _, valid = P2PDecode(sv.Value)
-                                        if valid then AddOverheadTag(p, char) end
-                                end
                                 -- Also watch the character root and HumanoidRootPart for late marker arrival
                                 local function onChildAdded(child)
                                         if child.Name == P2P_TAG then
-                                                local _, _, valid = P2PDecode(child.Value)
-                                                if valid then AddOverheadTag(p, char) end
+                                                -- marker detected (used by outline/panel features)
                                         end
                                 end
                                 char.ChildAdded:Connect(onChildAdded)
@@ -11036,13 +10927,7 @@ local d = function()
                         if p ~= Player then WatchOtherPlayer(p) end
                 end
                 Players.PlayerAdded:Connect(function(p) WatchOtherPlayer(p) end)
-                -- Clean up overhead tags when a player leaves
-                Players.PlayerRemoving:Connect(function(p)
-                        if _overheadTags[p] then
-                                _overheadTags[p]:Destroy()
-                                _overheadTags[p] = nil
-                        end
-                end)
+                Players.PlayerRemoving:Connect(function(p) end)
 
                 -- ============================================================
                 -- Click-to-Outline (client-local only)
@@ -11110,7 +10995,7 @@ local d = function()
                         if not hitChar then return end
                         local sv = GetP2PMarker(hitChar)
                         if not sv then return end
-                        local _, _, valid = P2PDecode(sv.Value)
+                        local _, valid = P2PDecode(sv.Value)
                         if not valid then return end
                         SetCharOutline(hitChar, not IsCharOutlined(hitChar))
                         local pname = ""
@@ -11278,22 +11163,10 @@ local d = function()
                 SyncCtxSep.BorderSizePixel = 0
                 SyncCtxSep.ZIndex = 21
 
-                local SyncCtxDo = Util.Instance("TextButton", SyncCtx)
-                SyncCtxDo.Position = UDim2.new(0, 8, 0, 50)
-                SyncCtxDo.Size = UDim2.new(0.5, -12, 0, 28)
-                SyncCtxDo.BackgroundTransparency = 0
-                SyncCtxDo.BorderSizePixel = 0
-                SyncCtxDo.Text = "Sync Dance"
-                SyncCtxDo.Font = Enum.Font.GothamBold
-                SyncCtxDo.TextSize = 11
-                SyncCtxDo.ZIndex = 22
-                Stylize(SyncCtxDo)
-                RegisterTextLabel(SyncCtxDo)
-
                 local SyncCtxOutline = Util.Instance("TextButton", SyncCtx)
-                SyncCtxOutline.AnchorPoint = Vector2.new(1, 0)
-                SyncCtxOutline.Position = UDim2.new(1, -8, 0, 50)
-                SyncCtxOutline.Size = UDim2.new(0.5, -12, 0, 28)
+                SyncCtxOutline.AnchorPoint = Vector2.new(0, 0)
+                SyncCtxOutline.Position = UDim2.new(0, 8, 0, 50)
+                SyncCtxOutline.Size = UDim2.new(1, -16, 0, 28)
                 SyncCtxOutline.BackgroundTransparency = 0
                 SyncCtxOutline.BorderSizePixel = 0
                 SyncCtxOutline.Text = "Outline OFF"
@@ -11329,29 +11202,6 @@ local d = function()
                         SyncCtxOutline.Text = IsCharOutlined(char) and "Outline ON" or "Outline OFF"
                         SyncCtxOutline.TextColor3 = IsCharOutlined(char) and Color3.new(0, 0.82, 1) or nil
                 end)
-                SyncCtxDo.Activated:Connect(function()
-                        local target = _syncCtxTarget
-                        SyncCtx.Visible = false
-                        _syncCtxTarget = nil
-                        if not target then return end
-                        local char = target.Character
-                        if not char then Util.UINotify(target.Name .. " has no character") return end
-                        local sv = GetP2PMarker(char)
-                        if not sv then Util.UINotify(target.Name .. " is not running Uhhhhhh") return end
-                        local hash, syncOk, valid = P2PDecode(sv.Value)
-                        if not valid then Util.UINotify(target.Name .. " is not running Uhhhhhh") return end
-                        if not syncOk then Util.UINotify(target.Name .. " has sync disabled") return end
-                        if hash == "" then Util.UINotify(target.Name .. " is not dancing") return end
-                        for _, dance in DanceableDances do
-                                if dance.Hash == hash then
-                                        CurrentDance = dance
-                                        DancePaused = false
-                                        Util.UINotify("Syncing with " .. target.Name .. ": " .. dance.Name)
-                                        return
-                                end
-                        end
-                        Util.UINotify("Dance not installed locally")
-                end)
 
                 -- Build the scrollable player list
                 local function RebuildPnlList()
@@ -11365,7 +11215,7 @@ local d = function()
                                 if not char then continue end
                                 local sv = GetP2PMarker(char)
                                 if not sv then continue end
-                                local hash, syncOk, valid = P2PDecode(sv.Value)
+                                local hash, valid = P2PDecode(sv.Value)
                                 if not valid then continue end
                                 count += 1
                                 local danceName = ""
@@ -11386,7 +11236,7 @@ local d = function()
 
                                 local nameLbl = Util.Instance("TextLabel", row)
                                 nameLbl.Position = UDim2.new(0, 7, 0, 5)
-                                nameLbl.Size = UDim2.new(1, -78, 0, 18)
+                                nameLbl.Size = UDim2.new(1, -14, 0, 18)
                                 nameLbl.BackgroundTransparency = 1
                                 nameLbl.Font = Enum.Font.GothamBold
                                 nameLbl.TextSize = 13
@@ -11398,7 +11248,7 @@ local d = function()
 
                                 local statusLbl = Util.Instance("TextLabel", row)
                                 statusLbl.Position = UDim2.new(0, 7, 0, 25)
-                                statusLbl.Size = UDim2.new(1, -78, 0, 14)
+                                statusLbl.Size = UDim2.new(1, -14, 0, 14)
                                 statusLbl.BackgroundTransparency = 1
                                 statusLbl.Font = Enum.Font.Gotham
                                 statusLbl.TextSize = 11
@@ -11409,31 +11259,17 @@ local d = function()
                                 statusLbl.TextColor3 = danceName ~= "" and Color3.new(0.4, 1, 0.45) or Color3.new(0.5, 0.5, 0.5)
                                 RegisterTextLabel(statusLbl)
 
-                                local syncTag = Util.Instance("TextLabel", row)
-                                syncTag.AnchorPoint = Vector2.new(1, 0.5)
-                                syncTag.Position = UDim2.new(1, -6, 0.5, 0)
-                                syncTag.Size = UDim2.new(0, 68, 0, 16)
-                                syncTag.BackgroundTransparency = 1
-                                syncTag.Font = Enum.Font.Gotham
-                                syncTag.TextSize = 10
-                                syncTag.TextXAlignment = Enum.TextXAlignment.Right
-                                syncTag.ZIndex = 13
-                                syncTag.Text = syncOk and "sync ON" or "sync OFF"
-                                syncTag.TextColor3 = syncOk and Color3.new(0.3, 1, 0.4) or Color3.new(1, 0.35, 0.35)
-                                RegisterTextLabel(syncTag)
-
                                 local rowBtn = Util.Instance("TextButton", row)
                                 rowBtn.Position = UDim2.new(0, 0, 0, 0)
                                 rowBtn.Size = UDim2.new(1, 0, 1, 0)
                                 rowBtn.BackgroundTransparency = 1
                                 rowBtn.Text = ""
                                 rowBtn.ZIndex = 14
-                                local cp, cname, cok = p, danceName, syncOk
+                                local cp, cname = p, danceName
                                 rowBtn.Activated:Connect(function()
                                         _syncCtxTarget = cp
-                                        SyncCtxName.Text = cp.Name .. (cok and "" or " [sync disabled]")
+                                        SyncCtxName.Text = cp.Name
                                         SyncCtxInfo.Text = cname ~= "" and ("Dancing: " .. cname) or "Not dancing"
-                                        SyncCtxDo.Text = cok and "Sync Dance" or "Sync Disabled"
                                         local outlined = cp.Character and IsCharOutlined(cp.Character)
                                         SyncCtxOutline.Text = outlined and "Outline ON" or "Outline OFF"
                                         SyncCtxOutline.TextColor3 = outlined and Color3.new(0, 0.82, 1) or Color3.new(1, 1, 1)
@@ -11559,7 +11395,6 @@ local d = function()
                                         uid   = tostring(Player.UserId),
                                         game  = tostring(game.PlaceId),
                                         dance = CurrentDance and CurrentDance.Name or "",
-                                        sync  = P2PSyncAllowed and 1 or 0,
                                 })
                                 request({ Url = GLOBAL_POST, Method = "POST", Body = body,
                                         Headers = { ["Content-Type"] = "application/json" } })
@@ -11588,7 +11423,6 @@ local d = function()
                                                                 uid   = tostring(d.uid),
                                                                 game  = tostring(d.game or ""),
                                                                 dance = tostring(d.dance or ""),
-                                                                sync  = d.sync == 1,
                                                         })
                                                 end
                                         end
@@ -11810,19 +11644,6 @@ local d = function()
                                         danceLbl.Text = d.dance ~= "" and ("Dancing: " .. d.dance) or "Not dancing"
                                         danceLbl.TextColor3 = d.dance ~= "" and Color3.new(0.4, 1, 0.45) or Color3.new(0.45, 0.45, 0.45)
                                         RegisterTextLabel(danceLbl)
-
-                                        local syncTag = Util.Instance("TextLabel", row)
-                                        syncTag.AnchorPoint = Vector2.new(1, 0.5)
-                                        syncTag.Position = UDim2.new(1, -6, 0.5, 0)
-                                        syncTag.Size = UDim2.new(0, 68, 0, 16)
-                                        syncTag.BackgroundTransparency = 1
-                                        syncTag.Font = Enum.Font.Gotham
-                                        syncTag.TextSize = 10
-                                        syncTag.TextXAlignment = Enum.TextXAlignment.Right
-                                        syncTag.ZIndex = 13
-                                        syncTag.Text = d.sync and "sync ON" or "sync OFF"
-                                        syncTag.TextColor3 = d.sync and Color3.new(0.3, 1, 0.4) or Color3.new(1, 0.35, 0.35)
-                                        RegisterTextLabel(syncTag)
                                 end
                         end
                         GpnlTitle.Text = "Global Players (" .. #list .. ")"
@@ -11915,19 +11736,14 @@ local d = function()
                         end
                 end)
 
-                -- Sync section in main menu
+                -- Players section in main menu
                 UI.CreateSeparator(MainPage)
-                UI.CreateText(MainPage, "* Sync *", 15, Enum.TextXAlignment.Center)
+                UI.CreateText(MainPage, "* Players *", 15, Enum.TextXAlignment.Center)
                 UI.CreateButton(MainPage, "Uhhhhhh Players >", 20).Activated:Connect(function()
                         if _pnlVisible then HidePnl() else ShowPnl() end
                 end)
                 UI.CreateButton(MainPage, "Global Players >", 20).Activated:Connect(function()
                         if _gpnlVisible then HideGpnl() else ShowGpnl() end
-                end)
-                local _syncSwitch = UI.CreateSwitch(MainPage, "Allow Others to Sync With Me", P2PSyncAllowed)
-                _syncSwitch.Changed:Connect(function(val)
-                        P2PSyncAllowed = val
-                        SaveData.P2PSyncAllowed = val
                 end)
         end -- P2P Sync System
 
