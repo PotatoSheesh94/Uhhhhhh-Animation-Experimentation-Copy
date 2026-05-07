@@ -4751,7 +4751,7 @@ function LimbReanimator.Start()
         Reanimate.CreateCharacter(InitCFrame)
 
         local lastrep = 0
-        local function UpdateTransforms(ReanimCharacter, RootPart, rootcf, rootvel, flingtarget, flingcf)
+        local function UpdateTransforms(ReanimCharacter, RootPart, rootcf, rootvel, flingtarget, flingcf, dt)
                 if not RootPart:IsGrounded() then
                         if flingtarget then
                                 if LimbReanimator.UseNaNFling then
@@ -4805,7 +4805,12 @@ function LimbReanimator.Start()
                                                 end
                                         end
                                         if dorep or not map.CFrame then
-                                                map.CFrame = cf
+                                                if dt and map.CFrame then
+                                                        local alpha = 1 - math.exp(-30 * dt)
+                                                        map.CFrame = map.CFrame:Lerp(cf, alpha)
+                                                else
+                                                        map.CFrame = cf
+                                                end
                                         end
                                         Util.SetMotor6DOffset(v, map.CFrame)
                                 end
@@ -4894,7 +4899,7 @@ function LimbReanimator.Start()
                                 end
                         end
                         if Character and Humanoid and RootPart then
-                                RunService.Heartbeat:Wait()
+                                local dt = RunService.Heartbeat:Wait()
                                 local t = os.clock()
                                 local flingtarget = LimbReanimator.FlingTargets[1]
                                 if flingtarget then
@@ -4915,7 +4920,7 @@ function LimbReanimator.Start()
                                                 flingtarget = nil
                                         end
                                 end
-                                UpdateTransforms(ReanimCharacter, RootPart, rootcf, rootvel, flingtarget, flingcf)
+                                UpdateTransforms(ReanimCharacter, RootPart, rootcf, rootvel, flingtarget, flingcf, dt)
                                 if LimbReanimator.UseNaNFling then
                                         if os.clock() - lastspawn > 0.1 then
                                                 pcall(sethiddenproperty, Humanoid, "MoveDirectionInternal", Vector3.new(0/0, 0/0, 0/0))
