@@ -8112,13 +8112,18 @@ do -- Dance Player Popup
         local _popupDragRef = nil
         local _popupDragStart = Vector2.zero
         local _popupDragStartOffset = Vector2.zero
-        local _popupDragOffset = Vector2.zero
+        local _popupDragOffset = (function()
+                local d = SaveData.DancePopupDragOffset
+                if type(d) == "table" and type(d[1]) == "number" and type(d[2]) == "number" then
+                        return Vector2.new(d[1], d[2])
+                end
+                return Vector2.zero
+        end)()
 
         local DancePopupFrame = Instance.new("Frame", UIMainFrame)
         DancePopupFrame.Active = true
         DancePopupFrame.AnchorPoint = Vector2.new(0.5, 1)
         DancePopupFrame.Position = UDim2.new(0.5, 0, 1, 80)
-        DancePopupFrame.Size = UDim2.new(0, 320, 0, 164)
         DancePopupFrame.BackgroundTransparency = 0
         DancePopupFrame.BackgroundColor3 = Color3.new(0, 0, 0)
         DancePopupFrame.BorderSizePixel = 0
@@ -8127,9 +8132,10 @@ do -- Dance Player Popup
         DancePopupFrame.ZIndex = 10
         Stylize(DancePopupFrame, { Glow = true })
 
-        local _popupMinimized = false
+        local _popupMinimized = not not SaveData.DancePopupMinimized
         local POPUP_FULL_H = 164
         local POPUP_MIN_H  = 38
+        DancePopupFrame.Size = UDim2.new(0, 320, 0, _popupMinimized and POPUP_MIN_H or POPUP_FULL_H)
 
         local DancePopupClose = Util.Instance("TextButton", DancePopupFrame)
         DancePopupClose.AnchorPoint = Vector2.new(1, 0)
@@ -8150,7 +8156,7 @@ do -- Dance Player Popup
         DancePopupMinimize.Size = UDim2.new(0, 22, 0, 22)
         DancePopupMinimize.BackgroundTransparency = 0
         DancePopupMinimize.BorderSizePixel = 0
-        DancePopupMinimize.Text = "-"
+        DancePopupMinimize.Text = _popupMinimized and "+" or "-"
         DancePopupMinimize.Font = Enum.Font.GothamBold
         DancePopupMinimize.TextSize = 15
         DancePopupMinimize.ZIndex = 12
@@ -8181,6 +8187,8 @@ do -- Dance Player Popup
                         TweenInfo.new(0.28, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
                         { Size = UDim2.new(0, 320, 0, targetH) }
                 ):Play()
+                SaveData.DancePopupMinimized = _popupMinimized
+                SaveData.DancePopupDragOffset = {_popupDragOffset.X, _popupDragOffset.Y}
         end)
 
         -- Header title (matches Players panel style)
@@ -8334,6 +8342,7 @@ do -- Dance Player Popup
                 if _popupDragRef and _popupDragRef == input then
                         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
                                 _popupDragRef = nil
+                                SaveData.DancePopupDragOffset = {_popupDragOffset.X, _popupDragOffset.Y}
                         end
                 end
         end)
@@ -10845,12 +10854,18 @@ local d = function()
                 -- Players Panel UI
                 -- ============================================================
                 local _pnlVisible = false
-                local _pnlDragOffset = Vector2.zero
+                local _pnlDragOffset = (function()
+                        local d = SaveData.PnlDragOffset
+                        if type(d) == "table" and type(d[1]) == "number" and type(d[2]) == "number" then
+                                return Vector2.new(d[1], d[2])
+                        end
+                        return Vector2.zero
+                end)()
                 local _pnlDragRef = nil
                 local _pnlDragStart = Vector2.zero
                 local _pnlDragStartOff = Vector2.zero
                 local _pnlDragLive = false
-                local _pnlMinimized = false
+                local _pnlMinimized = not not SaveData.PnlMinimized
                 local PNL_W = 292
                 local PNL_FULL_H = 258
                 local PNL_MIN_H  = 38
@@ -10859,7 +10874,7 @@ local d = function()
                 PnlFrame.Active = true
                 PnlFrame.AnchorPoint = Vector2.new(0, 1)
                 PnlFrame.Position = UDim2.new(0, -400, 1, -20)
-                PnlFrame.Size = UDim2.new(0, PNL_W, 0, PNL_FULL_H)
+                PnlFrame.Size = UDim2.new(0, PNL_W, 0, _pnlMinimized and PNL_MIN_H or PNL_FULL_H)
                 PnlFrame.BackgroundTransparency = 0
                 PnlFrame.BackgroundColor3 = Color3.new(0, 0, 0)
                 PnlFrame.BorderSizePixel = 0
@@ -10898,7 +10913,7 @@ local d = function()
                 PnlMinimize.Size = UDim2.new(0, 22, 0, 22)
                 PnlMinimize.BackgroundTransparency = 0
                 PnlMinimize.BorderSizePixel = 0
-                PnlMinimize.Text = "-"
+                PnlMinimize.Text = _pnlMinimized and "+" or "-"
                 PnlMinimize.Font = Enum.Font.GothamBold
                 PnlMinimize.TextSize = 15
                 PnlMinimize.ZIndex = 12
@@ -11156,6 +11171,8 @@ local d = function()
                         PnlMinimize.Text = _pnlMinimized and "+" or "-"
                         TweenService:Create(PnlFrame, TweenInfo.new(0.28, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
                                 { Size = UDim2.new(0, PNL_W, 0, _pnlMinimized and PNL_MIN_H or PNL_FULL_H) }):Play()
+                        SaveData.PnlMinimized = _pnlMinimized
+                        SaveData.PnlDragOffset = {_pnlDragOffset.X, _pnlDragOffset.Y}
                 end)
                 PnlRefresh.Activated:Connect(function() if _pnlVisible then RebuildPnlList() end end)
 
@@ -11191,6 +11208,7 @@ local d = function()
                                 if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
                                         _pnlDragRef = nil
                                         _pnlDragLive = false
+                                        SaveData.PnlDragOffset = {_pnlDragOffset.X, _pnlDragOffset.Y}
                                 end
                         end
                 end)
@@ -11314,12 +11332,18 @@ local d = function()
                 -- Global Players Panel UI
                 -- ============================================================
                 local _gpnlVisible = false
-                local _gpnlDragOffset = Vector2.zero
+                local _gpnlDragOffset = (function()
+                        local d = SaveData.GpnlDragOffset
+                        if type(d) == "table" and type(d[1]) == "number" and type(d[2]) == "number" then
+                                return Vector2.new(d[1], d[2])
+                        end
+                        return Vector2.zero
+                end)()
                 local _gpnlDragRef = nil
                 local _gpnlDragStart = Vector2.zero
                 local _gpnlDragStartOff = Vector2.zero
                 local _gpnlDragLive = false
-                local _gpnlMinimized = false
+                local _gpnlMinimized = not not SaveData.GpnlMinimized
                 local GPNL_W      = 292
                 local GPNL_FULL_H = 286
                 local GPNL_MIN_H  = 38
@@ -11328,7 +11352,7 @@ local d = function()
                 GpnlFrame.Active = true
                 GpnlFrame.AnchorPoint = Vector2.new(0, 1)
                 GpnlFrame.Position = UDim2.new(0, -500, 1, -20)
-                GpnlFrame.Size = UDim2.new(0, GPNL_W, 0, GPNL_FULL_H)
+                GpnlFrame.Size = UDim2.new(0, GPNL_W, 0, _gpnlMinimized and GPNL_MIN_H or GPNL_FULL_H)
                 GpnlFrame.BackgroundTransparency = 0
                 GpnlFrame.BackgroundColor3 = Color3.new(0, 0, 0)
                 GpnlFrame.BorderSizePixel = 0
@@ -11367,7 +11391,7 @@ local d = function()
                 GpnlMinimize.Size = UDim2.new(0, 22, 0, 22)
                 GpnlMinimize.BackgroundTransparency = 0
                 GpnlMinimize.BorderSizePixel = 0
-                GpnlMinimize.Text = "-"
+                GpnlMinimize.Text = _gpnlMinimized and "+" or "-"
                 GpnlMinimize.Font = Enum.Font.GothamBold
                 GpnlMinimize.TextSize = 15
                 GpnlMinimize.ZIndex = 12
@@ -11533,6 +11557,8 @@ local d = function()
                         GpnlMinimize.Text = _gpnlMinimized and "+" or "-"
                         TweenService:Create(GpnlFrame, TweenInfo.new(0.28, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
                                 { Size = UDim2.new(0, GPNL_W, 0, _gpnlMinimized and GPNL_MIN_H or GPNL_FULL_H) }):Play()
+                        SaveData.GpnlMinimized = _gpnlMinimized
+                        SaveData.GpnlDragOffset = {_gpnlDragOffset.X, _gpnlDragOffset.Y}
                 end)
                 GpnlRefresh.Activated:Connect(function()
                         if _gpnlVisible then
@@ -11585,6 +11611,7 @@ local d = function()
                                 if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
                                         _gpnlDragRef = nil
                                         _gpnlDragLive = false
+                                        SaveData.GpnlDragOffset = {_gpnlDragOffset.X, _gpnlDragOffset.Y}
                                 end
                         end
                 end)
