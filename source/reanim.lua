@@ -4801,6 +4801,7 @@ function LimbReanimator.Start()
         local lastrep = 0
         local smoothedRootCF = nil
         local smoothedRootVel = Vector3.zero
+        local lastAppliedRootCF = nil
         local jointSpeedMult = {
                 ["Torso"]     = 1.00,
                 ["Head"]      = 0.93,
@@ -4824,18 +4825,22 @@ function LimbReanimator.Start()
                         else
                                 local appliedCF
                                 if LimbReanimator.Mode == 3 and dt and dt > 0 then
-                                        local frameVel = smoothedRootCF
-                                                and (rootcf.Position - smoothedRootCF.Position) / dt
-                                                or Vector3.zero
-                                        smoothedRootCF = rootcf
-                                        local forwardSpd = math.clamp(frameVel:Dot(rootcf.LookVector),  -50, 50)
-                                        local lateralSpd = math.clamp(frameVel:Dot(rootcf.RightVector), -50, 50)
-                                        local targetLean = Vector3.new(-forwardSpd * 0.004, 0, -lateralSpd * 0.003)
-                                        smoothedRootVel = smoothedRootVel:Lerp(targetLean, 1 - math.exp(-14 * dt))
-                                        appliedCF = rootcf * CFrame.Angles(smoothedRootVel.X, 0, smoothedRootVel.Z)
+                                        if smoothedRootCF ~= rootcf then
+                                                local frameVel = smoothedRootCF
+                                                        and (rootcf.Position - smoothedRootCF.Position) / dt
+                                                        or Vector3.zero
+                                                smoothedRootCF = rootcf
+                                                local forwardSpd = math.clamp(frameVel:Dot(rootcf.LookVector),  -50, 50)
+                                                local lateralSpd = math.clamp(frameVel:Dot(rootcf.RightVector), -50, 50)
+                                                local targetLean = Vector3.new(-forwardSpd * 0.004, 0, -lateralSpd * 0.003)
+                                                smoothedRootVel = smoothedRootVel:Lerp(targetLean, 1 - math.exp(-14 * dt))
+                                                lastAppliedRootCF = rootcf * CFrame.Angles(smoothedRootVel.X, 0, smoothedRootVel.Z)
+                                        end
+                                        appliedCF = lastAppliedRootCF or rootcf
                                 else
                                         smoothedRootCF = nil
                                         smoothedRootVel = Vector3.zero
+                                        lastAppliedRootCF = nil
                                         appliedCF = rootcf
                                 end
                                 RootPart.CFrame = appliedCF + Vector3.new(0, 0, math.random(0, 1) * 0.005)
@@ -4888,26 +4893,9 @@ function LimbReanimator.Start()
                                         if dorep or not map.CFrame then
                                                 if map.CFrame and dt and dt > 0 then
                                                         if LimbReanimator.Mode == 3 then
-                                                                local mult = jointSpeedMult[map.RPart1] or 1.0
-                                                                local rotCurrent = map.CFrame - map.CFrame.Position
-                                                                local rotTarget  = cf - cf.Position
-                                                                local _, rotJump = (rotCurrent:Inverse() * rotTarget):ToAxisAngle()
-                                                                if rotJump > 0.25 then
-                                                                        map.BlendTimer = 0.25
-                                                                end
-                                                                local omega
-                                                                if map.BlendTimer and map.BlendTimer > 0 then
-                                                                        map.BlendTimer = math.max(0, map.BlendTimer - dt)
-                                                                        omega = 14 * mult
-                                                                else
-                                                                        map.BlendTimer = nil
-                                                                        omega = 100 * mult
-                                                                end
-                                                                local posAlpha = 1 - math.exp(-omega * dt)
-                                                                local rotAlpha = 1 - math.exp(-omega * 1.3 * dt)
-                                                                local newPos   = map.CFrame.Position:Lerp(cf.Position, posAlpha)
-                                                                local rotLerped  = rotCurrent:Lerp(rotTarget, rotAlpha)
-                                                                map.CFrame = CFrame.new(newPos) * rotLerped
+                                                                local alpha = 1 - math.exp(-100 * dt)
+                                                                map.CFrame = map.CFrame:Lerp(cf, alpha)
+                                                                map.BlendTimer = nil
                                                         else
                                                                 local alpha = 1 - math.exp(-60 * dt)
                                                                 map.CFrame = map.CFrame:Lerp(cf, alpha)
