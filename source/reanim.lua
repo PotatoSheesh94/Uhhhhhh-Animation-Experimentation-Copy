@@ -8980,6 +8980,39 @@ local function AddDance(m)
                                 end
                                 UpdateEquipText()
                         end)
+                        local pausebtn, pausetext = UI.CreateButton(page, "Pause", 20)
+                        local function UpdatePauseText()
+                                if CurrentDance ~= m then
+                                        pausebtn.Visible = false
+                                elseif DancePaused then
+                                        pausebtn.Visible = true
+                                        pausetext.Text = "Resume"
+                                else
+                                        pausebtn.Visible = true
+                                        pausetext.Text = "Pause"
+                                end
+                        end
+                        UpdatePauseText()
+                        local pauseRSConn = RunService.RenderStepped:Connect(UpdatePauseText)
+                        pausebtn.Destroying:Connect(function() pauseRSConn:Disconnect() end)
+                        pausebtn.Activated:Connect(function()
+                                if CurrentDance ~= m then return end
+                                if DancePaused then
+                                        DancePaused = false
+                                        if _soundWasPaused then
+                                                UISound.DanceMusic:Resume()
+                                                _soundWasPaused = false
+                                        end
+                                else
+                                        DancePaused = true
+                                        if UISound.DanceMusic.IsPlaying then
+                                                UISound.DanceMusic:Pause()
+                                                _soundWasPaused = true
+                                        end
+                                end
+                                UpdatePauseText()
+                                UpdateEquipText()
+                        end)
                         UI.CreateSeparator(page)
                         UI.CreateText(page, "* Configuration *", 15, Enum.TextXAlignment.Center)
                         m.Config(page)
