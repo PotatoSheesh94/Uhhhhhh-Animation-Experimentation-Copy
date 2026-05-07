@@ -4678,6 +4678,8 @@ function LimbReanimator.Start()
                                 for _,map in LimbMapping do
                                         if map.Part0 == p0 and map.Part1 == p1 then
                                                 map.Reference = v
+                                                map.OrigC0 = v.C0
+                                                map.OrigC1 = v.C1
                                                 return
                                         end
                                 end
@@ -4758,10 +4760,15 @@ function LimbReanimator.Start()
                 smoothedRootCF = nil
                 smoothedRootVel = Vector3.zero
                 for _,map in LimbMapping do
+                        if map.Reference and map.OrigC0 then
+                                pcall(function() map.Reference.C0 = map.OrigC0 end)
+                        end
                         map.Reference = nil
                         map.CFrame = nil
                         map.BlendTimer = nil
                         map.PosVelocity = nil
+                        map.OrigC0 = nil
+                        map.OrigC1 = nil
                 end
                 character.DescendantAdded:Connect(CharOnDesc)
                 for _,v in character:GetDescendants() do
@@ -4910,7 +4917,15 @@ function LimbReanimator.Start()
                                                         map.PosVelocity = nil
                                                 end
                                         end
-                                        Util.SetMotor6DOffset(v, map.CFrame)
+                                        if LimbReanimator.Mode == 3 and map.OrigC1 then
+                                                v.C0 = map.CFrame * map.OrigC1
+                                                pcall(rawset, v, "Transform", CFrame.identity)
+                                                if v.MaxVelocity ~= 9e9 then v.MaxVelocity = 9e9 end
+                                                pcall(sethiddenproperty, v, "ReplicateCurrentOffset6D", Vector3.zero)
+                                                pcall(sethiddenproperty, v, "ReplicateCurrentAngle6D", Vector3.zero)
+                                        else
+                                                Util.SetMotor6DOffset(v, map.CFrame)
+                                        end
                                 end
                         end
                 end
