@@ -10689,25 +10689,40 @@ local d = function()
                 local P2P_TAG = "_UhhhhhP2P"
                 local P2PSyncAllowed = SaveData.P2PSyncAllowed ~= false
 
+                local P2P_PREFIX = "UHH1|"
                 local function P2PEncode(hash, syncOk)
-                        return (hash or "") .. "|" .. (syncOk and "1" or "0")
+                        return P2P_PREFIX .. (hash or "") .. "|" .. (syncOk and "1" or "0")
                 end
+                -- Returns hash, syncOk, isValid. isValid=false means wrong script/version.
                 local function P2PDecode(val)
-                        if type(val) ~= "string" then return "", true end
+                        if type(val) ~= "string" then return "", true, false end
+                        if val:sub(1, #P2P_PREFIX) ~= P2P_PREFIX then return "", true, false end
+                        val = val:sub(#P2P_PREFIX + 1)
                         local sep = val:find("|")
-                        if not sep then return val, true end
-                        return val:sub(1, sep - 1), val:sub(sep + 1) == "1"
+                        if not sep then return val, true, true end
+                        return val:sub(1, sep - 1), val:sub(sep + 1) == "1", true
+                end
+                -- Locate the marker; checks HumanoidRootPart first (server-replicated), then character
+                local function GetP2PMarker(character)
+                        local hrp = character:FindFirstChild("HumanoidRootPart")
+                        if hrp then
+                                local sv = hrp:FindFirstChild(P2P_TAG)
+                                if sv then return sv end
+                        end
+                        return character:FindFirstChild(P2P_TAG)
                 end
 
-                -- Place detection marker on local character
+                -- Place detection marker under HumanoidRootPart (client network-owns it → replicates to server)
                 local function PlaceMarker(character)
                         pcall(function()
-                                local old = character:FindFirstChild(P2P_TAG)
+                                local hrp = character:WaitForChild("HumanoidRootPart", 5)
+                                if not hrp then return end
+                                local old = hrp:FindFirstChild(P2P_TAG)
                                 if old then old:Destroy() end
                                 local sv = Instance.new("StringValue")
                                 sv.Name = P2P_TAG
                                 sv.Value = P2PEncode("", P2PSyncAllowed)
-                                sv.Parent = character
+                                sv.Parent = hrp
                         end)
                 end
 
@@ -10748,28 +10763,45 @@ local d = function()
                         AddOverheadTag(Player, char)
                 end)
 
-                -- Keep marker value up-to-date every 0.5s
+                -- Keep marker value up-to-date every 0.5s (checks HRP first, re-places if missing)
                 task.spawn(function()
                         while true do
                                 task.wait(0.5)
                                 pcall(function()
                                         local char = Player.Character
                                         if not char then return end
-                                        local sv = char:FindFirstChild(P2P_TAG)
-                                        if not sv then PlaceMarker(char) sv = char:FindFirstChild(P2P_TAG) end
+                                        local sv = GetP2PMarker(char)
+                                        if not sv then PlaceMarker(char) sv = GetP2PMarker(char) end
                                         if sv then sv.Value = P2PEncode(CurrentDance and CurrentDance.Hash or "", P2PSyncAllowed) end
                                 end)
                         end
                 end)
 
-                -- Watch other players: add overhead tags when their marker appears
+                -- Watch other players: add overhead tags when their Uhhhhhh marker appears
                 local function WatchOtherPlayer(p)
                         local function onChar(char)
                                 task.wait(1)
                                 if not char or not char.Parent then return end
-                                if char:FindFirstChild(P2P_TAG) then AddOverheadTag(p, char) end
+                                -- Check immediately (marker may already be present if server-replicated)
+                                if GetP2PMarker(char) then
+                                        local sv = GetP2PMarker(char)
+                                        local _, _, valid = P2PDecode(sv.Value)
+                                        if valid then AddOverheadTag(p, char) end
+                                end
+                                -- Also watch the character root and HumanoidRootPart for late marker arrival
+                                local function onChildAdded(child)
+                                        if child.Name == P2P_TAG then
+                                                local _, _, valid = P2PDecode(child.Value)
+                                                if valid then AddOverheadTag(p, char) end
+                                        end
+                                end
+                                char.ChildAdded:Connect(onChildAdded)
+                                local hrp = char:FindFirstChild("HumanoidRootPart")
+                                if hrp then hrp.ChildAdded:Connect(onChildAdded) end
                                 char.ChildAdded:Connect(function(child)
-                                        if child.Name == P2P_TAG then AddOverheadTag(p, char) end
+                                        if child.Name == "HumanoidRootPart" then
+                                                child.ChildAdded:Connect(onChildAdded)
+                                        end
                                 end)
                         end
                         if p.Character then task.spawn(onChar, p.Character) end
@@ -10971,9 +11003,10 @@ local d = function()
                         if not target then return end
                         local char = target.Character
                         if not char then Util.UINotify(target.Name .. " has no character") return end
-                        local sv = char:FindFirstChild(P2P_TAG)
+                        local sv = GetP2PMarker(char)
                         if not sv then Util.UINotify(target.Name .. " is not running Uhhhhhh") return end
-                        local hash, syncOk = P2PDecode(sv.Value)
+                        local hash, syncOk, valid = P2PDecode(sv.Value)
+                        if not valid then Util.UINotify(target.Name .. " is not running Uhhhhhh") return end
                         if not syncOk then Util.UINotify(target.Name .. " has sync disabled") return end
                         if hash == "" then Util.UINotify(target.Name .. " is not dancing") return end
                         for _, dance in DanceableDances do
@@ -10997,10 +11030,11 @@ local d = function()
                                 if p == Player then continue end
                                 local char = p.Character
                                 if not char then continue end
-                                local sv = char:FindFirstChild(P2P_TAG)
+                                local sv = GetP2PMarker(char)
                                 if not sv then continue end
+                                local hash, syncOk, valid = P2PDecode(sv.Value)
+                                if not valid then continue end
                                 count += 1
-                                local hash, syncOk = P2PDecode(sv.Value)
                                 local danceName = ""
                                 if hash ~= "" then
                                         for _, dance in DanceableDances do
