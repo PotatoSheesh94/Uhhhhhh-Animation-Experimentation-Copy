@@ -8722,7 +8722,8 @@ do -- Dance Queue Panel
         end
         _rebuildQueue = RebuildQueueList
 
-        -- Drag (uses global InputBegan with bounds check so transparency/ZIndex don't block it)
+        -- Drag — full panel is draggable; threshold prevents button clicks from moving it
+        local _queueDragLive = false
         UserInputService.InputBegan:Connect(function(input, gpe)
                 if gpe then return end
                 if _queueDragRef then return end
@@ -8731,9 +8732,10 @@ do -- Dance Queue Panel
                 local mousePos = Vector2.new(input.Position.X, input.Position.Y)
                 local framePos = QueueFrame.AbsolutePosition
                 local frameSize = QueueFrame.AbsoluteSize
-                if mousePos.X >= framePos.X and mousePos.X <= framePos.X + frameSize.X - 60
-                        and mousePos.Y >= framePos.Y and mousePos.Y <= framePos.Y + 38 then
+                if mousePos.X >= framePos.X and mousePos.X <= framePos.X + frameSize.X
+                        and mousePos.Y >= framePos.Y and mousePos.Y <= framePos.Y + frameSize.Y then
                         _queueDragRef = input
+                        _queueDragLive = false
                         _queueDragStart = mousePos
                         _queueDragStartOffset = _queueDragOffset
                 end
@@ -8741,7 +8743,10 @@ do -- Dance Queue Panel
         UserInputService.InputChanged:Connect(function(input)
                 if not _queueDragRef then return end
                 if input.UserInputType == Enum.UserInputType.MouseMovement or (input.UserInputType == Enum.UserInputType.Touch and _queueDragRef == input) then
-                        local delta = Vector2.new(input.Position.X, input.Position.Y) - _queueDragStart
+                        local mousePos = Vector2.new(input.Position.X, input.Position.Y)
+                        local delta = mousePos - _queueDragStart
+                        if not _queueDragLive and delta.Magnitude < 6 then return end
+                        _queueDragLive = true
                         _queueDragOffset = _queueDragStartOffset + delta
                         if _queueVisible then QueueFrame.Position = GetQueueShownPos() end
                 end
@@ -8750,6 +8755,7 @@ do -- Dance Queue Panel
                 if _queueDragRef and _queueDragRef == input then
                         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
                                 _queueDragRef = nil
+                                _queueDragLive = false
                         end
                 end
         end)
