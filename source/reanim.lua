@@ -1122,6 +1122,7 @@ local UIMainWindow, WindowContent do
         UIMainWindow.BackgroundTransparency = 0
         UIMainWindow.BackgroundColor3 = Color3.new(1, 1, 1)
         UIMainWindow.BorderSizePixel = 0
+        UIMainWindow.ClipsDescendants = true
         Stylize(UIMainWindow, {
                 Glow = true
         })
@@ -3606,6 +3607,7 @@ do
                                 self.Inputs.GP.JB = true
                         end
                         if input.UserInputType == Enum.UserInputType.Touch then
+                                if gpe then return end
                                 if self.Inputs.TC.DJ == nil and IsInThumbstickArea(input.Position) then
                                         self.Inputs.TC.DJ = input
                                         self.Inputs.TC.LP = input.Position
@@ -8847,6 +8849,9 @@ local function AddDance(m)
                 msname.Name = "LabelName"
                 msdesc.Name = "LabelDesc"
                 item.Parent.Name = m.Name .. " " .. m.Description
+                AddToRenderStep(function()
+                        msname.Text = (CurrentDance == m) and ("\u{25BA} " .. m.Name) or (m.Name .. " &gt;")
+                end, item)
                 Util.LinkDestroyI2C(item, item.Activated:Connect(function()
                         local page = UI.CreatePage()
                         page.ZIndex = 2
