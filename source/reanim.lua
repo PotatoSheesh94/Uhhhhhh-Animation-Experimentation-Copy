@@ -1365,6 +1365,18 @@ local UIMainWindow, WindowContent do
                         end
                 end
         end)
+        local _UIWindowScaler = Instance.new("UIScale", UIMainWindow)
+        local function _RefreshWindowScale()
+                local vp = Util.GetScreenSize()
+                _UIWindowScaler.Scale = math.max(math.min(vp.X / 580, vp.Y / 440, 1), 0.55)
+        end
+        _RefreshWindowScale()
+        Camera:GetPropertyChangedSignal("ViewportSize"):Connect(_RefreshWindowScale)
+        workspace:GetPropertyChangedSignal("CurrentCamera"):Connect(function()
+                task.wait()
+                _RefreshWindowScale()
+                Camera:GetPropertyChangedSignal("ViewportSize"):Connect(_RefreshWindowScale)
+        end)
 end
 
 local _funcrefreshes = {}
@@ -4733,8 +4745,8 @@ function LimbReanimator.Start()
                                                 end
                                         end
                                         if dorep or not map.CFrame then
-                                                if map.CFrame and dt and dt > 0 then
-                                                        map.CFrame = map.CFrame:Lerp(cf, 1 - math.exp(-14 * dt))
+                                                if not dorep and map.CFrame and dt and dt > 0 then
+                                                        map.CFrame = map.CFrame:Lerp(cf, 1 - math.exp(-55 * dt))
                                                 else
                                                         map.CFrame = cf
                                                 end
@@ -7854,6 +7866,225 @@ local _MovementStyleIndex = nil
 local CurrentDance = nil
 local _CurrentDance = nil
 local OldReanimCharacter = nil
+local DancePaused = false
+local _DanceMusicSavedTime = 0
+do
+        local _panelVisible = false
+        local _panelMinimized = false
+        local _panelNameLabel, _panelDescLabel, _panelPlayBtn, _panelContent, _panelMinBtn
+        local DanceNowPlayingPanel = Util.Instance("Frame", UIMainFrame)
+        DanceNowPlayingPanel.AnchorPoint = Vector2.new(1, 1)
+        DanceNowPlayingPanel.Position = UDim2.new(1, -12, 1, -12)
+        DanceNowPlayingPanel.Size = UDim2.new(0, 280, 0, 38)
+        DanceNowPlayingPanel.BackgroundTransparency = 0
+        DanceNowPlayingPanel.BackgroundColor3 = Color3.new(0, 0, 0)
+        DanceNowPlayingPanel.BorderSizePixel = 0
+        DanceNowPlayingPanel.Visible = false
+        DanceNowPlayingPanel.ZIndex = 50
+        DanceNowPlayingPanel.ClipsDescendants = true
+        Stylize(DanceNowPlayingPanel, {Glow = true})
+        local _dpScale = Instance.new("UIScale", DanceNowPlayingPanel)
+        AddToRenderStep(function()
+                local vp = Util.GetScreenSize()
+                _dpScale.Scale = math.max(math.min(vp.X / 580, vp.Y / 440, 1), 0.55)
+        end)
+        local DPHeader = Util.Instance("Frame", DanceNowPlayingPanel)
+        DPHeader.Size = UDim2.new(1, 0, 0, 38)
+        DPHeader.BackgroundTransparency = 0
+        DPHeader.BackgroundColor3 = Color3.new(0, 0, 0)
+        DPHeader.BorderSizePixel = 0
+        DPHeader.ZIndex = 2
+        Stylize(DPHeader)
+        local DPHeaderLabel = Util.Instance("TextLabel", DPHeader)
+        DPHeaderLabel.AnchorPoint = Vector2.new(0, 0.5)
+        DPHeaderLabel.Position = UDim2.new(0, 8, 0.5, 0)
+        DPHeaderLabel.Size = UDim2.new(1, -84, 1, 0)
+        DPHeaderLabel.BackgroundTransparency = 1
+        DPHeaderLabel.Font = Enum.Font.Code
+        DPHeaderLabel.TextSize = 14
+        DPHeaderLabel.TextXAlignment = Enum.TextXAlignment.Left
+        DPHeaderLabel.Text = "// now playing"
+        RegisterTextLabel(DPHeaderLabel)
+        _panelMinBtn = Util.Instance("TextButton", DPHeader)
+        _panelMinBtn.AnchorPoint = Vector2.new(1, 0)
+        _panelMinBtn.Position = UDim2.new(1, -38, 0, 0)
+        _panelMinBtn.Size = UDim2.new(0, 38, 1, 0)
+        _panelMinBtn.BackgroundTransparency = 1
+        _panelMinBtn.Font = Enum.Font.Code
+        _panelMinBtn.TextSize = 20
+        _panelMinBtn.Text = "_"
+        RegisterTextLabel(_panelMinBtn)
+        local DPCloseBtn = Util.Instance("TextButton", DPHeader)
+        DPCloseBtn.AnchorPoint = Vector2.new(1, 0)
+        DPCloseBtn.Position = UDim2.new(1, 0, 0, 0)
+        DPCloseBtn.Size = UDim2.new(0, 38, 1, 0)
+        DPCloseBtn.BackgroundTransparency = 1
+        DPCloseBtn.Font = Enum.Font.Code
+        DPCloseBtn.TextSize = 20
+        DPCloseBtn.Text = "x"
+        RegisterTextLabel(DPCloseBtn)
+        local _dpDragRef, _dpDragOffset = nil, Vector2.new(0, 0)
+        DPHeader.InputBegan:Connect(function(input)
+                if _dpDragRef then return end
+                if input.UserInputState ~= Enum.UserInputState.Begin then return end
+                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                        local screen = Util.GetScreenSize()
+                        local ch = (Vector2.new(input.Position.X, input.Position.Y) + SCREENGUI.AbsolutePosition) / screen
+                        _dpDragOffset = Util.UDim2ToVector2Scale(DanceNowPlayingPanel.Position) - ch
+                        _dpDragRef = input
+                end
+        end)
+        UserInputService.InputChanged:Connect(function(input)
+                if not _dpDragRef then return end
+                if input.UserInputType == Enum.UserInputType.MouseMovement or (input.UserInputType == Enum.UserInputType.Touch and _dpDragRef == input) then
+                        local screen = Util.GetScreenSize()
+                        local ch = (Vector2.new(input.Position.X, input.Position.Y) + SCREENGUI.AbsolutePosition) / screen
+                        local p = ch + _dpDragOffset
+                        DanceNowPlayingPanel.Position = Util.Vector2ToUDim2Scale(Vector2.new(math.clamp(p.X, 0, 1), math.clamp(p.Y, 0, 1)))
+                end
+        end)
+        UserInputService.InputEnded:Connect(function(input)
+                if _dpDragRef and _dpDragRef == input then
+                        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                                _dpDragRef = nil
+                        end
+                end
+        end)
+        _panelContent = Util.Instance("Frame", DanceNowPlayingPanel)
+        _panelContent.Position = UDim2.new(0, 0, 0, 38)
+        _panelContent.Size = UDim2.new(1, 0, 1, -38)
+        _panelContent.BackgroundTransparency = 1
+        _panelContent.ClipsDescendants = true
+        _panelNameLabel = Util.Instance("TextLabel", _panelContent)
+        _panelNameLabel.AnchorPoint = Vector2.new(0, 0)
+        _panelNameLabel.Position = UDim2.new(0, 10, 0, 8)
+        _panelNameLabel.Size = UDim2.new(1, -20, 0, 24)
+        _panelNameLabel.BackgroundTransparency = 1
+        _panelNameLabel.Font = Enum.Font.Code
+        _panelNameLabel.TextSize = 18
+        _panelNameLabel.TextXAlignment = Enum.TextXAlignment.Left
+        _panelNameLabel.TextTruncate = Enum.TextTruncate.AtEnd
+        _panelNameLabel.Text = ""
+        RegisterTextLabel(_panelNameLabel)
+        _panelDescLabel = Util.Instance("TextLabel", _panelContent)
+        _panelDescLabel.AnchorPoint = Vector2.new(0, 0)
+        _panelDescLabel.Position = UDim2.new(0, 10, 0, 34)
+        _panelDescLabel.Size = UDim2.new(1, -20, 0, 32)
+        _panelDescLabel.BackgroundTransparency = 1
+        _panelDescLabel.Font = Enum.Font.Code
+        _panelDescLabel.TextSize = 12
+        _panelDescLabel.TextXAlignment = Enum.TextXAlignment.Left
+        _panelDescLabel.TextWrapped = true
+        _panelDescLabel.Text = ""
+        RegisterTextLabel(_panelDescLabel)
+        local DPSep = Util.Instance("Frame", _panelContent)
+        DPSep.Position = UDim2.new(0.05, 0, 0, 72)
+        DPSep.Size = UDim2.new(0.9, 0, 0, 2)
+        DPSep.BackgroundTransparency = 0.8
+        DPSep.BackgroundColor3 = UITextColor.Value
+        DPSep.BorderSizePixel = 0
+        Util.LinkDestroyI2C(DPSep, UITextColor.Changed:Connect(function(val)
+                DPSep.BackgroundColor3 = val
+        end))
+        local function MakeDPBtn(label, anchorX, posXScale)
+                local Btn = Util.Instance("TextButton", _panelContent)
+                Btn.AnchorPoint = Vector2.new(anchorX, 0)
+                Btn.Position = UDim2.new(posXScale, 0, 0, 80)
+                Btn.Size = UDim2.new(0, 82, 0, 30)
+                Btn.BackgroundTransparency = 0
+                Btn.BackgroundColor3 = Color3.new(0, 0, 0)
+                Btn.BorderSizePixel = 0
+                Btn.Font = Enum.Font.Code
+                Btn.TextSize = 13
+                Btn.Text = label
+                Btn.AutoButtonColor = true
+                Stylize(Btn)
+                RegisterTextLabel(Btn)
+                return Btn
+        end
+        local DPRevertBtn = MakeDPBtn("<< Revert", 0, 0.02)
+        _panelPlayBtn = MakeDPBtn("|| Pause", 0.5, 0.5)
+        local DPNextBtn = MakeDPBtn("Next >>", 1, 0.98)
+        DPCloseBtn.Activated:Connect(function()
+                CurrentDance = nil
+                DancePaused = false
+                UISound.DanceMusic:Stop()
+        end)
+        _panelMinBtn.Activated:Connect(function()
+                _panelMinimized = not _panelMinimized
+                _panelContent.Visible = not _panelMinimized
+                _panelMinBtn.Text = _panelMinimized and "+" or "_"
+                TweenService:Create(DanceNowPlayingPanel, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
+                        Size = UDim2.fromOffset(280, _panelMinimized and 38 or 158)
+                }):Play()
+        end)
+        DPRevertBtn.Activated:Connect(function()
+                CurrentDance = nil
+                DancePaused = false
+                UISound.DanceMusic:Stop()
+        end)
+        _panelPlayBtn.Activated:Connect(function()
+                DancePaused = not DancePaused
+                if DancePaused then
+                        _panelPlayBtn.Text = "> Play"
+                        _DanceMusicSavedTime = UISound.DanceMusic.TimePosition
+                        UISound.DanceMusic:Pause()
+                else
+                        _panelPlayBtn.Text = "|| Pause"
+                        UISound.DanceMusic.TimePosition = _DanceMusicSavedTime
+                        UISound.DanceMusic:Play()
+                end
+        end)
+        DPNextBtn.Activated:Connect(function()
+                if #DanceableDances < 1 then return end
+                local idx = CurrentDance and table.find(DanceableDances, CurrentDance) or 0
+                idx = (idx % #DanceableDances) + 1
+                local nextDance = DanceableDances[idx]
+                if nextDance then
+                        DancePaused = false
+                        _panelPlayBtn.Text = "|| Pause"
+                        CurrentDance = nextDance
+                        Util.UINotify(">> " .. nextDance.Name)
+                end
+        end)
+        local _dpLastDance = nil
+        AddToRenderStep(function()
+                local cd = CurrentDance
+                if cd ~= _dpLastDance then
+                        _dpLastDance = cd
+                        if cd then
+                                _panelNameLabel.Text = cd.Name
+                                _panelDescLabel.Text = cd.Description
+                                _panelPlayBtn.Text = "|| Pause"
+                                if _panelMinimized then
+                                        _panelMinimized = false
+                                        _panelContent.Visible = true
+                                        _panelMinBtn.Text = "_"
+                                end
+                                DanceNowPlayingPanel.Visible = true
+                                if not _panelVisible then
+                                        _panelVisible = true
+                                        DanceNowPlayingPanel.Size = UDim2.fromOffset(280, 38)
+                                end
+                                TweenService:Create(DanceNowPlayingPanel, TweenInfo.new(0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
+                                        Size = UDim2.fromOffset(280, 158)
+                                }):Play()
+                        else
+                                if _panelVisible then
+                                        _panelVisible = false
+                                        TweenService:Create(DanceNowPlayingPanel, TweenInfo.new(0.2, Enum.EasingStyle.Quint, Enum.EasingDirection.In), {
+                                                Size = UDim2.fromOffset(280, 0)
+                                        }):Play()
+                                        task.delay(0.25, function()
+                                                if not CurrentDance then
+                                                        DanceNowPlayingPanel.Visible = false
+                                                end
+                                        end)
+                                end
+                        end
+                end
+        end)
+end
 
 if type(SaveData.MovesetIndex) == "number" then
         MovementStyleIndex = SaveData.MovesetIndex
@@ -8525,20 +8756,23 @@ task.spawn(function()
                                                         pcall(_CurrentDance.Destroy, ReanimCharacter)
                                                 end
                                                 _CurrentDance = CurrentDance
+                                                DancePaused = false
                                                 ReanimCharacter:SetAttribute("IsDancing", nil)
                                                 ReanimCharacter:SetAttribute("DanceInternalName", nil)
                                                 SetOverrideDanceMusic(nil)
                                         end
                                         if _CurrentDance then
-                                                if ReanimCharacter:GetAttribute("IsDancing") then
-                                                        _CurrentDance.Update(dt, ReanimCharacter)
-                                                else
-                                                        if AssetEnsure(_CurrentDance.Assets) then
-                                                                ReanimCharacter:SetAttribute("IsDancing", true)
-                                                                ReanimCharacter:SetAttribute("DanceInternalName", _CurrentDance.InternalName)
-                                                                _CurrentDance.Init(ReanimCharacter)
+                                                if not DancePaused then
+                                                        if ReanimCharacter:GetAttribute("IsDancing") then
+                                                                _CurrentDance.Update(dt, ReanimCharacter)
                                                         else
-                                                                SetOverrideDanceMusic(nil)
+                                                                if AssetEnsure(_CurrentDance.Assets) then
+                                                                        ReanimCharacter:SetAttribute("IsDancing", true)
+                                                                        ReanimCharacter:SetAttribute("DanceInternalName", _CurrentDance.InternalName)
+                                                                        _CurrentDance.Init(ReanimCharacter)
+                                                                else
+                                                                        SetOverrideDanceMusic(nil)
+                                                                end
                                                         end
                                                 end
                                         end
