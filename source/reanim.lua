@@ -4778,7 +4778,7 @@ function LimbReanimator.Start()
                                         end
                                         if dorep or not map.CFrame then
                                                 if map.CFrame and dt and dt > 0 then
-                                                        local _lerpSpeed = (LimbReanimator.Mode == 3) and 20 or 150
+                                                        local _lerpSpeed = (LimbReanimator.Mode == 3) and 45 or 150
                                                         map.CFrame = map.CFrame:Lerp(cf, 1 - math.exp(-_lerpSpeed * dt))
                                                 else
                                                         map.CFrame = cf
@@ -4846,7 +4846,7 @@ function LimbReanimator.Start()
                                                 if dist > 40 then
                                                         _mode3smoothcf = _m3target
                                                 else
-                                                                        _mode3smoothcf = _mode3smoothcf:Lerp(_m3target, 1 - math.exp(-20 * _m3elapsed))
+                                                                        _mode3smoothcf = _mode3smoothcf:Lerp(_m3target, 1 - math.exp(-35 * _m3elapsed))
                                                 end
                                         end
                                         rootcf = _mode3smoothcf
