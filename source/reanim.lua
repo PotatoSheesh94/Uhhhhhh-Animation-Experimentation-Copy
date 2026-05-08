@@ -4806,12 +4806,7 @@ function LimbReanimator.Start()
                                         end
                                         if dt ~= nil then
                                                 if dorep or not map.CFrame then
-                                                        if map.CFrame then
-                                                                local alpha = 1 - math.exp(-25 * dt)
-                                                                map.CFrame = map.CFrame:Lerp(cf, alpha)
-                                                        else
-                                                                map.CFrame = cf
-                                                        end
+                                                        map.CFrame = cf
                                                 end
                                         end
                                         if map.CFrame then
@@ -8432,7 +8427,7 @@ do -- Dance Queue Panel
         local QueueDragArea = Util.Instance("Frame", QueueFrame)
         QueueDragArea.Active = true
         QueueDragArea.Position = UDim2.new(0, 0, 0, 0)
-        QueueDragArea.Size = UDim2.new(1, -60, 0, 38)
+        QueueDragArea.Size = UDim2.new(1, 0, 1, 0)
         QueueDragArea.BackgroundTransparency = 1
         QueueDragArea.ZIndex = 11
 
@@ -8687,21 +8682,14 @@ do -- Dance Queue Panel
 
         -- Drag — full panel is draggable; threshold prevents button clicks from moving it
         local _queueDragLive = false
-        UserInputService.InputBegan:Connect(function(input, gpe)
-                if gpe then return end
+        QueueDragArea.InputBegan:Connect(function(input)
                 if _queueDragRef then return end
-                if not _queueVisible then return end
+                if input.UserInputState ~= Enum.UserInputState.Begin then return end
                 if input.UserInputType ~= Enum.UserInputType.MouseButton1 and input.UserInputType ~= Enum.UserInputType.Touch then return end
-                local mousePos = Vector2.new(input.Position.X, input.Position.Y)
-                local framePos = QueueFrame.AbsolutePosition
-                local frameSize = QueueFrame.AbsoluteSize
-                if mousePos.X >= framePos.X and mousePos.X <= framePos.X + frameSize.X
-                        and mousePos.Y >= framePos.Y and mousePos.Y <= framePos.Y + frameSize.Y then
-                        _queueDragRef = input
-                        _queueDragLive = false
-                        _queueDragStart = mousePos
-                        _queueDragStartOffset = _queueDragOffset
-                end
+                _queueDragRef = input
+                _queueDragLive = false
+                _queueDragStart = Vector2.new(input.Position.X, input.Position.Y)
+                _queueDragStartOffset = _queueDragOffset
         end)
         UserInputService.InputChanged:Connect(function(input)
                 if not _queueDragRef then return end
