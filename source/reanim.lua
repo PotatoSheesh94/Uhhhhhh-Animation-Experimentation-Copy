@@ -8092,12 +8092,30 @@ do -- Dance Player Popup
         DancePopupMinimize.Size = UDim2.new(0, 22, 0, 22)
         DancePopupMinimize.BackgroundTransparency = 0
         DancePopupMinimize.BorderSizePixel = 0
-        DancePopupMinimize.Text = _popupMinimized and "+" or "-"
-        DancePopupMinimize.Font = Enum.Font.GothamBold
-        DancePopupMinimize.TextSize = 15
+        DancePopupMinimize.Text = ""
         DancePopupMinimize.ZIndex = 12
         Stylize(DancePopupMinimize)
-        RegisterTextLabel(DancePopupMinimize)
+        do
+                local MA = Util.Instance("Frame", DancePopupMinimize)
+                MA.AnchorPoint = Vector2.new(0.5, 0.5)
+                MA.Position = UDim2.new(0.5, 0, 0.5, 0)
+                MA.Size = UDim2.new(0, 12, 0, 2)
+                MA.Rotation = _popupMinimized and 180 or 0
+                MA.BackgroundTransparency = 0
+                MA.BackgroundColor3 = UITextColor.Value
+                MA.BorderSizePixel = 0
+                MA.Name = "MA"
+                UITextColor.Changed:Connect(function(val) MA.BackgroundColor3 = val end)
+                local MB = Util.Instance("Frame", MA)
+                MB.AnchorPoint = Vector2.new(0.5, 0.5)
+                MB.Position = UDim2.new(0.5, 0, 0.5, 0)
+                MB.Size = _popupMinimized and UDim2.new(0, 2, 0, 12) or UDim2.new(0, 2, 0, 0)
+                MB.BackgroundTransparency = 0
+                MB.BackgroundColor3 = UITextColor.Value
+                MB.BorderSizePixel = 0
+                MB.Name = "MB"
+                UITextColor.Changed:Connect(function(val) MB.BackgroundColor3 = val end)
+        end
 
         local DancePopupQueueToggle = Util.Instance("TextButton", DancePopupFrame)
         DancePopupQueueToggle.AnchorPoint = Vector2.new(1, 0)
@@ -8117,11 +8135,16 @@ do -- Dance Player Popup
 
         DancePopupMinimize.Activated:Connect(function()
                 _popupMinimized = not _popupMinimized
-                DancePopupMinimize.Text = _popupMinimized and "+" or "-"
                 local targetH = _popupMinimized and POPUP_MIN_H or POPUP_FULL_H
-                TweenService:Create(DancePopupFrame,
-                        TweenInfo.new(0.28, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+                local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Cubic, Enum.EasingDirection.Out)
+                TweenService:Create(DancePopupFrame, tweenInfo,
                         { Size = UDim2.new(0, 320, 0, targetH) }
+                ):Play()
+                TweenService:Create(DancePopupMinimize.MA, tweenInfo,
+                        { Rotation = _popupMinimized and 180 or 0 }
+                ):Play()
+                TweenService:Create(DancePopupMinimize.MA.MB, tweenInfo,
+                        { Size = _popupMinimized and UDim2.new(0, 2, 0, 12) or UDim2.new(0, 2, 0, 0) }
                 ):Play()
                 SaveData.DancePopupMinimized = _popupMinimized
                 SaveData.DancePopupDragOffset = {_popupDragOffset.X, _popupDragOffset.Y}
@@ -8345,7 +8368,6 @@ do -- Dance Player Popup
                 ShowDancePopup(CurrentDance)
         end)
 
-        local _popupSyncedMainMin = false
         AddToRenderStep(function()
                 -- Keep play/pause button text in sync with state
                 DancePopupPlayPause.Text = DancePaused and ">" or "||"
@@ -8367,14 +8389,6 @@ do -- Dance Player Popup
                         if CurrentDance then
                                 ShowDancePopup(CurrentDance)
                         elseif _popupVisible then
-                                HideDancePopup()
-                        end
-                end
-                -- Mirror main UI minimize state
-                local mainMin = UIMainWindow.Size.Y.Offset <= 34
-                if mainMin ~= _popupSyncedMainMin then
-                        _popupSyncedMainMin = mainMin
-                        if mainMin and _popupVisible then
                                 HideDancePopup()
                         end
                 end
@@ -8452,12 +8466,30 @@ do -- Dance Queue Panel
         QueueMinimize.Size = UDim2.new(0, 22, 0, 22)
         QueueMinimize.BackgroundTransparency = 0
         QueueMinimize.BorderSizePixel = 0
-        QueueMinimize.Text = "-"
-        QueueMinimize.Font = Enum.Font.GothamBold
-        QueueMinimize.TextSize = 15
+        QueueMinimize.Text = ""
         QueueMinimize.ZIndex = 12
         Stylize(QueueMinimize)
-        RegisterTextLabel(QueueMinimize)
+        do
+                local QA = Util.Instance("Frame", QueueMinimize)
+                QA.AnchorPoint = Vector2.new(0.5, 0.5)
+                QA.Position = UDim2.new(0.5, 0, 0.5, 0)
+                QA.Size = UDim2.new(0, 12, 0, 2)
+                QA.Rotation = 0
+                QA.BackgroundTransparency = 0
+                QA.BackgroundColor3 = UITextColor.Value
+                QA.BorderSizePixel = 0
+                QA.Name = "QA"
+                UITextColor.Changed:Connect(function(val) QA.BackgroundColor3 = val end)
+                local QB = Util.Instance("Frame", QA)
+                QB.AnchorPoint = Vector2.new(0.5, 0.5)
+                QB.Position = UDim2.new(0.5, 0, 0.5, 0)
+                QB.Size = UDim2.new(0, 2, 0, 0)
+                QB.BackgroundTransparency = 0
+                QB.BackgroundColor3 = UITextColor.Value
+                QB.BorderSizePixel = 0
+                QB.Name = "QB"
+                UITextColor.Changed:Connect(function(val) QB.BackgroundColor3 = val end)
+        end
 
         local QueueSep1 = Instance.new("Frame", QueueFrame)
         QueueSep1.AnchorPoint = Vector2.new(0.5, 0)
@@ -8694,11 +8726,16 @@ do -- Dance Queue Panel
 
         QueueMinimize.Activated:Connect(function()
                 _queueMinimized = not _queueMinimized
-                QueueMinimize.Text = _queueMinimized and "+" or "-"
                 local targetH = _queueMinimized and QUEUE_MIN_H or QUEUE_FULL_H
-                TweenService:Create(QueueFrame,
-                        TweenInfo.new(0.28, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+                local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Cubic, Enum.EasingDirection.Out)
+                TweenService:Create(QueueFrame, tweenInfo,
                         { Size = UDim2.new(0, 320, 0, targetH) }
+                ):Play()
+                TweenService:Create(QueueMinimize.QA, tweenInfo,
+                        { Rotation = _queueMinimized and 180 or 0 }
+                ):Play()
+                TweenService:Create(QueueMinimize.QA.QB, tweenInfo,
+                        { Size = _queueMinimized and UDim2.new(0, 2, 0, 12) or UDim2.new(0, 2, 0, 0) }
                 ):Play()
         end)
 
@@ -8727,17 +8764,8 @@ do -- Dance Queue Panel
                 RebuildQueueList()
         end)
 
-        local _queueSyncedMainMin = false
         AddToRenderStep(function()
                 QueueModeBtn.Text = DanceQueueMode and "Queue Mode: ON" or "Queue Mode: OFF"
-                -- Mirror main UI minimize state
-                local mainMin = UIMainWindow.Size.Y.Offset <= 34
-                if mainMin ~= _queueSyncedMainMin then
-                        _queueSyncedMainMin = mainMin
-                        if mainMin and _queueVisible then
-                                HideQueuePanel()
-                        end
-                end
         end)
 
         DanceQueueMode = not not SaveData.DanceQueueMode
