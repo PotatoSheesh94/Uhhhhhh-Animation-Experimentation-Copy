@@ -8077,6 +8077,7 @@ do
         _dpNotifFrame.BorderSizePixel = 0
         _dpNotifFrame.ZIndex = 54
         _dpNotifFrame.Visible = false
+        _dpNotifFrame.ClipsDescendants = true
         Stylize(_dpNotifFrame, {Glow = true})
         local _dpNotifLabel = Util.Instance("TextLabel", _dpNotifFrame)
         _dpNotifLabel.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -8118,6 +8119,34 @@ do
                         _dpNotifFrame.BackgroundTransparency = 0.3 + _dpNotifAnim * 0.7
                         _dpNotifLabel.TextTransparency = _dpNotifAnim
                         _dpNotifFrame.Visible = true
+                        local textW = _dpNotifLabel.TextBounds.X + 12
+                        local availW = math.max(_dpNotifFrame.AbsoluteSize.X - 12, 1)
+                        if textW > availW then
+                                local scrollRange = textW - availW
+                                local scrollSpeed = 45
+                                local pauseTime = 0.8
+                                local halfCycle = scrollRange / scrollSpeed + pauseTime
+                                local sc = os.clock() % (halfCycle * 2)
+                                local scrollOffset
+                                if sc < pauseTime then
+                                        scrollOffset = 0
+                                elseif sc < halfCycle then
+                                        scrollOffset = (sc - pauseTime) * scrollSpeed
+                                elseif sc < halfCycle + pauseTime then
+                                        scrollOffset = scrollRange
+                                else
+                                        scrollOffset = math.max(0, scrollRange - (sc - halfCycle - pauseTime) * scrollSpeed)
+                                end
+                                _dpNotifLabel.AnchorPoint = Vector2.new(0, 0.5)
+                                _dpNotifLabel.Position = UDim2.new(0, 6 - scrollOffset, 0.5, 0)
+                                _dpNotifLabel.Size = UDim2.fromOffset(textW, _dpNotifFrame.AbsoluteSize.Y)
+                                _dpNotifLabel.TextXAlignment = Enum.TextXAlignment.Left
+                        else
+                                _dpNotifLabel.AnchorPoint = Vector2.new(0.5, 0.5)
+                                _dpNotifLabel.Position = UDim2.new(0.5, 0, 0.5, 0)
+                                _dpNotifLabel.Size = UDim2.new(1, -10, 1, 0)
+                                _dpNotifLabel.TextXAlignment = Enum.TextXAlignment.Center
+                        end
                 end
         end, _dpNotifFrame)
         DPCloseBtn.Activated:Connect(function()
