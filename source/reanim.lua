@@ -700,7 +700,9 @@ if SaveData.SkipIntro then
 else
         UISound.Music.Volume = 0
         MusicPlayer.PlayMusic(1)
-        repeat RunService.RenderStepped:Wait() until UISound.Music.IsLoaded
+        local _introLoadStart = tick()
+        repeat RunService.RenderStepped:Wait() until UISound.Music.IsLoaded or (tick() - _introLoadStart >= 10)
+        if UISound.Music.IsLoaded then
         UISound.Music:Stop()
         task.wait()
         UISound.Music:Play()
@@ -860,6 +862,9 @@ else
                 BackgroundTransparency = 1
         }):Play()
         Debris:AddItem(flash, 1)
+        else
+                UIMainFrame.BackgroundTransparency = 1
+        end
 end
 
 SaveData.MuteUIMusic = not not SaveData.MuteUIMusic
