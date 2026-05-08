@@ -786,10 +786,11 @@ else
         stevetherealone_padding.PaddingRight = UDim.new(0, 10)
         stevetherealone_padding.PaddingTop = UDim.new(0, 10)
         stevetherealone_padding.PaddingBottom = UDim.new(0, 10)
+        local _introAnimStart = tick()
         while true do
                 local dt = RunService.Heartbeat:Wait()
                 local t = UISound.Music.TimePosition
-                if t >= 5.256 then break end
+                if t >= 5.256 or (tick() - _introAnimStart) >= 15 then break end
                 local screensize = Util.GetScreenSize()
                 local ysize = screensize.Y
                 local height = ysize / 3
