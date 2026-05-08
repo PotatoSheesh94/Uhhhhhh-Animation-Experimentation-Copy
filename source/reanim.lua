@@ -4804,15 +4804,19 @@ function LimbReanimator.Start()
                                                         cf = v.C0 * transform * v.C1:Inverse()
                                                 end
                                         end
-                                        if dorep or not map.CFrame then
-                                                if dt and map.CFrame then
-                                                        local alpha = 1 - math.exp(-30 * dt)
-                                                        map.CFrame = map.CFrame:Lerp(cf, alpha)
-                                                else
-                                                        map.CFrame = cf
+                                        if dt ~= nil then
+                                                if dorep or not map.CFrame then
+                                                        if map.CFrame then
+                                                                local alpha = 1 - math.exp(-25 * dt)
+                                                                map.CFrame = map.CFrame:Lerp(cf, alpha)
+                                                        else
+                                                                map.CFrame = cf
+                                                        end
                                                 end
                                         end
-                                        Util.SetMotor6DOffset(v, map.CFrame)
+                                        if map.CFrame then
+                                                Util.SetMotor6DOffset(v, map.CFrame)
+                                        end
                                 end
                         end
                 end
@@ -8041,6 +8045,7 @@ do -- Dance Player Popup
         local _popupLastDance = nil
         local _popupVisible = false
         local _popupDragRef = nil
+        local _popupDragLive = false
         local _popupDragStart = Vector2.zero
         local _popupDragStartOffset = Vector2.zero
         local _popupDragOffset = (function()
@@ -8148,7 +8153,7 @@ do -- Dance Player Popup
         local DancePopupDragArea = Util.Instance("Frame", DancePopupFrame)
         DancePopupDragArea.Active = true
         DancePopupDragArea.Position = UDim2.new(0, 0, 0, 0)
-        DancePopupDragArea.Size = UDim2.new(1, 0, 0, 38)
+        DancePopupDragArea.Size = UDim2.new(1, 0, 1, 0)
         DancePopupDragArea.BackgroundTransparency = 1
         DancePopupDragArea.ZIndex = 11
 
@@ -8204,11 +8209,10 @@ do -- Dance Player Popup
                 return b
         end
 
-        -- 4 buttons: Prev, Play/Pause, Next, Loop — evenly spaced
-        local DancePopupPrev      = MakeCtrlBtn("|<",  -75)
-        local DancePopupPlayPause = MakeCtrlBtn("||",  -25)
-        local DancePopupNext      = MakeCtrlBtn(">|",   25)
-        local DancePopupLoop      = MakeCtrlBtn("LP",   75)
+        -- 3 buttons: Prev, Play/Pause, Next — evenly spaced
+        local DancePopupPrev      = MakeCtrlBtn("|<",  -52)
+        local DancePopupPlayPause = MakeCtrlBtn("||",    0)
+        local DancePopupNext      = MakeCtrlBtn(">|",   52)
 
         local function GetShownPos()
                 return UDim2.new(0.5, _popupDragOffset.X, 1, -20 + _popupDragOffset.Y)
@@ -8251,12 +8255,13 @@ do -- Dance Player Popup
                 end)
         end
 
-        -- Drag: grab anywhere in the header/description area
+        -- Drag: grab anywhere on the frame; 6px threshold prevents button-click interference
         DancePopupDragArea.InputBegan:Connect(function(input)
                 if _popupDragRef then return end
                 if input.UserInputState ~= Enum.UserInputState.Begin then return end
                 if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
                         _popupDragRef = input
+                        _popupDragLive = false
                         _popupDragStart = Vector2.new(input.Position.X, input.Position.Y)
                         _popupDragStartOffset = _popupDragOffset
                 end
@@ -8265,14 +8270,17 @@ do -- Dance Player Popup
                 if not _popupDragRef then return end
                 if input.UserInputType == Enum.UserInputType.MouseMovement or (input.UserInputType == Enum.UserInputType.Touch and _popupDragRef == input) then
                         local delta = Vector2.new(input.Position.X, input.Position.Y) - _popupDragStart
+                        if not _popupDragLive and delta.Magnitude < 6 then return end
+                        _popupDragLive = true
                         _popupDragOffset = _popupDragStartOffset + delta
-                        DancePopupFrame.Position = GetShownPos()
+                        if _popupVisible then DancePopupFrame.Position = GetShownPos() end
                 end
         end)
         UserInputService.InputEnded:Connect(function(input)
                 if _popupDragRef and _popupDragRef == input then
                         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
                                 _popupDragRef = nil
+                                _popupDragLive = false
                                 SaveData.DancePopupDragOffset = {_popupDragOffset.X, _popupDragOffset.Y}
                         end
                 end
@@ -8285,13 +8293,6 @@ do -- Dance Player Popup
                 HideDancePopup()
         end)
 
-        DancePopupLoop.Activated:Connect(function()
-                local dance = CurrentDance or _popupLastDance
-                if not dance then return end
-                DanceLoop[dance] = not DanceLoop[dance]
-                if type(SaveData.DanceLoop) ~= "table" then SaveData.DanceLoop = {} end
-                SaveData.DanceLoop[dance.Hash] = DanceLoop[dance]
-        end)
 
         DancePopupPlayPause.Activated:Connect(function()
                 if DancePaused then
@@ -8344,12 +8345,10 @@ do -- Dance Player Popup
                 ShowDancePopup(CurrentDance)
         end)
 
+        local _popupSyncedMainMin = false
         AddToRenderStep(function()
                 -- Keep play/pause button text in sync with state
                 DancePopupPlayPause.Text = DancePaused and ">" or "||"
-                -- Keep loop button in sync: LP = looping, 1x = play once
-                local _loopDance = CurrentDance or _popupLastDance
-                DancePopupLoop.Text = (_loopDance and DanceLoop[_loopDance] == false) and "1x" or "LP"
                 -- Update dance list labels to reflect playing/paused state
                 for dance, label in _danceItemLabels do
                         if dance == CurrentDance then
@@ -8371,6 +8370,14 @@ do -- Dance Player Popup
                                 HideDancePopup()
                         end
                 end
+                -- Mirror main UI minimize state
+                local mainMin = UIMainWindow.Size.Y.Offset <= 34
+                if mainMin ~= _popupSyncedMainMin then
+                        _popupSyncedMainMin = mainMin
+                        if mainMin and _popupVisible then
+                                HideDancePopup()
+                        end
+                end
         end)
 end
 
@@ -8385,7 +8392,13 @@ do -- Dance Queue Panel
         local _queueDragRef = nil
         local _queueDragStart = Vector2.zero
         local _queueDragStartOffset = Vector2.zero
-        local _queueDragOffset = Vector2.zero
+        local _queueDragOffset = (function()
+                local d = SaveData.QueueDragOffset
+                if type(d) == "table" and type(d[1]) == "number" and type(d[2]) == "number" then
+                        return Vector2.new(d[1], d[2])
+                end
+                return Vector2.zero
+        end)()
         local QUEUE_FULL_H = 240
         local QUEUE_MIN_H  = 38
 
@@ -8674,6 +8687,7 @@ do -- Dance Queue Panel
                         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
                                 _queueDragRef = nil
                                 _queueDragLive = false
+                                SaveData.QueueDragOffset = {_queueDragOffset.X, _queueDragOffset.Y}
                         end
                 end
         end)
@@ -8713,8 +8727,17 @@ do -- Dance Queue Panel
                 RebuildQueueList()
         end)
 
+        local _queueSyncedMainMin = false
         AddToRenderStep(function()
                 QueueModeBtn.Text = DanceQueueMode and "Queue Mode: ON" or "Queue Mode: OFF"
+                -- Mirror main UI minimize state
+                local mainMin = UIMainWindow.Size.Y.Offset <= 34
+                if mainMin ~= _queueSyncedMainMin then
+                        _queueSyncedMainMin = mainMin
+                        if mainMin and _queueVisible then
+                                HideQueuePanel()
+                        end
+                end
         end)
 
         DanceQueueMode = not not SaveData.DanceQueueMode
