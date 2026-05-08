@@ -893,12 +893,12 @@ end
 local StylizedObjs = {}
 local function Stylize(obj, options)
         options = options or {}
-        Util.Instance("UICorner", obj).CornerRadius = UDim.new(0, 5)
+        Util.Instance("UICorner", obj).CornerRadius = UDim.new(0, 12)
         local Out = Util.Instance("UIStroke", obj)
         Out.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
         Out.Color = Color3.new(1, 1, 1)
         Out.LineJoinMode = Enum.LineJoinMode.Round
-        Out.Thickness = 1
+        Out.Thickness = 2
         Out.Transparency = 0
         Out.Enabled = true
         obj.BackgroundColor3 = Color3.new(0, 0, 0)
@@ -1107,7 +1107,7 @@ local UIMainWindow, WindowContent do
         UIMainWindow.Active = true
         UIMainWindow.AnchorPoint = Vector2.new(0.5, 0.5)
         UIMainWindow.Position = UDim2.new(0.5, 0, 0.5, 0)
-        UIMainWindow.Size = UDim2.new(0, 360, 0, 240)
+        UIMainWindow.Size = UDim2.new(0, 420, 0, 300)
         UIMainWindow.BackgroundTransparency = 0
         UIMainWindow.BackgroundColor3 = Color3.new(1, 1, 1)
         UIMainWindow.BorderSizePixel = 0
@@ -1141,7 +1141,7 @@ local UIMainWindow, WindowContent do
         
         local TopBarFrame = Util.Instance("Frame", UIMainWindow)
         TopBarFrame.Position = UDim2.new(0, 0, 0, 0)
-        TopBarFrame.Size = UDim2.new(1, 0, 0, 30)
+        TopBarFrame.Size = UDim2.new(1, 0, 0, 38)
         TopBarFrame.BackgroundTransparency = 0
         TopBarFrame.BackgroundColor3 = Color3.new(1, 1, 1)
         TopBarFrame.BorderSizePixel = 0
@@ -1152,7 +1152,7 @@ local UIMainWindow, WindowContent do
         local TopBarText = Util.Instance("TextLabel", TopBarFrame)
         TopBarText.AnchorPoint = Vector2.new(0, 0.5)
         TopBarText.Position = UDim2.new(0, 8, 0.5, 0)
-        TopBarText.Size = UDim2.new(1, -35, 1, 0)
+        TopBarText.Size = UDim2.new(1, -48, 1, 0)
         TopBarText.BackgroundTransparency = 1
         TopBarText.ClipsDescendants = true
         TopBarText.Font = Enum.Font.Code
@@ -1238,7 +1238,7 @@ local UIMainWindow, WindowContent do
         local TopBarClose = Util.Instance("TextButton", TopBarFrame)
         TopBarClose.AnchorPoint = Vector2.new(1, 0)
         TopBarClose.Position = UDim2.new(1, 0, 0, 0)
-        TopBarClose.Size = UDim2.new(0, 30, 1, 0)
+        TopBarClose.Size = UDim2.new(0, 38, 1, 0)
         TopBarClose.BackgroundTransparency = 1
         TopBarClose.Text = ""
         do
@@ -1267,8 +1267,8 @@ local UIMainWindow, WindowContent do
         end
         
         WindowContent = Util.Instance("Frame", UIMainWindow)
-        WindowContent.Position = UDim2.new(0, 0, 0, 30)
-        WindowContent.Size = UDim2.new(1, 0, 1, -35)
+        WindowContent.Position = UDim2.new(0, 0, 0, 38)
+        WindowContent.Size = UDim2.new(1, 0, 1, -43)
         WindowContent.BackgroundTransparency = 1
         WindowContent.ClipsDescendants = true
         WindowContent.ZIndex = 0
@@ -1294,7 +1294,7 @@ local UIMainWindow, WindowContent do
                         MainWindowPosOpen = UIMainWindow.Position
                         TweenService:Create(UIMainWindow, TweenInfo.new(0.5, Enum.EasingStyle.Cubic, Enum.EasingDirection.Out), {
                                 Position = MainWindowPosClose,
-                                Size = UDim2.fromOffset(112, 30)
+                                Size = UDim2.fromOffset(135, 38)
                         }):Play()
                         TweenService:Create(TopBarClose.A, TweenInfo.new(0.5, Enum.EasingStyle.Cubic, Enum.EasingDirection.Out), {
                                 Rotation = 180
@@ -1312,7 +1312,7 @@ local UIMainWindow, WindowContent do
                         SaveData.WindowClosedPosition = {MainWindowPosClose.X.Scale, MainWindowPosClose.X.Offset, MainWindowPosClose.Y.Scale, MainWindowPosClose.Y.Offset}
                         TweenService:Create(UIMainWindow, TweenInfo.new(0.5, Enum.EasingStyle.Cubic, Enum.EasingDirection.Out), {
                                 Position = MainWindowPosOpen,
-                                Size = UDim2.fromOffset(360, 240)
+                                Size = UDim2.fromOffset(420, 300)
                         }):Play()
                         TweenService:Create(TopBarClose.A, TweenInfo.new(0.5, Enum.EasingStyle.Cubic, Enum.EasingDirection.Out), {
                                 Rotation = 0
@@ -1384,7 +1384,7 @@ local _totalrendertime = 0
 RunService:BindToRenderStep("Uhhhhhh_Render" .. Util.RandomString(), Enum.RenderPriority.Last.Value - 69, function(dt)
         _totalrendertime += dt
         UpdateGrads(_totalrendertime)
-        WindowContent.Visible = UIMainWindow.Size.Y.Offset > 35
+        WindowContent.Visible = UIMainWindow.Size.Y.Offset > 43
         for _,func in _funcrefreshes do
                 local s, e = pcall(func, _totalrendertime, dt)
                 if not s then warn(e) end
@@ -1490,7 +1490,7 @@ local CracktroFrame = Util.Instance("Frame", WindowContent)
 CracktroFrame.Active = true
 CracktroFrame.AnchorPoint = Vector2.new(0.5, 0.5)
 CracktroFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
-CracktroFrame.Size = UDim2.new(0, 360, 0, 205)
+CracktroFrame.Size = UDim2.new(0, 420, 0, 262)
 CracktroFrame.BackgroundTransparency = 0
 CracktroFrame.BackgroundColor3 = Color3.new(0, 0, 0)
 CracktroFrame.BorderSizePixel = 1
@@ -1512,7 +1512,7 @@ do -- homepage
         local Glowy = Util.Instance("ImageLabel", CracktroFrame)
         Glowy.AnchorPoint = Vector2.new(0.5, 0.5)
         Glowy.Position = UDim2.new(0.5, 0, 0.5, 0)
-        Glowy.Size = UDim2.new(0, 260, 0, 260)
+        Glowy.Size = UDim2.new(0, 310, 0, 310)
         Glowy.BackgroundTransparency = 1
         Glowy.Image = Util.GetCDNAsset("lightinursoul.graphic.png")
         Glowy.ImageColor3 = UITextColor.Value
@@ -1522,7 +1522,7 @@ do -- homepage
         local Triforce = Util.MakeTriforce(3, Color3.new(1, 0.7, 0), 0)
         Triforce.AnchorPoint = Vector2.new(0.5, 0.5)
         Triforce.Position = UDim2.new(0.5, 0, 0.5, 0)
-        Triforce.Size = UDim2.new(0, 160, 0, 160)
+        Triforce.Size = UDim2.new(0, 195, 0, 195)
         Triforce.Parent = TriforceClip
 
         local particles = {}
@@ -1760,7 +1760,7 @@ function UI.CreatePage()
         local Frame = Util.Instance("ScrollingFrame", WindowContent)
         Frame.AnchorPoint = Vector2.new(0.5, 0.5)
         Frame.Position = UDim2.new(0.5, 0, 0.5, 0)
-        Frame.Size = UDim2.new(0, 360, 0, 205)
+        Frame.Size = UDim2.new(0, 420, 0, 262)
         Frame.BackgroundTransparency = 0
         Frame.BackgroundColor3 = Color3.new(0, 0, 0)
         Frame.BorderSizePixel = 1
@@ -1775,7 +1775,7 @@ function UI.CreatePage()
                 Frame.BackgroundColor3 = GetUIBGColor(t)
         end, Frame)
         Frame.ScrollingDirection = Enum.ScrollingDirection.Y
-        Frame.ScrollBarThickness = 3
+        Frame.ScrollBarThickness = 4
         Frame.ElasticBehavior = Enum.ElasticBehavior.Always
         Frame.TopImage = "rbxasset://textures/ui/Scroll/scroll-middle.png"
         Frame.MidImage = "rbxasset://textures/ui/Scroll/scroll-middle.png"
@@ -1837,7 +1837,7 @@ function UI.CreateSeparator(parent)
         local Sep = Util.Instance("Frame", Container)
         Sep.AnchorPoint = Vector2.new(0.5, 0.5)
         Sep.Position = UDim2.new(0.5, 0, 0.5, 0)
-        Sep.Size = UDim2.new(1, -8, 0, 1)
+        Sep.Size = UDim2.new(1, -8, 0, 2)
         Sep.BackgroundColor3 = UITextColor.Value
         Sep.BackgroundTransparency = 0.8
         Sep.BorderSizePixel = 0
@@ -1925,27 +1925,29 @@ function UI.CreateSwitch(parent, text, value)
         local Switch = Util.Instance("Frame", Container)
         Switch.AnchorPoint = Vector2.new(1, 0.5)
         Switch.Position = UDim2.new(1, -margin, 0.5, 0)
-        Switch.Size = UDim2.new(0, 25, 0, 25)
+        Switch.Size = UDim2.new(0, 48, 0, 26)
         Switch.BackgroundTransparency = 0
-        Switch.BackgroundColor3 = Color3.new(0, 0, 0)
+        Switch.BackgroundColor3 = Color3.new(0.12, 0.12, 0.12)
         Switch.BorderSizePixel = 0
-        Util.Instance("UICorner", Switch).CornerRadius = UDim.new(0, 5)
+        Util.Instance("UICorner", Switch).CornerRadius = UDim.new(0, 13)
         Stylize(Switch)
         local SwitchDot = Util.Instance("Frame", Switch)
         SwitchDot.AnchorPoint = Vector2.new(0.5, 0.5)
-        SwitchDot.Position = UDim2.new(0.5, 0, 0.5, 0)
-        SwitchDot.Size = UDim2.new(0, 19, 0, 19)
-        SwitchDot.BackgroundTransparency = 0.2
-        SwitchDot.BackgroundColor3 = UITextColor.Value
+        SwitchDot.Position = UDim2.new(0, 13, 0.5, 0)
+        SwitchDot.Size = UDim2.new(0, 20, 0, 20)
+        SwitchDot.BackgroundTransparency = 0
+        SwitchDot.BackgroundColor3 = Color3.new(1, 1, 1)
         SwitchDot.BorderSizePixel = 0
-        Util.LinkDestroyI2C(SwitchDot, UITextColor.Changed:Connect(function(val)
-                SwitchDot.BackgroundColor3 = val
-        end))
-        Util.Instance("UICorner", SwitchDot).CornerRadius = UDim.new(0, 2)
+        Util.Instance("UICorner", SwitchDot).CornerRadius = UDim.new(1, 0)
         local Lever = Util.Instance("BoolValue")
         Lever.Value = value
         local function updatesw()
-                SwitchDot.Visible = Lever.Value
+                TweenService:Create(SwitchDot, TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                        Position = Lever.Value and UDim2.new(0, 35, 0.5, 0) or UDim2.new(0, 13, 0.5, 0),
+                }):Play()
+                TweenService:Create(Switch, TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                        BackgroundColor3 = Lever.Value and Color3.new(0.06, 0.28, 0.06) or Color3.new(0.12, 0.12, 0.12),
+                }):Play()
         end
         Lever.Changed:Connect(updatesw)
         updatesw()
@@ -2412,7 +2414,7 @@ function UI.CreateScrollCanvas(parent, height)
         ListBox.CanvasSize = UDim2.new(0, 0, 0, 0)
         ListBox.ClipsDescendants = true
         ListBox.ScrollingDirection = Enum.ScrollingDirection.Y
-        ListBox.ScrollBarThickness = 3
+        ListBox.ScrollBarThickness = 4
         ListBox.ElasticBehavior = Enum.ElasticBehavior.Always
         ListBox.TopImage = "rbxasset://textures/ui/Scroll/scroll-middle.png"
         ListBox.MidImage = "rbxasset://textures/ui/Scroll/scroll-middle.png"
@@ -2444,7 +2446,7 @@ function UI.CreateItemListPage()
         local Frame = Util.Instance("Frame", WindowContent)
         Frame.AnchorPoint = Vector2.new(0.5, 0.5)
         Frame.Position = UDim2.new(0.5, 0, 0.5, 0)
-        Frame.Size = UDim2.new(0, 360, 0, 205)
+        Frame.Size = UDim2.new(0, 420, 0, 262)
         Frame.BackgroundTransparency = 0
         Frame.BackgroundColor3 = Color3.new(0, 0, 0)
         Frame.BorderSizePixel = 1
@@ -2526,7 +2528,7 @@ function UI.CreateItemListPage()
         ListBox.CanvasSize = UDim2.new(0, 0, 0, 0)
         ListBox.ClipsDescendants = true
         ListBox.ScrollingDirection = Enum.ScrollingDirection.Y
-        ListBox.ScrollBarThickness = 3
+        ListBox.ScrollBarThickness = 4
         ListBox.ElasticBehavior = Enum.ElasticBehavior.Always
         ListBox.TopImage = "rbxasset://textures/ui/Scroll/scroll-middle.png"
         ListBox.MidImage = "rbxasset://textures/ui/Scroll/scroll-middle.png"
