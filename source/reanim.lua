@@ -887,12 +887,12 @@ end
 local StylizedObjs = {}
 local function Stylize(obj, options)
         options = options or {}
-        Util.Instance("UICorner", obj).CornerRadius = UDim.new(0, 10)
+        Util.Instance("UICorner", obj).CornerRadius = UDim.new(0, 14)
         local Out = Util.Instance("UIStroke", obj)
         Out.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
         Out.Color = Color3.new(1, 1, 1)
         Out.LineJoinMode = Enum.LineJoinMode.Round
-        Out.Thickness = 1.5
+        Out.Thickness = 2
         Out.Transparency = 0
         Out.Enabled = true
         obj.BackgroundColor3 = Color3.new(0, 0, 0)
@@ -1101,7 +1101,7 @@ local UIMainWindow, WindowContent do
         UIMainWindow.Active = true
         UIMainWindow.AnchorPoint = Vector2.new(0.5, 0.5)
         UIMainWindow.Position = UDim2.new(0.5, 0, 0.5, 0)
-        UIMainWindow.Size = UDim2.new(0, 360, 0, 240)
+        UIMainWindow.Size = UDim2.new(0, 360, 0, 270)
         UIMainWindow.BackgroundTransparency = 0
         UIMainWindow.BackgroundColor3 = Color3.new(1, 1, 1)
         UIMainWindow.BorderSizePixel = 0
@@ -1135,23 +1135,43 @@ local UIMainWindow, WindowContent do
         
         local TopBarFrame = Util.Instance("Frame", UIMainWindow)
         TopBarFrame.Position = UDim2.new(0, 0, 0, 0)
-        TopBarFrame.Size = UDim2.new(1, 0, 0, 34)
+        TopBarFrame.Size = UDim2.new(1, 0, 0, 38)
         TopBarFrame.BackgroundTransparency = 0
         TopBarFrame.BackgroundColor3 = Color3.new(1, 1, 1)
         TopBarFrame.BorderSizePixel = 0
         TopBarFrame.ClipsDescendants = true
         TopBarFrame.ZIndex = 1
         Stylize(TopBarFrame)
-        
+        -- Glowing accent strip at bottom of topbar
+        local TopBarAccent = Util.Instance("Frame", TopBarFrame)
+        TopBarAccent.AnchorPoint = Vector2.new(0.5, 1)
+        TopBarAccent.Position = UDim2.new(0.5, 0, 1, 0)
+        TopBarAccent.Size = UDim2.new(1, -28, 0, 2)
+        TopBarAccent.BackgroundColor3 = Color3.new(1, 1, 1)
+        TopBarAccent.BackgroundTransparency = 0
+        TopBarAccent.BorderSizePixel = 0
+        TopBarAccent.ZIndex = 3
+        Util.Instance("UICorner", TopBarAccent).CornerRadius = UDim.new(1, 0)
+        local TopBarAccentGrad = Util.Instance("UIGradient", TopBarAccent)
+        TopBarAccentGrad.Transparency = NumberSequence.new({
+                NumberSequenceKeypoint.new(0, 1),
+                NumberSequenceKeypoint.new(0.12, 0),
+                NumberSequenceKeypoint.new(0.88, 0),
+                NumberSequenceKeypoint.new(1, 1),
+        })
+        AddToRenderStep(function(t)
+                TopBarAccent.BackgroundColor3 = GetUIColor(t)
+        end, TopBarAccent)
+
         local TopBarText = Util.Instance("TextLabel", TopBarFrame)
         TopBarText.AnchorPoint = Vector2.new(0, 0.5)
-        TopBarText.Position = UDim2.new(0, 10, 0.5, 0)
-        TopBarText.Size = UDim2.new(1, -40, 1, 0)
+        TopBarText.Position = UDim2.new(0, 12, 0.5, -1)
+        TopBarText.Size = UDim2.new(1, -46, 1, 0)
         TopBarText.BackgroundTransparency = 1
         TopBarText.ClipsDescendants = true
-        TopBarText.Font = Enum.Font.GothamBold
+        TopBarText.Font = Enum.Font.GothamBlack
         TopBarText.TextColor3 = Color3.new(1, 1, 1)
-        TopBarText.TextSize = 14
+        TopBarText.TextSize = 15
         TopBarText.TextXAlignment = Enum.TextXAlignment.Left
         TopBarText.Text = "Uhhhhhh Reanimate | v" .. UhhhhhhVersion
         TopBarText.RichText = true
@@ -1261,8 +1281,8 @@ local UIMainWindow, WindowContent do
         end
         
         WindowContent = Util.Instance("Frame", UIMainWindow)
-        WindowContent.Position = UDim2.new(0, 0, 0, 34)
-        WindowContent.Size = UDim2.new(1, 0, 1, -39)
+        WindowContent.Position = UDim2.new(0, 0, 0, 38)
+        WindowContent.Size = UDim2.new(1, 0, 1, -43)
         WindowContent.BackgroundTransparency = 1
         WindowContent.ClipsDescendants = true
         WindowContent.ZIndex = 0
@@ -1282,7 +1302,7 @@ local UIMainWindow, WindowContent do
                         MainWindowPosOpen = UIMainWindow.Position
                         TweenService:Create(UIMainWindow, TweenInfo.new(0.5, Enum.EasingStyle.Cubic, Enum.EasingDirection.Out), {
                                 Position = MainWindowPosClose,
-                                Size = UDim2.fromOffset(180, 34)
+                                Size = UDim2.fromOffset(180, 38)
                         }):Play()
                         TweenService:Create(TopBarClose.A, TweenInfo.new(0.5, Enum.EasingStyle.Cubic, Enum.EasingDirection.Out), {
                                 Rotation = 180
@@ -1300,7 +1320,7 @@ local UIMainWindow, WindowContent do
                         SaveData.WindowClosedPosition = {MainWindowPosClose.X.Scale, MainWindowPosClose.X.Offset, MainWindowPosClose.Y.Scale, MainWindowPosClose.Y.Offset}
                         TweenService:Create(UIMainWindow, TweenInfo.new(0.5, Enum.EasingStyle.Cubic, Enum.EasingDirection.Out), {
                                 Position = MainWindowPosOpen,
-                                Size = UDim2.fromOffset(360, 240)
+                                Size = UDim2.fromOffset(360, 270)
                         }):Play()
                         TweenService:Create(TopBarClose.A, TweenInfo.new(0.5, Enum.EasingStyle.Cubic, Enum.EasingDirection.Out), {
                                 Rotation = 0
@@ -1366,7 +1386,7 @@ local _totalrendertime = 0
 RunService:BindToRenderStep("Uhhhhhh_Render" .. Util.RandomString(), Enum.RenderPriority.Last.Value - 69, function(dt)
         _totalrendertime += dt
         UpdateGrads(_totalrendertime)
-        WindowContent.Visible = UIMainWindow.Size.Y.Offset > 39
+        WindowContent.Visible = UIMainWindow.Size.Y.Offset > 43
         for _,func in _funcrefreshes do
                 local s, e = pcall(func, _totalrendertime, dt)
                 if not s then warn(e) end
@@ -1771,7 +1791,7 @@ function UI.CreatePage()
         local Frame = Util.Instance("ScrollingFrame", WindowContent)
         Frame.AnchorPoint = Vector2.new(0.5, 0.5)
         Frame.Position = UDim2.new(0.5, 0, 0.5, 0)
-        Frame.Size = UDim2.new(0, 360, 0, 205)
+        Frame.Size = UDim2.new(0, 360, 0, 226)
         Frame.BackgroundTransparency = 0
         Frame.BackgroundColor3 = Color3.new(0, 0, 0)
         Frame.BorderSizePixel = 0
@@ -1784,7 +1804,7 @@ function UI.CreatePage()
         PageStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
         PageStroke.Color = Color3.new(1, 1, 1)
         PageStroke.LineJoinMode = Enum.LineJoinMode.Round
-        PageStroke.Thickness = 1.5
+        PageStroke.Thickness = 2
         PageStroke.Transparency = 0
         AddToRenderStep(function(t)
                 PageStroke.Color = GetUIColor(t)
@@ -1802,15 +1822,15 @@ function UI.CreatePage()
                 Frame.ScrollBarImageColor3 = val
         end))
         local Padding = Util.Instance("UIPadding", Frame)
-        Padding.PaddingTop = UDim.new(0, 8)
-        Padding.PaddingBottom = UDim.new(0, 4)
+        Padding.PaddingTop = UDim.new(0, 10)
+        Padding.PaddingBottom = UDim.new(0, 8)
         Padding.PaddingLeft = UDim.new(0, 0)
         Padding.PaddingRight = UDim.new(0, 0)
         local UIList = Util.Instance("UIListLayout", Frame)
         UIList.FillDirection = Enum.FillDirection.Vertical
         UIList.HorizontalAlignment = Enum.HorizontalAlignment.Center
         UIList.VerticalAlignment = Enum.VerticalAlignment.Top
-        UIList.Padding = UDim.new(0, 2)
+        UIList.Padding = UDim.new(0, 4)
         UIList.SortOrder = Enum.SortOrder.LayoutOrder
         return Frame
 end
@@ -1847,16 +1867,17 @@ end
 function UI.CreateSeparator(parent)
         local Container = Util.Instance("Frame", parent)
         Container.AnchorPoint = Vector2.new(0.5, 0)
-        Container.Size = UDim2.new(1, 0, 0, 14)
+        Container.Size = UDim2.new(1, 0, 0, 18)
         Container.BackgroundTransparency = 1
         Container.LayoutOrder = #parent:GetChildren()
         local Sep = Util.Instance("Frame", Container)
         Sep.AnchorPoint = Vector2.new(0.5, 0.5)
         Sep.Position = UDim2.new(0.5, 0, 0.5, 0)
-        Sep.Size = UDim2.new(1, -24, 0, 1)
+        Sep.Size = UDim2.new(1, -20, 0, 2)
         Sep.BackgroundColor3 = UITextColor.Value
-        Sep.BackgroundTransparency = 0.55
+        Sep.BackgroundTransparency = 0.42
         Sep.BorderSizePixel = 0
+        Util.Instance("UICorner", Sep).CornerRadius = UDim.new(1, 0)
         Util.Instance("UIGradient", Sep).Transparency = NumberSequence.new({
                 NumberSequenceKeypoint.new(0, 1),
                 NumberSequenceKeypoint.new(0.15, 0),
@@ -1898,17 +1919,42 @@ function UI.CreateButton(parent, text, size)
         ButtonText.TextSize = size
         RegisterTextLabel(ButtonText)
         Stylize(Button)
-        local _btnTI = TweenInfo.new(0.12, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+        -- Glass highlight overlay (top-half shimmer)
+        local Glass = Util.Instance("Frame", Button)
+        Glass.AnchorPoint = Vector2.new(0, 0)
+        Glass.Position = UDim2.new(0, 0, 0, 0)
+        Glass.Size = UDim2.new(1, 0, 0.5, 0)
+        Glass.BackgroundColor3 = Color3.new(1, 1, 1)
+        Glass.BackgroundTransparency = 0.91
+        Glass.BorderSizePixel = 0
+        Glass.ZIndex = Button.ZIndex + 1
+        Util.Instance("UICorner", Glass).CornerRadius = UDim.new(0, 13)
+        -- Left accent bar (follows theme color)
+        local AccentBar = Util.Instance("Frame", Button)
+        AccentBar.AnchorPoint = Vector2.new(0, 0.5)
+        AccentBar.Position = UDim2.new(0, 0, 0.5, 0)
+        AccentBar.Size = UDim2.new(0, 4, 0.65, 0)
+        AccentBar.BackgroundColor3 = Color3.new(1, 1, 1)
+        AccentBar.BackgroundTransparency = 0
+        AccentBar.BorderSizePixel = 0
+        AccentBar.ZIndex = Button.ZIndex + 2
+        Util.Instance("UICorner", AccentBar).CornerRadius = UDim.new(0, 2)
+        AddToRenderStep(function(t)
+                AccentBar.BackgroundColor3 = GetUIColor(t)
+        end, AccentBar)
+        local _btnTI = TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
         Button.MouseEnter:Connect(function()
-                TweenService:Create(Button, _btnTI, { BackgroundTransparency = 0.18 }):Play()
+                TweenService:Create(Button, _btnTI, { BackgroundTransparency = 0.14 }):Play()
+                TweenService:Create(Glass, _btnTI, { BackgroundTransparency = 0.83 }):Play()
         end)
         Button.MouseLeave:Connect(function()
                 TweenService:Create(Button, _btnTI, { BackgroundTransparency = 0 }):Play()
+                TweenService:Create(Glass, _btnTI, { BackgroundTransparency = 0.91 }):Play()
         end)
         local function update()
                 local x = parent.AbsoluteSize.X
                 local size = TextService:GetTextSize(ButtonText.ContentText, ButtonText.TextSize, ButtonText.Font, Vector2.new(x - margin * 2, math.huge))
-                Container.Size = UDim2.new(1, 0, 0, size.Y + margin * 2 + 4)
+                Container.Size = UDim2.new(1, 0, 0, size.Y + margin * 2 + 8)
         end
         ButtonText.Text = text
         update()
@@ -1917,7 +1963,7 @@ function UI.CreateButton(parent, text, size)
 end
 function UI.CreateSwitch(parent, text, value)
         local margin = 6
-        local switchW, switchH = 44, 22
+        local switchW, switchH = 50, 26
         local Container = Util.Instance("Frame", parent)
         Container.AnchorPoint = Vector2.new(0.5, 0)
         Container.Size = UDim2.new(1, 0, 0, 10)
@@ -2119,14 +2165,14 @@ function UI.CreateSlider(parent, text, value, min, max, step)
         local SliderR = Util.Instance("Frame", SliderC)
         SliderR.AnchorPoint = Vector2.new(0.5, 0.5)
         SliderR.Position = UDim2.new(0.5, 0, 0.5, 0)
-        SliderR.Size = UDim2.new(1, margin * -2 - 20, 0, 6)
+        SliderR.Size = UDim2.new(1, margin * -2 - 20, 0, 8)
         SliderR.BackgroundTransparency = 0
         SliderR.BackgroundColor3 = Color3.new(1, 1, 1)
         SliderR.BorderSizePixel = 0
         local SliderB = Util.Instance("Frame", SliderR)
         SliderB.AnchorPoint = Vector2.new(0.5, 0.5)
         SliderB.Position = UDim2.new(0, 0, 0.5, 0)
-        SliderB.Size = UDim2.new(0, 20, 0, 20)
+        SliderB.Size = UDim2.new(0, 24, 0, 24)
         SliderB.BackgroundTransparency = 0
         SliderB.BackgroundColor3 = Color3.new(1, 1, 1)
         SliderB.BorderSizePixel = 0
@@ -8073,9 +8119,9 @@ do -- Dance Player Popup
         DancePopupClose.Size = UDim2.new(0, 22, 0, 22)
         DancePopupClose.BackgroundTransparency = 0
         DancePopupClose.BorderSizePixel = 0
-        DancePopupClose.Text = "x"
+        DancePopupClose.Text = "\xc3\x97"
         DancePopupClose.Font = Enum.Font.GothamBold
-        DancePopupClose.TextSize = 13
+        DancePopupClose.TextSize = 15
         DancePopupClose.ZIndex = 12
         Stylize(DancePopupClose)
         RegisterTextLabel(DancePopupClose)
@@ -8144,27 +8190,37 @@ do -- Dance Player Popup
                 SaveData.DancePopupDragOffset = {_popupDragOffset.X, _popupDragOffset.Y}
         end)
 
-        -- Header title (matches Players panel style)
+        -- Header title
         local DancePopupHeaderTitle = Util.Instance("TextLabel", DancePopupFrame)
         DancePopupHeaderTitle.Position = UDim2.new(0, 12, 0, 9)
         DancePopupHeaderTitle.Size = UDim2.new(1, -90, 0, 20)
         DancePopupHeaderTitle.BackgroundTransparency = 1
-        DancePopupHeaderTitle.Font = Enum.Font.GothamBold
+        DancePopupHeaderTitle.Font = Enum.Font.GothamBlack
         DancePopupHeaderTitle.TextSize = 14
         DancePopupHeaderTitle.TextXAlignment = Enum.TextXAlignment.Left
         DancePopupHeaderTitle.ZIndex = 12
         DancePopupHeaderTitle.Text = "Now Playing"
         RegisterTextLabel(DancePopupHeaderTitle)
 
-        -- Header separator (matches Players panel style)
-        local DancePopupHeaderSep = Instance.new("Frame", DancePopupFrame)
+        -- Header accent strip (theme-colored, faded at edges)
+        local DancePopupHeaderSep = Util.Instance("Frame", DancePopupFrame)
         DancePopupHeaderSep.AnchorPoint = Vector2.new(0.5, 0)
         DancePopupHeaderSep.Position = UDim2.new(0.5, 0, 0, 38)
-        DancePopupHeaderSep.Size = UDim2.new(1, -24, 0, 1)
-        DancePopupHeaderSep.BackgroundTransparency = 0.6
+        DancePopupHeaderSep.Size = UDim2.new(1, -20, 0, 2)
+        DancePopupHeaderSep.BackgroundTransparency = 0.42
         DancePopupHeaderSep.BackgroundColor3 = Color3.new(1, 1, 1)
         DancePopupHeaderSep.BorderSizePixel = 0
         DancePopupHeaderSep.ZIndex = 11
+        Util.Instance("UICorner", DancePopupHeaderSep).CornerRadius = UDim.new(1, 0)
+        Util.Instance("UIGradient", DancePopupHeaderSep).Transparency = NumberSequence.new({
+                NumberSequenceKeypoint.new(0, 1),
+                NumberSequenceKeypoint.new(0.15, 0),
+                NumberSequenceKeypoint.new(0.85, 0),
+                NumberSequenceKeypoint.new(1, 1),
+        })
+        AddToRenderStep(function(t)
+                DancePopupHeaderSep.BackgroundColor3 = GetUIColor(t)
+        end, DancePopupHeaderSep)
 
         -- Transparent drag handle covering only the header bar (title area)
         local DancePopupDragArea = Util.Instance("Frame", DancePopupFrame)
@@ -8201,14 +8257,24 @@ do -- Dance Player Popup
         DancePopupDesc.Text = ""
         RegisterTextLabel(DancePopupDesc)
 
-        local DancePopupSep = Instance.new("Frame", DancePopupFrame)
+        local DancePopupSep = Util.Instance("Frame", DancePopupFrame)
         DancePopupSep.AnchorPoint = Vector2.new(0.5, 0)
         DancePopupSep.Position = UDim2.new(0.5, 0, 0, 110)
-        DancePopupSep.Size = UDim2.new(1, -24, 0, 1)
-        DancePopupSep.BackgroundTransparency = 0.6
+        DancePopupSep.Size = UDim2.new(1, -20, 0, 2)
+        DancePopupSep.BackgroundTransparency = 0.42
         DancePopupSep.BackgroundColor3 = Color3.new(1, 1, 1)
         DancePopupSep.BorderSizePixel = 0
         DancePopupSep.ZIndex = 11
+        Util.Instance("UICorner", DancePopupSep).CornerRadius = UDim.new(1, 0)
+        Util.Instance("UIGradient", DancePopupSep).Transparency = NumberSequence.new({
+                NumberSequenceKeypoint.new(0, 1),
+                NumberSequenceKeypoint.new(0.15, 0),
+                NumberSequenceKeypoint.new(0.85, 0),
+                NumberSequenceKeypoint.new(1, 1),
+        })
+        AddToRenderStep(function(t)
+                DancePopupSep.BackgroundColor3 = GetUIColor(t)
+        end, DancePopupSep)
 
         local function MakeCtrlBtn(label, xOff)
                 local b = Util.Instance("TextButton", DancePopupFrame)
@@ -8434,7 +8500,7 @@ do -- Dance Queue Panel
         QueueTitle.Position = UDim2.new(0, 12, 0, 9)
         QueueTitle.Size = UDim2.new(1, -90, 0, 20)
         QueueTitle.BackgroundTransparency = 1
-        QueueTitle.Font = Enum.Font.GothamBold
+        QueueTitle.Font = Enum.Font.GothamBlack
         QueueTitle.TextSize = 15
         QueueTitle.TextXAlignment = Enum.TextXAlignment.Left
         QueueTitle.ZIndex = 12
@@ -8447,9 +8513,9 @@ do -- Dance Queue Panel
         QueueClose.Size = UDim2.new(0, 22, 0, 22)
         QueueClose.BackgroundTransparency = 0
         QueueClose.BorderSizePixel = 0
-        QueueClose.Text = "x"
+        QueueClose.Text = "\xc3\x97"
         QueueClose.Font = Enum.Font.GothamBold
-        QueueClose.TextSize = 13
+        QueueClose.TextSize = 15
         QueueClose.ZIndex = 12
         Stylize(QueueClose)
         RegisterTextLabel(QueueClose)
@@ -8485,14 +8551,24 @@ do -- Dance Queue Panel
                 UITextColor.Changed:Connect(function(val) QB.BackgroundColor3 = val end)
         end
 
-        local QueueSep1 = Instance.new("Frame", QueueFrame)
+        local QueueSep1 = Util.Instance("Frame", QueueFrame)
         QueueSep1.AnchorPoint = Vector2.new(0.5, 0)
         QueueSep1.Position = UDim2.new(0.5, 0, 0, 38)
-        QueueSep1.Size = UDim2.new(1, -24, 0, 1)
-        QueueSep1.BackgroundTransparency = 0.6
+        QueueSep1.Size = UDim2.new(1, -20, 0, 2)
+        QueueSep1.BackgroundTransparency = 0.42
         QueueSep1.BackgroundColor3 = Color3.new(1, 1, 1)
         QueueSep1.BorderSizePixel = 0
         QueueSep1.ZIndex = 11
+        Util.Instance("UICorner", QueueSep1).CornerRadius = UDim.new(1, 0)
+        Util.Instance("UIGradient", QueueSep1).Transparency = NumberSequence.new({
+                NumberSequenceKeypoint.new(0, 1),
+                NumberSequenceKeypoint.new(0.15, 0),
+                NumberSequenceKeypoint.new(0.85, 0),
+                NumberSequenceKeypoint.new(1, 1),
+        })
+        AddToRenderStep(function(t)
+                QueueSep1.BackgroundColor3 = GetUIColor(t)
+        end, QueueSep1)
 
         local QueueScroll = Instance.new("ScrollingFrame", QueueFrame)
         QueueScroll.Position = UDim2.new(0, 4, 0, 40)
@@ -8508,14 +8584,24 @@ do -- Dance Queue Panel
         QueueListLayout.SortOrder = Enum.SortOrder.LayoutOrder
         QueueListLayout.Padding = UDim.new(0, 2)
 
-        local QueueSep2 = Instance.new("Frame", QueueFrame)
+        local QueueSep2 = Util.Instance("Frame", QueueFrame)
         QueueSep2.AnchorPoint = Vector2.new(0.5, 0)
         QueueSep2.Position = UDim2.new(0.5, 0, 0, 163)
-        QueueSep2.Size = UDim2.new(1, -24, 0, 1)
-        QueueSep2.BackgroundTransparency = 0.6
+        QueueSep2.Size = UDim2.new(1, -20, 0, 2)
+        QueueSep2.BackgroundTransparency = 0.42
         QueueSep2.BackgroundColor3 = Color3.new(1, 1, 1)
         QueueSep2.BorderSizePixel = 0
         QueueSep2.ZIndex = 11
+        Util.Instance("UICorner", QueueSep2).CornerRadius = UDim.new(1, 0)
+        Util.Instance("UIGradient", QueueSep2).Transparency = NumberSequence.new({
+                NumberSequenceKeypoint.new(0, 1),
+                NumberSequenceKeypoint.new(0.15, 0),
+                NumberSequenceKeypoint.new(0.85, 0),
+                NumberSequenceKeypoint.new(1, 1),
+        })
+        AddToRenderStep(function(t)
+                QueueSep2.BackgroundColor3 = GetUIColor(t)
+        end, QueueSep2)
 
         local QueueStartBtn = Util.Instance("TextButton", QueueFrame)
         QueueStartBtn.AnchorPoint = Vector2.new(0.5, 0)
