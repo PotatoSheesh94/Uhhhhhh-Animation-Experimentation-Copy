@@ -4830,23 +4830,8 @@ function LimbReanimator.Start()
                                         end
                                         if dorep or not map.CFrame then
                                                 if map.CFrame and dt and dt > 0 then
-                                                        local _lerpSpeed
-                                                        if LimbReanimator.Mode == 3 then
-                                                                local prevTarget = map.PrevTargetCF
-                                                                if prevTarget then
-                                                                        local jumpDiff = math.acos(math.clamp(prevTarget.LookVector:Dot(cf.LookVector), -1, 1))
-                                                                        local t = math.clamp(jumpDiff / 0.25, 0, 1)
-                                                                        _lerpSpeed = 140 * (1 - t) + 12 * t
-                                                                else
-                                                                        _lerpSpeed = 140
-                                                                end
-                                                        else
-                                                                _lerpSpeed = 150
-                                                        end
-                                                        map.PrevTargetCF = cf
-                                                        map.CFrame = map.CFrame:Lerp(cf, 1 - math.exp(-_lerpSpeed * dt))
+                                                        map.CFrame = map.CFrame:Lerp(cf, 1 - math.exp(-150 * dt))
                                                 else
-                                                        map.PrevTargetCF = cf
                                                         map.CFrame = cf
                                                 end
                                         end
@@ -4912,7 +4897,7 @@ function LimbReanimator.Start()
                                                 if dist > 40 then
                                                         _mode3smoothcf = _m3target
                                                 else
-                                                                        _mode3smoothcf = _mode3smoothcf:Lerp(_m3target, 1 - math.exp(-70 * _m3elapsed))
+                                                                        _mode3smoothcf = _mode3smoothcf:Lerp(_m3target, 1 - math.exp(-80 * _m3elapsed))
                                                 end
                                         end
                                         rootcf = _mode3smoothcf
