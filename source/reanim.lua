@@ -1490,8 +1490,10 @@ do
                 end
                 if uinotif.Animation < 1 then
                         local winPos = UIMainWindow.Position
+                        local winAbsW = UIMainWindow.AbsoluteSize.X
                         local winAbsH = UIMainWindow.AbsoluteSize.Y
                         if winAbsH == 0 then winAbsH = UIMainWindow.Size.Y.Offset end
+                        if winAbsW > 0 then UINotifyFrame.Size = UDim2.fromOffset(winAbsW, 28) end
                         UINotifyFrame.Position = UDim2.new(
                                 winPos.X.Scale, winPos.X.Offset,
                                 winPos.Y.Scale, winPos.Y.Offset + winAbsH / 2 + 8 + math.pow(uinotif.Animation, 3) * -25
@@ -4829,12 +4831,7 @@ function LimbReanimator.Start()
                                                 if dist > 40 then
                                                         _mode3smoothcf = _m3target
                                                 else
-                                                        local alpha_p = 1 - math.exp(-60 * _m3elapsed)
-                                                        local alpha_r = 1 - math.exp(-90 * _m3elapsed)
-                                                        local smoothPos = _mode3smoothcf.Position:Lerp(_m3target.Position, alpha_p)
-                                                        local srcRot = CFrame.fromMatrix(Vector3.zero, _mode3smoothcf.XVector, _mode3smoothcf.YVector)
-                                                        local tgtRot = CFrame.fromMatrix(Vector3.zero, _m3target.XVector, _m3target.YVector)
-                                                        _mode3smoothcf = CFrame.new(smoothPos) * srcRot:Lerp(tgtRot, alpha_r)
+                                                                        _mode3smoothcf = _mode3smoothcf:Lerp(_m3target, 1 - math.exp(-200 * _m3elapsed))
                                                 end
                                         end
                                         rootcf = _mode3smoothcf
@@ -8100,6 +8097,7 @@ do
                         local panelAbs = DanceNowPlayingPanel.AbsolutePosition
                         local panelSize = DanceNowPlayingPanel.AbsoluteSize
                         if panelSize.Y == 0 then return end
+                        if panelSize.X > 0 then _dpNotifFrame.Size = UDim2.fromOffset(panelSize.X, 24) end
                         _dpNotifFrame.Position = UDim2.fromOffset(
                                 panelAbs.X + panelSize.X / 2 - frameOrig.X,
                                 panelAbs.Y + panelSize.Y + 5 - frameOrig.Y + math.pow(_dpNotifAnim, 3) * -18
