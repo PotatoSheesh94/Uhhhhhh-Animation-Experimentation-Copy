@@ -1107,7 +1107,7 @@ local UIMainWindow, WindowContent do
         UIMainWindow.Active = true
         UIMainWindow.AnchorPoint = Vector2.new(0.5, 0.5)
         UIMainWindow.Position = UDim2.new(0.5, 0, 0.5, 0)
-        UIMainWindow.Size = UDim2.new(0, 360, 0, 260)
+        UIMainWindow.Size = UDim2.new(0, 300, 0, 220)
         UIMainWindow.BackgroundTransparency = 0
         UIMainWindow.BackgroundColor3 = Color3.new(1, 1, 1)
         UIMainWindow.BorderSizePixel = 0
@@ -1294,7 +1294,7 @@ local UIMainWindow, WindowContent do
                         MainWindowPosOpen = UIMainWindow.Position
                         TweenService:Create(UIMainWindow, TweenInfo.new(0.5, Enum.EasingStyle.Cubic, Enum.EasingDirection.Out), {
                                 Position = MainWindowPosClose,
-                                Size = UDim2.fromOffset(120, 36)
+                                Size = UDim2.fromOffset(100, 34)
                         }):Play()
                         TweenService:Create(TopBarClose.A, TweenInfo.new(0.5, Enum.EasingStyle.Cubic, Enum.EasingDirection.Out), {
                                 Rotation = 180
@@ -1312,7 +1312,7 @@ local UIMainWindow, WindowContent do
                         SaveData.WindowClosedPosition = {MainWindowPosClose.X.Scale, MainWindowPosClose.X.Offset, MainWindowPosClose.Y.Scale, MainWindowPosClose.Y.Offset}
                         TweenService:Create(UIMainWindow, TweenInfo.new(0.5, Enum.EasingStyle.Cubic, Enum.EasingDirection.Out), {
                                 Position = MainWindowPosOpen,
-                                Size = UDim2.fromOffset(360, 260)
+                                Size = UDim2.fromOffset(300, 220)
                         }):Play()
                         TweenService:Create(TopBarClose.A, TweenInfo.new(0.5, Enum.EasingStyle.Cubic, Enum.EasingDirection.Out), {
                                 Rotation = 0
@@ -1378,7 +1378,7 @@ local UIMainWindow, WindowContent do
         local _UIWindowScaler = Instance.new("UIScale", UIMainWindow)
         local function _RefreshWindowScale()
                 local vp = Util.GetScreenSize()
-                _UIWindowScaler.Scale = math.max(math.min(vp.X / 520, vp.Y / 400, 1), 0.48)
+                _UIWindowScaler.Scale = math.max(math.min(vp.X / 460, vp.Y / 350, 1), 0.5)
         end
         _RefreshWindowScale()
         Camera:GetPropertyChangedSignal("ViewportSize"):Connect(_RefreshWindowScale)
@@ -1524,7 +1524,7 @@ local CracktroFrame = Util.Instance("Frame", WindowContent)
 CracktroFrame.Active = true
 CracktroFrame.AnchorPoint = Vector2.new(0.5, 0.5)
 CracktroFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
-CracktroFrame.Size = UDim2.new(0, 360, 0, 222)
+CracktroFrame.Size = UDim2.new(0, 300, 0, 182)
 CracktroFrame.BackgroundTransparency = 0
 CracktroFrame.BackgroundColor3 = Color3.new(0, 0, 0)
 CracktroFrame.BorderSizePixel = 1
@@ -1794,7 +1794,7 @@ function UI.CreatePage()
         local Frame = Util.Instance("ScrollingFrame", WindowContent)
         Frame.AnchorPoint = Vector2.new(0.5, 0.5)
         Frame.Position = UDim2.new(0.5, 0, 0.5, 0)
-        Frame.Size = UDim2.new(0, 360, 0, 222)
+        Frame.Size = UDim2.new(0, 300, 0, 182)
         Frame.BackgroundTransparency = 0
         Frame.BackgroundColor3 = Color3.new(0, 0, 0)
         Frame.BorderSizePixel = 1
@@ -2480,7 +2480,7 @@ function UI.CreateItemListPage()
         local Frame = Util.Instance("Frame", WindowContent)
         Frame.AnchorPoint = Vector2.new(0.5, 0.5)
         Frame.Position = UDim2.new(0.5, 0, 0.5, 0)
-        Frame.Size = UDim2.new(0, 360, 0, 222)
+        Frame.Size = UDim2.new(0, 300, 0, 182)
         Frame.BackgroundTransparency = 0
         Frame.BackgroundColor3 = Color3.new(0, 0, 0)
         Frame.BorderSizePixel = 1
@@ -4810,12 +4810,17 @@ function LimbReanimator.Start()
                                 if LimbReanimator.Mode == 3 then
                                         local _m3target = RCRootPart.CFrame
                                         local _m3now = os.clock()
-                                        local _m3elapsed = _m3now - _mode3lasttime
+                                        local _m3elapsed = math.min(_m3now - _mode3lasttime, 0.1)
                                         _mode3lasttime = _m3now
-                                        if _mode3smoothcf == nil or _m3elapsed > 0.5 then
+                                        if _mode3smoothcf == nil then
                                                 _mode3smoothcf = _m3target
                                         else
-                                                _mode3smoothcf = _mode3smoothcf:Lerp(_m3target, 1 - math.exp(-14 * _m3elapsed))
+                                                local dist = (_mode3smoothcf.Position - _m3target.Position).Magnitude
+                                                if dist > 12 then
+                                                        _mode3smoothcf = _m3target
+                                                else
+                                                        _mode3smoothcf = _mode3smoothcf:Lerp(_m3target, 1 - math.exp(-35 * _m3elapsed))
+                                                end
                                         end
                                         rootcf = _mode3smoothcf
                                 end
@@ -7893,6 +7898,7 @@ do
         local _panelVisible = false
         local _panelMinimized = false
         local _panelKeepOpen = false
+        local _danceHistory = {}
         local _panelNameLabel, _panelDescLabel, _panelPlayBtn, _panelContent, _panelMinBtn
         local DanceNowPlayingPanel = Util.Instance("Frame", UIMainFrame)
         DanceNowPlayingPanel.AnchorPoint = Vector2.new(1, 1)
@@ -7946,30 +7952,40 @@ do
         DPCloseBtn.Text = "x"
         RegisterTextLabel(DPCloseBtn)
         local _dpDragRef, _dpDragOffset = nil, Vector2.new(0, 0)
-        DPHeader.InputBegan:Connect(function(input)
-                if _dpDragRef then return end
+        local _dpDragPending, _dpDragPendingPos = nil, Vector2.new(0, 0)
+        local _DP_DRAG_THRESHOLD_SQ = 16
+        DanceNowPlayingPanel.InputBegan:Connect(function(input)
+                if _dpDragRef or _dpDragPending then return end
                 if input.UserInputState ~= Enum.UserInputState.Begin then return end
                 if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                        _dpDragPending = input
+                        _dpDragPendingPos = Vector2.new(input.Position.X, input.Position.Y)
                         local screen = Util.GetScreenSize()
                         local ch = (Vector2.new(input.Position.X, input.Position.Y) + SCREENGUI.AbsolutePosition) / screen
                         _dpDragOffset = Util.UDim2ToVector2Scale(DanceNowPlayingPanel.Position) - ch
-                        _dpDragRef = input
                 end
         end)
         UserInputService.InputChanged:Connect(function(input)
-                if not _dpDragRef then return end
-                if input.UserInputType == Enum.UserInputType.MouseMovement or (input.UserInputType == Enum.UserInputType.Touch and _dpDragRef == input) then
-                        local screen = Util.GetScreenSize()
-                        local ch = (Vector2.new(input.Position.X, input.Position.Y) + SCREENGUI.AbsolutePosition) / screen
-                        local p = ch + _dpDragOffset
-                        DanceNowPlayingPanel.Position = Util.Vector2ToUDim2Scale(Vector2.new(math.clamp(p.X, 0, 1), math.clamp(p.Y, 0, 1)))
+                if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+                        if _dpDragPending and not _dpDragRef then
+                                local delta = Vector2.new(input.Position.X, input.Position.Y) - _dpDragPendingPos
+                                if delta.X * delta.X + delta.Y * delta.Y >= _DP_DRAG_THRESHOLD_SQ then
+                                        _dpDragRef = _dpDragPending
+                                        _dpDragPending = nil
+                                end
+                        end
+                        if _dpDragRef and (input.UserInputType == Enum.UserInputType.MouseMovement or _dpDragRef == input) then
+                                local screen = Util.GetScreenSize()
+                                local ch = (Vector2.new(input.Position.X, input.Position.Y) + SCREENGUI.AbsolutePosition) / screen
+                                local p = ch + _dpDragOffset
+                                DanceNowPlayingPanel.Position = Util.Vector2ToUDim2Scale(Vector2.new(math.clamp(p.X, 0, 1), math.clamp(p.Y, 0, 1)))
+                        end
                 end
         end)
         UserInputService.InputEnded:Connect(function(input)
-                if _dpDragRef and _dpDragRef == input then
-                        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                                _dpDragRef = nil
-                        end
+                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                        if _dpDragPending == input then _dpDragPending = nil end
+                        if _dpDragRef == input then _dpDragRef = nil end
                 end
         end)
         _panelContent = Util.Instance("Frame", DanceNowPlayingPanel)
@@ -8042,13 +8058,21 @@ do
                 }):Play()
         end)
         DPRevertBtn.Activated:Connect(function()
-                _panelKeepOpen = true
-                CurrentDance = nil
-                DancePaused = false
-                UISound.DanceMusic:Stop()
-                _panelNameLabel.Text = "// idle"
-                _panelDescLabel.Text = "pick a dance to play"
-                _panelPlayBtn.Text = "> Play"
+                if #_danceHistory > 0 then
+                        local prev = table.remove(_danceHistory)
+                        DancePaused = false
+                        _panelPlayBtn.Text = "|| Pause"
+                        CurrentDance = prev
+                        Util.UINotify("<< " .. prev.Name)
+                else
+                        _panelKeepOpen = true
+                        CurrentDance = nil
+                        DancePaused = false
+                        UISound.DanceMusic:Stop()
+                        _panelNameLabel.Text = "// idle"
+                        _panelDescLabel.Text = "pick a dance to play"
+                        _panelPlayBtn.Text = "> Play"
+                end
         end)
         _panelPlayBtn.Activated:Connect(function()
                 DancePaused = not DancePaused
@@ -8068,6 +8092,10 @@ do
                 idx = (idx % #DanceableDances) + 1
                 local nextDance = DanceableDances[idx]
                 if nextDance then
+                        if CurrentDance then
+                                table.insert(_danceHistory, CurrentDance)
+                                if #_danceHistory > 30 then table.remove(_danceHistory, 1) end
+                        end
                         DancePaused = false
                         _panelPlayBtn.Text = "|| Pause"
                         CurrentDance = nextDance
