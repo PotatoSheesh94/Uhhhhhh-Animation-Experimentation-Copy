@@ -4804,8 +4804,14 @@ function LimbReanimator.Start()
                                                         cf = v.C0 * transform * v.C1:Inverse()
                                                 end
                                         end
-                                        if dorep or not map.CFrame then
-                                                map.CFrame = cf
+                                        if dt ~= nil then
+                                                if dorep or not map.CFrame then
+                                                        if map.CFrame then
+                                                                map.CFrame = map.CFrame:Lerp(cf, 1 - math.exp(-200 * dt))
+                                                        else
+                                                                map.CFrame = cf
+                                                        end
+                                                end
                                         end
                                         if map.CFrame then
                                                 Util.SetMotor6DOffset(v, map.CFrame)
@@ -8023,7 +8029,6 @@ local CurrentDance = nil
 local _CurrentDance = nil
 local DancePaused = false
 local _soundWasPaused = false
-local DanceLoop = {}
 local DanceShuffle = false
 local DanceQueue = {}
 local DanceQueueMode = false
@@ -8427,7 +8432,7 @@ do -- Dance Queue Panel
         QueueDragArea.Position = UDim2.new(0, 0, 0, 0)
         QueueDragArea.Size = UDim2.new(1, 0, 1, 0)
         QueueDragArea.BackgroundTransparency = 1
-        QueueDragArea.ZIndex = 11
+        QueueDragArea.ZIndex = 12
 
         local QueueTitle = Util.Instance("TextLabel", QueueFrame)
         QueueTitle.Position = UDim2.new(0, 12, 0, 9)
@@ -9277,8 +9282,6 @@ local function AddDance(m)
                 msname.Name = "LabelName"
                 msdesc.Name = "LabelDesc"
                 _danceItemLabels[m] = msname
-                if type(SaveData.DanceLoop) ~= "table" then SaveData.DanceLoop = {} end
-                DanceLoop[m] = SaveData.DanceLoop[m.Hash] ~= false
                 item.Parent.Name = m.Name .. " " .. m.Description
                 Util.LinkDestroyI2C(item, item.Activated:Connect(function()
                         local page = UI.CreatePage()
@@ -9362,19 +9365,6 @@ local function AddDance(m)
                                 end
                                 UpdatePauseText()
                                 UpdateEquipText()
-                        end)
-                        local loopbtn, looptext = UI.CreateButton(page, "Loop: ON", 20)
-                        local function UpdateLoopText()
-                                looptext.Text = (DanceLoop[m] ~= false) and "Loop: ON" or "Loop: OFF (Play Once)"
-                        end
-                        UpdateLoopText()
-                        local loopRSConn = RunService.RenderStepped:Connect(UpdateLoopText)
-                        loopbtn.Destroying:Connect(function() loopRSConn:Disconnect() end)
-                        loopbtn.Activated:Connect(function()
-                                DanceLoop[m] = not DanceLoop[m]
-                                if type(SaveData.DanceLoop) ~= "table" then SaveData.DanceLoop = {} end
-                                SaveData.DanceLoop[m.Hash] = DanceLoop[m]
-                                UpdateLoopText()
                         end)
                         local shufflebtn, shuffletext = UI.CreateButton(page, "Shuffle: OFF", 20)
                         local function UpdateShuffleText()
@@ -9521,7 +9511,7 @@ task.spawn(function()
                                                                 _CurrentDance.Update(dt, ReanimCharacter)
                                                         end
                                                 else
-                                                        if _danceInitialized and not DanceLoop[_CurrentDance] then
+                                                        if _danceInitialized then -- loop removed: always advance/stop at end
                                                                 if DanceShuffle and #DanceableDances > 0 then
                                                                         CurrentDance = DanceableDances[math.random(#DanceableDances)]
                                                                 elseif DanceQueueMode and #DanceQueue > 0 then
