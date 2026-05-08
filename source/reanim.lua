@@ -1428,7 +1428,7 @@ do
         local UINotifyFrame = Instance.new("Frame", UIMainFrame)
         UINotifyFrame.AnchorPoint = Vector2.new(0.5, 0)
         UINotifyFrame.Position = UDim2.new(0.5, 0, 1, 10)
-        UINotifyFrame.Size = UDim2.new(0, 340, 0, 44)
+        UINotifyFrame.Size = UDim2.new(0, 220, 0, 28)
         UINotifyFrame.BackgroundTransparency = 0
         UINotifyFrame.BackgroundColor3 = Color3.new(1, 1, 1)
         UINotifyFrame.BorderSizePixel = 0
@@ -1439,12 +1439,12 @@ do
         })
         local NotifyIcon = Instance.new("TextLabel", UINotifyFrame)
         NotifyIcon.AnchorPoint = Vector2.new(0, 0.5)
-        NotifyIcon.Position = UDim2.new(0, 10, 0.5, 0)
-        NotifyIcon.Size = UDim2.new(0, 22, 0, 30)
+        NotifyIcon.Position = UDim2.new(0, 8, 0.5, 0)
+        NotifyIcon.Size = UDim2.new(0, 16, 0, 18)
         NotifyIcon.BackgroundTransparency = 1
         NotifyIcon.Font = Enum.Font.Code
         NotifyIcon.TextColor3 = Color3.new(1, 1, 1)
-        NotifyIcon.TextSize = 16
+        NotifyIcon.TextSize = 12
         NotifyIcon.TextXAlignment = Enum.TextXAlignment.Center
         NotifyIcon.TextYAlignment = Enum.TextYAlignment.Center
         NotifyIcon.Text = ">>"
@@ -1452,33 +1452,33 @@ do
         local Progress = Instance.new("Frame", UINotifyFrame)
         Progress.AnchorPoint = Vector2.new(0.5, 0)
         Progress.Position = UDim2.new(0.5, 0, 0, 0)
-        Progress.Size = UDim2.new(1, -10, 1, 0)
+        Progress.Size = UDim2.new(1, -8, 1, 0)
         Progress.BackgroundTransparency = 1
         Progress.BackgroundColor3 = Color3.new(1, 1, 1)
         Progress.BorderSizePixel = 0
         local ProgressTop = Instance.new("Frame", Progress)
         ProgressTop.AnchorPoint = Vector2.new(0.5, 0)
         ProgressTop.Position = UDim2.new(0.5, 0, 0, 0)
-        ProgressTop.Size = UDim2.new(0, 0, 0, 5)
+        ProgressTop.Size = UDim2.new(0, 0, 0, 3)
         ProgressTop.BackgroundTransparency = 0
         ProgressTop.BackgroundColor3 = Color3.new(1, 1, 1)
         ProgressTop.BorderSizePixel = 0
         local ProgressBot = Instance.new("Frame", Progress)
         ProgressBot.AnchorPoint = Vector2.new(0.5, 1)
         ProgressBot.Position = UDim2.new(0.5, 0, 1, 0)
-        ProgressBot.Size = UDim2.new(0, 0, 0, 5)
+        ProgressBot.Size = UDim2.new(0, 0, 0, 3)
         ProgressBot.BackgroundTransparency = 0
         ProgressBot.BackgroundColor3 = Color3.new(1, 1, 1)
         ProgressBot.BorderSizePixel = 0
         local NotifyText = Util.Instance("TextLabel", UINotifyFrame)
         NotifyText.AnchorPoint = Vector2.new(0, 0.5)
-        NotifyText.Position = UDim2.new(0, 38, 0.5, 0)
-        NotifyText.Size = UDim2.new(1, -44, 0, 26)
+        NotifyText.Position = UDim2.new(0, 28, 0.5, 0)
+        NotifyText.Size = UDim2.new(1, -34, 0, 18)
         NotifyText.BackgroundTransparency = 1
         NotifyText.ClipsDescendants = true
         NotifyText.Font = Enum.Font.Code
         NotifyText.TextColor3 = Color3.new(1, 1, 1)
-        NotifyText.TextSize = 16
+        NotifyText.TextSize = 12
         NotifyText.TextXAlignment = Enum.TextXAlignment.Left
         NotifyText.Text = ""
         RegisterTextLabel(NotifyText)
@@ -1490,7 +1490,12 @@ do
                 end
                 if uinotif.Animation < 1 then
                         UINotifyFrame.Visible = true
-                        UINotifyFrame.Position = UIMainWindow.Position + UDim2.new(0, 0, 0, UIMainWindow.Size.Y.Offset / 2 + 10 + math.pow(uinotif.Animation, 3) * -40)
+                        local winAbsPos = UIMainWindow.AbsolutePosition
+                        local winAbsSize = UIMainWindow.AbsoluteSize
+                        UINotifyFrame.Position = UDim2.fromOffset(
+                                winAbsPos.X + winAbsSize.X / 2,
+                                winAbsPos.Y + winAbsSize.Y + 8 + math.pow(uinotif.Animation, 3) * -25
+                        )
                         if uinotif.Progress >= 1 then
                                 Progress.BackgroundTransparency = math.min(t - uinotif.LastNotif, 0.5) * 2 * 0.3 + 0.7
                         else
@@ -1502,14 +1507,14 @@ do
                                 uinotif.ProgressSm = uinotif.Progress + (uinotif.ProgressSm - uinotif.Progress) * math.exp(-16 * dt)
                                 ProgressTop.BackgroundTransparency = 0
                                 ProgressBot.BackgroundTransparency = 0
-                                ProgressTop.Size = UDim2.new(uinotif.ProgressSm, 0, 0, 5)
-                                ProgressBot.Size = UDim2.new(uinotif.ProgressSm, 0, 0, 5)
+                                ProgressTop.Size = UDim2.new(uinotif.ProgressSm, 0, 0, 3)
+                                ProgressBot.Size = UDim2.new(uinotif.ProgressSm, 0, 0, 3)
                         else
                                 uinotif.ProgressSm = 1
                                 ProgressTop.BackgroundTransparency = s
                                 ProgressBot.BackgroundTransparency = s
-                                ProgressTop.Size = UDim2.new(1, 0, 0, 5)
-                                ProgressBot.Size = UDim2.new(1, 0, 0, 5)
+                                ProgressTop.Size = UDim2.new(1, 0, 0, 3)
+                                ProgressBot.Size = UDim2.new(1, 0, 0, 3)
                         end
                         ProgressTop.BackgroundColor3 = c
                         ProgressBot.BackgroundColor3 = c
@@ -4810,16 +4815,21 @@ function LimbReanimator.Start()
                                 if LimbReanimator.Mode == 3 then
                                         local _m3target = RCRootPart.CFrame
                                         local _m3now = os.clock()
-                                        local _m3elapsed = math.min(_m3now - _mode3lasttime, 0.1)
+                                        local _m3elapsed = math.min(_m3now - _mode3lasttime, 0.05)
                                         _mode3lasttime = _m3now
                                         if _mode3smoothcf == nil then
                                                 _mode3smoothcf = _m3target
                                         else
                                                 local dist = (_mode3smoothcf.Position - _m3target.Position).Magnitude
-                                                if dist > 12 then
+                                                if dist > 40 then
                                                         _mode3smoothcf = _m3target
                                                 else
-                                                        _mode3smoothcf = _mode3smoothcf:Lerp(_m3target, 1 - math.exp(-35 * _m3elapsed))
+                                                        local alpha_p = 1 - math.exp(-60 * _m3elapsed)
+                                                        local alpha_r = 1 - math.exp(-90 * _m3elapsed)
+                                                        local smoothPos = _mode3smoothcf.Position:Lerp(_m3target.Position, alpha_p)
+                                                        local srcRot = CFrame.fromMatrix(Vector3.zero, _mode3smoothcf.XVector, _mode3smoothcf.YVector)
+                                                        local tgtRot = CFrame.fromMatrix(Vector3.zero, _m3target.XVector, _m3target.YVector)
+                                                        _mode3smoothcf = CFrame.new(smoothPos) * srcRot:Lerp(tgtRot, alpha_r)
                                                 end
                                         end
                                         rootcf = _mode3smoothcf
@@ -8043,6 +8053,46 @@ do
         local DPRevertBtn = MakeDPBtn("<< Revert", 0, 0.02)
         _panelPlayBtn = MakeDPBtn("|| Pause", 0.5, 0.5)
         local DPNextBtn = MakeDPBtn("Next >>", 1, 0.98)
+        local _dpNotifLabel = Util.Instance("TextLabel", UIMainFrame)
+        _dpNotifLabel.AnchorPoint = Vector2.new(0.5, 0)
+        _dpNotifLabel.Size = UDim2.new(0, 220, 0, 18)
+        _dpNotifLabel.BackgroundTransparency = 1
+        _dpNotifLabel.Font = Enum.Font.Code
+        _dpNotifLabel.TextSize = 11
+        _dpNotifLabel.TextColor3 = Color3.new(1, 1, 1)
+        _dpNotifLabel.TextTransparency = 1
+        _dpNotifLabel.TextXAlignment = Enum.TextXAlignment.Center
+        _dpNotifLabel.ZIndex = 55
+        _dpNotifLabel.Visible = false
+        RegisterTextLabel(_dpNotifLabel)
+        local _dpNotifTime = -99
+        local _dpNotifAnim = 1
+        local function DPNotify(text)
+                _dpNotifLabel.Text = text
+                _dpNotifLabel.Visible = true
+                _dpNotifTime = os.clock()
+                _dpNotifAnim = 0
+        end
+        AddToRenderStep(function(_, dt)
+                local age = os.clock() - _dpNotifTime
+                if age < 2.5 then
+                        _dpNotifAnim = math.max(0, _dpNotifAnim - dt * 4)
+                else
+                        _dpNotifAnim = math.min(1, _dpNotifAnim + dt * 4)
+                end
+                _dpNotifLabel.TextTransparency = _dpNotifAnim
+                if _dpNotifAnim >= 1 then
+                        _dpNotifLabel.Visible = false
+                else
+                        _dpNotifLabel.Visible = true
+                        local panelAbs = DanceNowPlayingPanel.AbsolutePosition
+                        local panelSize = DanceNowPlayingPanel.AbsoluteSize
+                        _dpNotifLabel.Position = UDim2.fromOffset(
+                                panelAbs.X + panelSize.X / 2,
+                                panelAbs.Y + panelSize.Y + 5 + math.pow(_dpNotifAnim, 3) * -18
+                        )
+                end
+        end, _dpNotifLabel)
         DPCloseBtn.Activated:Connect(function()
                 _panelKeepOpen = false
                 CurrentDance = nil
@@ -8051,11 +8101,21 @@ do
         end)
         _panelMinBtn.Activated:Connect(function()
                 _panelMinimized = not _panelMinimized
-                _panelContent.Visible = not _panelMinimized
                 _panelMinBtn.Text = _panelMinimized and "+" or "_"
-                TweenService:Create(DanceNowPlayingPanel, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
-                        Size = UDim2.fromOffset(280, _panelMinimized and 38 or 158)
-                }):Play()
+                if _panelMinimized then
+                        local tw = TweenService:Create(DanceNowPlayingPanel, TweenInfo.new(0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.In), {
+                                Size = UDim2.fromOffset(280, 38)
+                        })
+                        tw:Play()
+                        tw.Completed:Connect(function()
+                                if _panelMinimized then _panelContent.Visible = false end
+                        end)
+                else
+                        _panelContent.Visible = true
+                        TweenService:Create(DanceNowPlayingPanel, TweenInfo.new(0.35, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
+                                Size = UDim2.fromOffset(280, 158)
+                        }):Play()
+                end
         end)
         DPRevertBtn.Activated:Connect(function()
                 if #_danceHistory > 0 then
@@ -8063,7 +8123,7 @@ do
                         DancePaused = false
                         _panelPlayBtn.Text = "|| Pause"
                         CurrentDance = prev
-                        Util.UINotify("<< " .. prev.Name)
+                        DPNotify("<< " .. prev.Name)
                 else
                         _panelKeepOpen = true
                         CurrentDance = nil
@@ -8099,7 +8159,7 @@ do
                         DancePaused = false
                         _panelPlayBtn.Text = "|| Pause"
                         CurrentDance = nextDance
-                        Util.UINotify(">> " .. nextDance.Name)
+                        DPNotify(">> " .. nextDance.Name)
                 end
         end)
         local _dpLastDance = nil
