@@ -4804,10 +4804,8 @@ function LimbReanimator.Start()
                                                         cf = v.C0 * transform * v.C1:Inverse()
                                                 end
                                         end
-                                        if dt ~= nil then
-                                                if dorep or not map.CFrame then
-                                                        map.CFrame = cf
-                                                end
+                                        if dorep or not map.CFrame then
+                                                map.CFrame = cf
                                         end
                                         if map.CFrame then
                                                 Util.SetMotor6DOffset(v, map.CFrame)
