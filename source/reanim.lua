@@ -130,7 +130,7 @@ do
                                 setscriptable(inst, prop, false)
                         end
                 else
-                        sethiddenproperty = function(inst, prop, val)
+                        gethiddenproperty = function(inst, prop, val)
                                 local was = isscriptable(inst, prop)
                                 if not was then setscriptable(inst, prop, true) end
                                 inst[prop] = val
@@ -459,8 +459,8 @@ do
                 Downloading.ClipsDescendants = true
                 Downloading.BorderSizePixel = 0
                 Downloading.TextColor3 = Color3.new(1, 1, 1)
-                Downloading.TextSize = 14
-                Downloading.Font = Enum.Font.Gotham
+                Downloading.TextSize = 20
+                Downloading.Font = Enum.Font.Code
                 Downloading.Text = "Fetching Assets metadata..."
                 Util.ForceTextSize(Downloading)
                 TweenService:Create(Downloading, TweenInfo.new(0.5), {
@@ -893,12 +893,12 @@ end
 local StylizedObjs = {}
 local function Stylize(obj, options)
         options = options or {}
-        Util.Instance("UICorner", obj).CornerRadius = UDim.new(0, 14)
+        Util.Instance("UICorner", obj).CornerRadius = UDim.new(0, 5)
         local Out = Util.Instance("UIStroke", obj)
         Out.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
         Out.Color = Color3.new(1, 1, 1)
         Out.LineJoinMode = Enum.LineJoinMode.Round
-        Out.Thickness = 2
+        Out.Thickness = 1
         Out.Transparency = 0
         Out.Enabled = true
         obj.BackgroundColor3 = Color3.new(0, 0, 0)
@@ -1107,7 +1107,7 @@ local UIMainWindow, WindowContent do
         UIMainWindow.Active = true
         UIMainWindow.AnchorPoint = Vector2.new(0.5, 0.5)
         UIMainWindow.Position = UDim2.new(0.5, 0, 0.5, 0)
-        UIMainWindow.Size = UDim2.new(0, 360, 0, 270)
+        UIMainWindow.Size = UDim2.new(0, 360, 0, 240)
         UIMainWindow.BackgroundTransparency = 0
         UIMainWindow.BackgroundColor3 = Color3.new(1, 1, 1)
         UIMainWindow.BorderSizePixel = 0
@@ -1141,43 +1141,23 @@ local UIMainWindow, WindowContent do
         
         local TopBarFrame = Util.Instance("Frame", UIMainWindow)
         TopBarFrame.Position = UDim2.new(0, 0, 0, 0)
-        TopBarFrame.Size = UDim2.new(1, 0, 0, 38)
+        TopBarFrame.Size = UDim2.new(1, 0, 0, 30)
         TopBarFrame.BackgroundTransparency = 0
         TopBarFrame.BackgroundColor3 = Color3.new(1, 1, 1)
         TopBarFrame.BorderSizePixel = 0
         TopBarFrame.ClipsDescendants = true
         TopBarFrame.ZIndex = 1
         Stylize(TopBarFrame)
-        -- Glowing accent strip at bottom of topbar
-        local TopBarAccent = Util.Instance("Frame", TopBarFrame)
-        TopBarAccent.AnchorPoint = Vector2.new(0.5, 1)
-        TopBarAccent.Position = UDim2.new(0.5, 0, 1, 0)
-        TopBarAccent.Size = UDim2.new(1, -28, 0, 2)
-        TopBarAccent.BackgroundColor3 = Color3.new(1, 1, 1)
-        TopBarAccent.BackgroundTransparency = 0
-        TopBarAccent.BorderSizePixel = 0
-        TopBarAccent.ZIndex = 3
-        Util.Instance("UICorner", TopBarAccent).CornerRadius = UDim.new(1, 0)
-        local TopBarAccentGrad = Util.Instance("UIGradient", TopBarAccent)
-        TopBarAccentGrad.Transparency = NumberSequence.new({
-                NumberSequenceKeypoint.new(0, 1),
-                NumberSequenceKeypoint.new(0.12, 0),
-                NumberSequenceKeypoint.new(0.88, 0),
-                NumberSequenceKeypoint.new(1, 1),
-        })
-        AddToRenderStep(function(t)
-                TopBarAccent.BackgroundColor3 = GetUIColor(t)
-        end, TopBarAccent)
-
+        
         local TopBarText = Util.Instance("TextLabel", TopBarFrame)
         TopBarText.AnchorPoint = Vector2.new(0, 0.5)
-        TopBarText.Position = UDim2.new(0, 12, 0.5, -1)
-        TopBarText.Size = UDim2.new(1, -46, 1, 0)
+        TopBarText.Position = UDim2.new(0, 8, 0.5, 0)
+        TopBarText.Size = UDim2.new(1, -35, 1, 0)
         TopBarText.BackgroundTransparency = 1
         TopBarText.ClipsDescendants = true
-        TopBarText.Font = Enum.Font.GothamBlack
+        TopBarText.Font = Enum.Font.Code
         TopBarText.TextColor3 = Color3.new(1, 1, 1)
-        TopBarText.TextSize = 15
+        TopBarText.TextSize = 20
         TopBarText.TextXAlignment = Enum.TextXAlignment.Left
         TopBarText.Text = "Uhhhhhh Reanimate | v" .. UhhhhhhVersion
         TopBarText.RichText = true
@@ -1287,8 +1267,8 @@ local UIMainWindow, WindowContent do
         end
         
         WindowContent = Util.Instance("Frame", UIMainWindow)
-        WindowContent.Position = UDim2.new(0, 0, 0, 38)
-        WindowContent.Size = UDim2.new(1, 0, 1, -43)
+        WindowContent.Position = UDim2.new(0, 0, 0, 30)
+        WindowContent.Size = UDim2.new(1, 0, 1, -35)
         WindowContent.BackgroundTransparency = 1
         WindowContent.ClipsDescendants = true
         WindowContent.ZIndex = 0
@@ -1300,6 +1280,12 @@ local UIMainWindow, WindowContent do
         if SaveData.WindowClosedPosition then
                 MainWindowPosClose = UDim2.new(unpack(SaveData.WindowClosedPosition))
         end
+        if MainWindowPosClose and (MainWindowPosClose.X.Scale < 0 or MainWindowPosClose.X.Scale > 1) then
+                MainWindowPosClose = nil
+        end
+        if MainWindowPosClose and (MainWindowPosClose.Y.Scale < 0 or MainWindowPosClose.Y.Scale > 1) then
+                MainWindowPosClose = nil
+        end
         TopBarClose.Activated:Connect(function()
                 if MainWindowTweening then return end
                 MainWindowTweening = true
@@ -1308,7 +1294,7 @@ local UIMainWindow, WindowContent do
                         MainWindowPosOpen = UIMainWindow.Position
                         TweenService:Create(UIMainWindow, TweenInfo.new(0.5, Enum.EasingStyle.Cubic, Enum.EasingDirection.Out), {
                                 Position = MainWindowPosClose,
-                                Size = UDim2.fromOffset(180, 38)
+                                Size = UDim2.fromOffset(112, 30)
                         }):Play()
                         TweenService:Create(TopBarClose.A, TweenInfo.new(0.5, Enum.EasingStyle.Cubic, Enum.EasingDirection.Out), {
                                 Rotation = 180
@@ -1326,7 +1312,7 @@ local UIMainWindow, WindowContent do
                         SaveData.WindowClosedPosition = {MainWindowPosClose.X.Scale, MainWindowPosClose.X.Offset, MainWindowPosClose.Y.Scale, MainWindowPosClose.Y.Offset}
                         TweenService:Create(UIMainWindow, TweenInfo.new(0.5, Enum.EasingStyle.Cubic, Enum.EasingDirection.Out), {
                                 Position = MainWindowPosOpen,
-                                Size = UDim2.fromOffset(360, 270)
+                                Size = UDim2.fromOffset(360, 240)
                         }):Play()
                         TweenService:Create(TopBarClose.A, TweenInfo.new(0.5, Enum.EasingStyle.Cubic, Enum.EasingDirection.Out), {
                                 Rotation = 0
@@ -1361,6 +1347,12 @@ local UIMainWindow, WindowContent do
                                 local screen = Util.GetScreenSize()
                                 local ch = (Vector2.new(input.Position.X, input.Position.Y) + SCREENGUI.AbsolutePosition) / screen
                                 local pos = ch + offset
+                                local imjolly = Util.UDim2ToVector2Offset(UIMainWindow.Size).Y * -0.5 / screen.Y
+                                local boxy = 31 / screen.Y
+                                pos = Vector2.new(
+                                        math.clamp(pos.X, 0, 1),
+                                        math.clamp(pos.Y, -imjolly, 1 - imjolly - boxy)
+                                )
                                 UIMainWindow.Position = Util.Vector2ToUDim2Scale(pos)
                         end
                 end
@@ -1392,7 +1384,7 @@ local _totalrendertime = 0
 RunService:BindToRenderStep("Uhhhhhh_Render" .. Util.RandomString(), Enum.RenderPriority.Last.Value - 69, function(dt)
         _totalrendertime += dt
         UpdateGrads(_totalrendertime)
-        WindowContent.Visible = UIMainWindow.Size.Y.Offset > 43
+        WindowContent.Visible = UIMainWindow.Size.Y.Offset > 35
         for _,func in _funcrefreshes do
                 local s, e = pcall(func, _totalrendertime, dt)
                 if not s then warn(e) end
@@ -1414,11 +1406,10 @@ do
         local UINotifyFrame = Instance.new("Frame", UIMainFrame)
         UINotifyFrame.AnchorPoint = Vector2.new(0.5, 0)
         UINotifyFrame.Position = UDim2.new(0.5, 0, 1, 10)
-        UINotifyFrame.Size = UDim2.new(0, 200, 0, 30)
+        UINotifyFrame.Size = UDim2.new(0, 300, 0, 30)
         UINotifyFrame.BackgroundTransparency = 0
         UINotifyFrame.BackgroundColor3 = Color3.new(1, 1, 1)
         UINotifyFrame.BorderSizePixel = 0
-        UINotifyFrame.ClipsDescendants = true
         UINotifyFrame.Visible = false
         UINotifyFrame.ZIndex = -1
         Stylize(UINotifyFrame, {
@@ -1434,41 +1425,29 @@ do
         local ProgressTop = Instance.new("Frame", Progress)
         ProgressTop.AnchorPoint = Vector2.new(0.5, 0)
         ProgressTop.Position = UDim2.new(0.5, 0, 0, 0)
-        ProgressTop.Size = UDim2.new(0, 0, 0, 3)
+        ProgressTop.Size = UDim2.new(0, 0, 0, 4)
         ProgressTop.BackgroundTransparency = 0
         ProgressTop.BackgroundColor3 = Color3.new(1, 1, 1)
         ProgressTop.BorderSizePixel = 0
-        Instance.new("UICorner", ProgressTop).CornerRadius = UDim.new(1, 0)
         local ProgressBot = Instance.new("Frame", Progress)
         ProgressBot.AnchorPoint = Vector2.new(0.5, 1)
         ProgressBot.Position = UDim2.new(0.5, 0, 1, 0)
-        ProgressBot.Size = UDim2.new(0, 0, 0, 3)
+        ProgressBot.Size = UDim2.new(0, 0, 0, 4)
         ProgressBot.BackgroundTransparency = 0
         ProgressBot.BackgroundColor3 = Color3.new(1, 1, 1)
         ProgressBot.BorderSizePixel = 0
-        Instance.new("UICorner", ProgressBot).CornerRadius = UDim.new(1, 0)
         local NotifyText = Util.Instance("TextLabel", UINotifyFrame)
         NotifyText.AnchorPoint = Vector2.new(0.5, 0.5)
         NotifyText.Position = UDim2.new(0.5, 0, 0.5, 0)
         NotifyText.Size = UDim2.new(1, 0, 0, 20)
         NotifyText.BackgroundTransparency = 1
-        NotifyText.ClipsDescendants = false
-        NotifyText.TextWrapped = true
-        NotifyText.Font = Enum.Font.Gotham
+        NotifyText.ClipsDescendants = true
+        NotifyText.Font = Enum.Font.Code
         NotifyText.TextColor3 = Color3.new(1, 1, 1)
-        NotifyText.TextSize = 14
+        NotifyText.TextSize = 18
         NotifyText.TextXAlignment = Enum.TextXAlignment.Center
         NotifyText.Text = ""
         RegisterTextLabel(NotifyText)
-        local _notifyPadX = 20
-        local _notifyPadY = 10
-        local _notifyMaxW = 520
-        local _notifyMinW = 200
-        local _notifyLastText = ""
-        local _notifyTargetW = 200
-        local _notifyTargetH = 30
-        local _notifyCurrentW = 200
-        local _notifyCurrentH = 30
         AddToRenderStep(function(t, dt)
                 if t - uinotif.LastNotif < 4 or uinotif.Progress < 1 then
                         uinotif.Animation = math.max(0, uinotif.Animation - dt * 2)
@@ -1477,18 +1456,6 @@ do
                 end
                 if uinotif.Animation < 1 then
                         UINotifyFrame.Visible = true
-                        if _notifyLastText ~= uinotif.Text then
-                                _notifyLastText = uinotif.Text
-                                local innerW = _notifyMaxW - _notifyPadX * 2
-                                local textBounds = TextService:GetTextSize(uinotif.Text, 14, Enum.Font.Gotham, Vector2.new(innerW, math.huge))
-                                _notifyTargetW = math.clamp(textBounds.X + _notifyPadX * 2, _notifyMinW, _notifyMaxW)
-                                _notifyTargetH = math.max(30, textBounds.Y + _notifyPadY)
-                                NotifyText.Size = UDim2.new(1, -_notifyPadX, 0, textBounds.Y)
-                        end
-                        local alpha = 1 - math.exp(-10 * dt)
-                        _notifyCurrentW = _notifyCurrentW + (_notifyTargetW - _notifyCurrentW) * alpha
-                        _notifyCurrentH = _notifyCurrentH + (_notifyTargetH - _notifyCurrentH) * alpha
-                        UINotifyFrame.Size = UDim2.new(0, _notifyCurrentW, 0, _notifyCurrentH)
                         UINotifyFrame.Position = UIMainWindow.Position + UDim2.new(0, 0, 0, UIMainWindow.Size.Y.Offset / 2 + 10 + math.pow(uinotif.Animation, 3) * -40)
                         if uinotif.Progress >= 1 then
                                 Progress.BackgroundTransparency = math.min(t - uinotif.LastNotif, 0.5) * 2 * 0.3 + 0.7
@@ -1526,17 +1493,12 @@ CracktroFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
 CracktroFrame.Size = UDim2.new(0, 360, 0, 205)
 CracktroFrame.BackgroundTransparency = 0
 CracktroFrame.BackgroundColor3 = Color3.new(0, 0, 0)
-CracktroFrame.BorderSizePixel = 0
+CracktroFrame.BorderSizePixel = 1
+CracktroFrame.BorderColor3 = Color3.new(1, 1, 1)
 CracktroFrame.ZIndex = 10
 CracktroFrame.ClipsDescendants = true
-local CracktroStroke = Util.Instance("UIStroke", CracktroFrame)
-CracktroStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-CracktroStroke.Color = Color3.new(1, 1, 1)
-CracktroStroke.LineJoinMode = Enum.LineJoinMode.Round
-CracktroStroke.Thickness = 1.5
-CracktroStroke.Transparency = 0
 AddToRenderStep(function(t)
-        CracktroStroke.Color = GetUIColor(t)
+        CracktroFrame.BorderColor3 = GetUIColor(t)
         CracktroFrame.BackgroundColor3 = GetUIBGColor(t)
 end, CracktroFrame)
 
@@ -1623,6 +1585,7 @@ do -- homepage
                 "\"Dreams come true!\"",
                 "Idea originated from a dream.",
                 "If you love this program, join my Discord!",
+                "boredgal was here..",
         }
         local text3 = nil
         local function changequote()
@@ -1797,46 +1760,41 @@ function UI.CreatePage()
         local Frame = Util.Instance("ScrollingFrame", WindowContent)
         Frame.AnchorPoint = Vector2.new(0.5, 0.5)
         Frame.Position = UDim2.new(0.5, 0, 0.5, 0)
-        Frame.Size = UDim2.new(0, 360, 0, 226)
+        Frame.Size = UDim2.new(0, 360, 0, 205)
         Frame.BackgroundTransparency = 0
         Frame.BackgroundColor3 = Color3.new(0, 0, 0)
-        Frame.BorderSizePixel = 0
+        Frame.BorderSizePixel = 1
+        Frame.BorderColor3 = Color3.new(1, 1, 1)
         Frame.Visible = true
         Frame.ZIndex = 0
         Frame.AutomaticCanvasSize = Enum.AutomaticSize.Y
         Frame.CanvasSize = UDim2.new(0, 0, 0, 0)
         Frame.ClipsDescendants = true
-        local PageStroke = Util.Instance("UIStroke", Frame)
-        PageStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-        PageStroke.Color = Color3.new(1, 1, 1)
-        PageStroke.LineJoinMode = Enum.LineJoinMode.Round
-        PageStroke.Thickness = 2
-        PageStroke.Transparency = 0
         AddToRenderStep(function(t)
-                PageStroke.Color = GetUIColor(t)
+                Frame.BorderColor3 = GetUIColor(t)
                 Frame.BackgroundColor3 = GetUIBGColor(t)
         end, Frame)
         Frame.ScrollingDirection = Enum.ScrollingDirection.Y
-        Frame.ScrollBarThickness = 4
+        Frame.ScrollBarThickness = 3
         Frame.ElasticBehavior = Enum.ElasticBehavior.Always
         Frame.TopImage = "rbxasset://textures/ui/Scroll/scroll-middle.png"
         Frame.MidImage = "rbxasset://textures/ui/Scroll/scroll-middle.png"
         Frame.BottomImage = "rbxasset://textures/ui/Scroll/scroll-middle.png"
-        Frame.ScrollBarImageTransparency = 0.3
+        Frame.ScrollBarImageTransparency = 0.5
         Frame.ScrollBarImageColor3 = UITextColor.Value
         Util.LinkDestroyI2C(Frame, UITextColor.Changed:Connect(function(val)
                 Frame.ScrollBarImageColor3 = val
         end))
         local Padding = Util.Instance("UIPadding", Frame)
-        Padding.PaddingTop = UDim.new(0, 10)
-        Padding.PaddingBottom = UDim.new(0, 8)
+        Padding.PaddingTop = UDim.new(0, 5)
+        Padding.PaddingBottom = UDim.new(0, 0)
         Padding.PaddingLeft = UDim.new(0, 0)
         Padding.PaddingRight = UDim.new(0, 0)
         local UIList = Util.Instance("UIListLayout", Frame)
         UIList.FillDirection = Enum.FillDirection.Vertical
         UIList.HorizontalAlignment = Enum.HorizontalAlignment.Center
         UIList.VerticalAlignment = Enum.VerticalAlignment.Top
-        UIList.Padding = UDim.new(0, 4)
+        UIList.Padding = UDim.new(0, 0)
         UIList.SortOrder = Enum.SortOrder.LayoutOrder
         return Frame
 end
@@ -1852,7 +1810,7 @@ function UI.CreateText(parent, text, size, alignment)
         Text.Size = UDim2.new(1, margin * -2, 1, -margin + 1)
         Text.BackgroundTransparency = 1
         Text.RichText = true
-        Text.Font = Enum.Font.Gotham
+        Text.Font = Enum.Font.Code
         Text.TextColor3 = Color3.new(1, 1, 1)
         Text.TextTransparency = 0
         Text.TextXAlignment = alignment
@@ -1873,29 +1831,22 @@ end
 function UI.CreateSeparator(parent)
         local Container = Util.Instance("Frame", parent)
         Container.AnchorPoint = Vector2.new(0.5, 0)
-        Container.Size = UDim2.new(1, 0, 0, 18)
+        Container.Size = UDim2.new(1, 0, 0, 7)
         Container.BackgroundTransparency = 1
         Container.LayoutOrder = #parent:GetChildren()
         local Sep = Util.Instance("Frame", Container)
         Sep.AnchorPoint = Vector2.new(0.5, 0.5)
         Sep.Position = UDim2.new(0.5, 0, 0.5, 0)
-        Sep.Size = UDim2.new(1, -20, 0, 2)
+        Sep.Size = UDim2.new(1, -8, 0, 1)
         Sep.BackgroundColor3 = UITextColor.Value
-        Sep.BackgroundTransparency = 0.42
+        Sep.BackgroundTransparency = 0.8
         Sep.BorderSizePixel = 0
-        Util.Instance("UICorner", Sep).CornerRadius = UDim.new(1, 0)
-        Util.Instance("UIGradient", Sep).Transparency = NumberSequence.new({
-                NumberSequenceKeypoint.new(0, 1),
-                NumberSequenceKeypoint.new(0.15, 0),
-                NumberSequenceKeypoint.new(0.85, 0),
-                NumberSequenceKeypoint.new(1, 1),
-        })
         Util.LinkDestroyI2C(Sep, UITextColor.Changed:Connect(function(val)
                 Sep.BackgroundColor3 = val
         end))
 end
 function UI.CreateButton(parent, text, size)
-        local margin = 7
+        local margin = 5
         local Container = Util.Instance("Frame", parent)
         Container.AnchorPoint = Vector2.new(0.5, 0)
         Container.Size = UDim2.new(1, 0, 0, 65536)
@@ -1916,7 +1867,7 @@ function UI.CreateButton(parent, text, size)
         ButtonText.Size = UDim2.new(1, 0, 1, -margin)
         ButtonText.BackgroundTransparency = 1
         ButtonText.RichText = true
-        ButtonText.Font = Enum.Font.GothamBold
+        ButtonText.Font = Enum.Font.Code
         ButtonText.TextColor3 = Color3.new(1, 1, 1)
         ButtonText.TextTransparency = 0
         ButtonText.TextXAlignment = Enum.TextXAlignment.Center
@@ -1925,42 +1876,10 @@ function UI.CreateButton(parent, text, size)
         ButtonText.TextSize = size
         RegisterTextLabel(ButtonText)
         Stylize(Button)
-        -- Glass highlight overlay (top-half shimmer)
-        local Glass = Util.Instance("Frame", Button)
-        Glass.AnchorPoint = Vector2.new(0, 0)
-        Glass.Position = UDim2.new(0, 0, 0, 0)
-        Glass.Size = UDim2.new(1, 0, 0.5, 0)
-        Glass.BackgroundColor3 = Color3.new(1, 1, 1)
-        Glass.BackgroundTransparency = 0.91
-        Glass.BorderSizePixel = 0
-        Glass.ZIndex = Button.ZIndex + 1
-        Util.Instance("UICorner", Glass).CornerRadius = UDim.new(0, 13)
-        -- Left accent bar (follows theme color)
-        local AccentBar = Util.Instance("Frame", Button)
-        AccentBar.AnchorPoint = Vector2.new(0, 0.5)
-        AccentBar.Position = UDim2.new(0, 0, 0.5, 0)
-        AccentBar.Size = UDim2.new(0, 4, 0.65, 0)
-        AccentBar.BackgroundColor3 = Color3.new(1, 1, 1)
-        AccentBar.BackgroundTransparency = 0
-        AccentBar.BorderSizePixel = 0
-        AccentBar.ZIndex = Button.ZIndex + 2
-        Util.Instance("UICorner", AccentBar).CornerRadius = UDim.new(0, 2)
-        AddToRenderStep(function(t)
-                AccentBar.BackgroundColor3 = GetUIColor(t)
-        end, AccentBar)
-        local _btnTI = TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-        Button.MouseEnter:Connect(function()
-                TweenService:Create(Button, _btnTI, { BackgroundTransparency = 0.14 }):Play()
-                TweenService:Create(Glass, _btnTI, { BackgroundTransparency = 0.83 }):Play()
-        end)
-        Button.MouseLeave:Connect(function()
-                TweenService:Create(Button, _btnTI, { BackgroundTransparency = 0 }):Play()
-                TweenService:Create(Glass, _btnTI, { BackgroundTransparency = 0.91 }):Play()
-        end)
         local function update()
                 local x = parent.AbsoluteSize.X
                 local size = TextService:GetTextSize(ButtonText.ContentText, ButtonText.TextSize, ButtonText.Font, Vector2.new(x - margin * 2, math.huge))
-                Container.Size = UDim2.new(1, 0, 0, size.Y + margin * 2 + 8)
+                Container.Size = UDim2.new(1, 0, 0, size.Y + margin * 2)
         end
         ButtonText.Text = text
         update()
@@ -1968,8 +1887,8 @@ function UI.CreateButton(parent, text, size)
         return Button, ButtonText
 end
 function UI.CreateSwitch(parent, text, value)
-        local margin = 6
-        local switchW, switchH = 50, 26
+        local margin = 5
+        local switchsize = 50
         local Container = Util.Instance("Frame", parent)
         Container.AnchorPoint = Vector2.new(0.5, 0)
         Container.Size = UDim2.new(1, 0, 0, 10)
@@ -1984,68 +1903,49 @@ function UI.CreateSwitch(parent, text, value)
         local ButtonText = Util.Instance("TextLabel", Button)
         ButtonText.AnchorPoint = Vector2.new(0, 0)
         ButtonText.Position = UDim2.new(0, margin, 0, 0)
-        ButtonText.Size = UDim2.new(1, margin * -3 - switchW, 1, 0)
+        ButtonText.Size = UDim2.new(1, margin * -3 - switchsize, 1, 0)
         ButtonText.BackgroundTransparency = 1
         ButtonText.RichText = true
-        ButtonText.Font = Enum.Font.Gotham
+        ButtonText.Font = Enum.Font.Code
         ButtonText.TextColor3 = Color3.new(1, 1, 1)
         ButtonText.TextTransparency = 0
         ButtonText.TextXAlignment = Enum.TextXAlignment.Left
         ButtonText.TextYAlignment = Enum.TextYAlignment.Center
         ButtonText.TextWrapped = true
-        ButtonText.TextSize = 14
+        ButtonText.TextSize = 20
         RegisterTextLabel(ButtonText)
         local function update()
                 local x = parent.AbsoluteSize.X
-                local sz = TextService:GetTextSize(ButtonText.ContentText, ButtonText.TextSize, ButtonText.Font, Vector2.new(x - margin * 3 - switchW, math.huge))
-                Container.Size = UDim2.new(1, 0, 0, math.max(36, sz.Y + 14))
+                local size = TextService:GetTextSize(ButtonText.ContentText, ButtonText.TextSize, ButtonText.Font, Vector2.new(x - margin * 3 - switchsize, math.huge))
+                Container.Size = UDim2.new(1, 0, 0, math.max(35, size.Y))
         end
         ButtonText.Text = text
         update()
         ButtonText.Changed:Connect(update)
-        -- Pill-shaped toggle track
         local Switch = Util.Instance("Frame", Container)
         Switch.AnchorPoint = Vector2.new(1, 0.5)
         Switch.Position = UDim2.new(1, -margin, 0.5, 0)
-        Switch.Size = UDim2.new(0, switchW, 0, switchH)
+        Switch.Size = UDim2.new(0, 25, 0, 25)
         Switch.BackgroundTransparency = 0
-        Switch.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+        Switch.BackgroundColor3 = Color3.new(0, 0, 0)
         Switch.BorderSizePixel = 0
-        Util.Instance("UICorner", Switch).CornerRadius = UDim.new(1, 0)
-        local SwitchStroke = Util.Instance("UIStroke", Switch)
-        SwitchStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-        SwitchStroke.Color = Color3.new(1, 1, 1)
-        SwitchStroke.Thickness = 1.5
-        SwitchStroke.Transparency = 0.6
-        -- Sliding thumb
-        local dotOff = UDim2.new(0, switchH / 2 - 1, 0.5, 0)
-        local dotOn  = UDim2.new(0, switchW - switchH / 2 + 1, 0.5, 0)
+        Util.Instance("UICorner", Switch).CornerRadius = UDim.new(0, 5)
+        Stylize(Switch)
         local SwitchDot = Util.Instance("Frame", Switch)
         SwitchDot.AnchorPoint = Vector2.new(0.5, 0.5)
-        SwitchDot.Position = dotOff
-        SwitchDot.Size = UDim2.new(0, switchH - 6, 0, switchH - 6)
-        SwitchDot.BackgroundTransparency = 0
-        SwitchDot.BackgroundColor3 = Color3.new(1, 1, 1)
+        SwitchDot.Position = UDim2.new(0.5, 0, 0.5, 0)
+        SwitchDot.Size = UDim2.new(0, 19, 0, 19)
+        SwitchDot.BackgroundTransparency = 0.2
+        SwitchDot.BackgroundColor3 = UITextColor.Value
         SwitchDot.BorderSizePixel = 0
-        Util.Instance("UICorner", SwitchDot).CornerRadius = UDim.new(1, 0)
+        Util.LinkDestroyI2C(SwitchDot, UITextColor.Changed:Connect(function(val)
+                SwitchDot.BackgroundColor3 = val
+        end))
+        Util.Instance("UICorner", SwitchDot).CornerRadius = UDim.new(0, 2)
         local Lever = Util.Instance("BoolValue")
         Lever.Value = value
-        local onColor = UITextColor.Value
-        Util.LinkDestroyI2C(Switch, UITextColor.Changed:Connect(function(val)
-                onColor = val
-                if Lever.Value then
-                        Switch.BackgroundColor3 = val
-                end
-        end))
-        local tweenInfo = TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
         local function updatesw()
-                if Lever.Value then
-                        TweenService:Create(SwitchDot, tweenInfo, { Position = dotOn }):Play()
-                        TweenService:Create(Switch, tweenInfo, { BackgroundColor3 = onColor }):Play()
-                else
-                        TweenService:Create(SwitchDot, tweenInfo, { Position = dotOff }):Play()
-                        TweenService:Create(Switch, tweenInfo, { BackgroundColor3 = Color3.fromRGB(45, 45, 45) }):Play()
-                end
+                SwitchDot.Visible = Lever.Value
         end
         Lever.Changed:Connect(updatesw)
         updatesw()
@@ -2073,7 +1973,7 @@ function UI.CreateTextbox(parent, text, placeholder, size)
         BoxText.Position = UDim2.new(0, 0, 0.5, 0)
         BoxText.Size = UDim2.new(1, 0, 1, -margin)
         BoxText.BackgroundTransparency = 1
-        BoxText.Font = Enum.Font.Gotham
+        BoxText.Font = Enum.Font.Code
         BoxText.TextColor3 = Color3.new(1, 1, 1)
         BoxText.PlaceholderColor3 = Color3.new(0.7, 0.7, 0.7)
         BoxText.TextTransparency = 0
@@ -2124,19 +2024,19 @@ function UI.CreateSlider(parent, text, value, min, max, step)
         Text.Size = UDim2.new(1, margin * -2, 0, 35)
         Text.BackgroundTransparency = 1
         Text.RichText = true
-        Text.Font = Enum.Font.Gotham
+        Text.Font = Enum.Font.Code
         Text.TextColor3 = Color3.new(1, 1, 1)
         Text.TextTransparency = 0
         Text.TextXAlignment = Enum.TextXAlignment.Left
         Text.TextYAlignment = Enum.TextYAlignment.Center
         Text.TextWrapped = true
-        Text.TextSize = 14
+        Text.TextSize = 20
         Text.Text = text
         RegisterTextLabel(Text)
         local Box = Util.Instance("Frame", Container)
         Box.AnchorPoint = Vector2.new(1, 0)
         Box.Position = UDim2.new(1, -margin, 0, margin)
-        Box.Size = UDim2.new(0, 86, 0, 35 - margin * 2)
+        Box.Size = UDim2.new(0, 80, 0, 35 - margin * 2)
         Box.BackgroundTransparency = 0
         Box.BackgroundColor3 = Color3.new(1, 1, 1)
         Box.BorderSizePixel = 0
@@ -2145,14 +2045,14 @@ function UI.CreateSlider(parent, text, value, min, max, step)
         BoxText.Position = UDim2.new(0, 0, 0.5, 0)
         BoxText.Size = UDim2.new(1, 0, 1, -margin)
         BoxText.BackgroundTransparency = 1
-        BoxText.Font = Enum.Font.Gotham
+        BoxText.Font = Enum.Font.Code
         BoxText.TextColor3 = Color3.new(1, 1, 1)
         BoxText.PlaceholderColor3 = Color3.new(0.7, 0.7, 0.7)
         BoxText.TextTransparency = 0
         BoxText.TextXAlignment = Enum.TextXAlignment.Center
         BoxText.TextYAlignment = Enum.TextYAlignment.Center
         BoxText.TextWrapped = true
-        BoxText.TextSize = 13
+        BoxText.TextSize = 15
         BoxText.ClearTextOnFocus = false
         RegisterTextLabel(BoxText)
         BoxText.Focused:Connect(function()
@@ -2164,21 +2064,21 @@ function UI.CreateSlider(parent, text, value, min, max, step)
         local SliderC = Util.Instance("TextButton", Container)
         SliderC.AnchorPoint = Vector2.new(0, 0)
         SliderC.Position = UDim2.new(0, 0, 0, 40)
-        SliderC.Size = UDim2.new(1, 0, 0, 22)
+        SliderC.Size = UDim2.new(1, 0, 0, 20)
         SliderC.BackgroundTransparency = 1
         SliderC.Text = ""
         SliderC.AutoButtonColor = true
         local SliderR = Util.Instance("Frame", SliderC)
         SliderR.AnchorPoint = Vector2.new(0.5, 0.5)
         SliderR.Position = UDim2.new(0.5, 0, 0.5, 0)
-        SliderR.Size = UDim2.new(1, margin * -2 - 20, 0, 8)
+        SliderR.Size = UDim2.new(1, margin * -2 - 18, 0, 5)
         SliderR.BackgroundTransparency = 0
         SliderR.BackgroundColor3 = Color3.new(1, 1, 1)
         SliderR.BorderSizePixel = 0
         local SliderB = Util.Instance("Frame", SliderR)
         SliderB.AnchorPoint = Vector2.new(0.5, 0.5)
         SliderB.Position = UDim2.new(0, 0, 0.5, 0)
-        SliderB.Size = UDim2.new(0, 24, 0, 24)
+        SliderB.Size = UDim2.new(0, 18, 0, 18)
         SliderB.BackgroundTransparency = 0
         SliderB.BackgroundColor3 = Color3.new(1, 1, 1)
         SliderB.BorderSizePixel = 0
@@ -2187,18 +2087,6 @@ function UI.CreateSlider(parent, text, value, min, max, step)
                 Depthed = true,
         })
         Stylize(SliderB)
-        local SliderFill = Util.Instance("Frame", SliderR)
-        SliderFill.AnchorPoint = Vector2.new(0, 0.5)
-        SliderFill.Position = UDim2.new(0, 0, 0.5, 0)
-        SliderFill.Size = UDim2.new(0, 0, 1, 0)
-        SliderFill.BackgroundTransparency = 0.25
-        SliderFill.BackgroundColor3 = UITextColor.Value
-        SliderFill.BorderSizePixel = 0
-        SliderFill.ZIndex = 1
-        Util.Instance("UICorner", SliderFill).CornerRadius = UDim.new(1, 0)
-        Util.LinkDestroyI2C(SliderFill, UITextColor.Changed:Connect(function(val)
-                SliderFill.BackgroundColor3 = val
-        end))
         local range = max - min
         if step > 0 then
                 if range / step < 20 then
@@ -2228,9 +2116,7 @@ function UI.CreateSlider(parent, text, value, min, max, step)
                         end
                 end
                 BoxText.Text = str
-                local _slPct = math.clamp((Select.Value - min) / (max - min), 0, 1)
-                SliderB.Position = UDim2.new(_slPct, 0, 0.5, 0)
-                SliderFill.Size = UDim2.new(_slPct, 0, 1, 0)
+                SliderB.Position = UDim2.new(math.clamp((Select.Value - min) / (max - min), 0, 1), 0, 0.5, 0)
                 if math.random(4) == 1 then
                         if str:find("67") or str:find("6.7") then
                                 Util.UINotify("SIX SEVENNNN 67 67 67 67 OMG")
@@ -2302,13 +2188,13 @@ function UI.CreateDropdown(parent, text, array, value)
         Text.Size = UDim2.new(1, margin * -2, 1, 0)
         Text.BackgroundTransparency = 1
         Text.RichText = true
-        Text.Font = Enum.Font.Gotham
+        Text.Font = Enum.Font.Code
         Text.TextColor3 = Color3.new(1, 1, 1)
         Text.TextTransparency = 0
         Text.TextXAlignment = Enum.TextXAlignment.Left
         Text.TextYAlignment = Enum.TextYAlignment.Center
         Text.TextWrapped = true
-        Text.TextSize = 14
+        Text.TextSize = 20
         RegisterTextLabel(Text)
         local Dropdown = Util.Instance("TextButton", Container)
         Dropdown.AnchorPoint = Vector2.new(1, 0.5)
@@ -2325,13 +2211,13 @@ function UI.CreateDropdown(parent, text, array, value)
         DropdownText.Size = UDim2.new(1, -margin * 2, 1, -margin)
         DropdownText.BackgroundTransparency = 1
         DropdownText.RichText = true
-        DropdownText.Font = Enum.Font.Gotham
+        DropdownText.Font = Enum.Font.Code
         DropdownText.TextColor3 = Color3.new(1, 1, 1)
         DropdownText.TextTransparency = 0
         DropdownText.TextXAlignment = Enum.TextXAlignment.Center
         DropdownText.TextYAlignment = Enum.TextYAlignment.Center
         DropdownText.TextWrapped = true
-        DropdownText.TextSize = 13
+        DropdownText.TextSize = 15
         RegisterTextLabel(DropdownText)
         Stylize(Dropdown)
         local function update()
@@ -2384,22 +2270,15 @@ function UI.CreateDropdown(parent, text, array, value)
         Util.LinkDestroyI2I(Dropdown, Droplist)
         for i,itemname in array do
                 local Item = Util.Instance("TextButton", Droplist)
-                Item.Size = UDim2.new(1, 0, 0, 26)
-                Item.BackgroundTransparency = 0.08
+                Item.Size = UDim2.new(1, 0, 0, 20)
+                Item.BackgroundTransparency = 0
                 Item.BackgroundColor3 = Color3.new(0, 0, 0)
                 Item.BorderSizePixel = 0
-                Item.AutoButtonColor = false
-                local _ddTI = TweenInfo.new(0.08, Enum.EasingStyle.Quad)
-                Item.MouseEnter:Connect(function()
-                        TweenService:Create(Item, _ddTI, { BackgroundTransparency = 0 }):Play()
-                end)
-                Item.MouseLeave:Connect(function()
-                        TweenService:Create(Item, _ddTI, { BackgroundTransparency = 0.08 }):Play()
-                end)
+                Item.AutoButtonColor = true
                 Item.LayoutOrder = i
                 Item.Text = itemname
-                Item.TextSize = 13
-                Item.Font = Enum.Font.Gotham
+                Item.TextSize = 15
+                Item.Font = Enum.Font.Code
                 Item.TextColor3 = Color3.new(1, 1, 1)
                 Item.TextXAlignment = Enum.TextXAlignment.Left
                 Item.TextYAlignment = Enum.TextYAlignment.Center
@@ -2533,12 +2412,12 @@ function UI.CreateScrollCanvas(parent, height)
         ListBox.CanvasSize = UDim2.new(0, 0, 0, 0)
         ListBox.ClipsDescendants = true
         ListBox.ScrollingDirection = Enum.ScrollingDirection.Y
-        ListBox.ScrollBarThickness = 4
+        ListBox.ScrollBarThickness = 3
         ListBox.ElasticBehavior = Enum.ElasticBehavior.Always
         ListBox.TopImage = "rbxasset://textures/ui/Scroll/scroll-middle.png"
         ListBox.MidImage = "rbxasset://textures/ui/Scroll/scroll-middle.png"
         ListBox.BottomImage = "rbxasset://textures/ui/Scroll/scroll-middle.png"
-        ListBox.ScrollBarImageTransparency = 0.3
+        ListBox.ScrollBarImageTransparency = 0.5
         ListBox.ScrollBarImageColor3 = UITextColor.Value
         Util.LinkDestroyI2C(ListBox, UITextColor.Changed:Connect(function(val)
                 ListBox.ScrollBarImageColor3 = val
@@ -2568,18 +2447,13 @@ function UI.CreateItemListPage()
         Frame.Size = UDim2.new(0, 360, 0, 205)
         Frame.BackgroundTransparency = 0
         Frame.BackgroundColor3 = Color3.new(0, 0, 0)
-        Frame.BorderSizePixel = 0
+        Frame.BorderSizePixel = 1
+        Frame.BorderColor3 = Color3.new(1, 1, 1)
         Frame.Visible = true
         Frame.ZIndex = 0
         Frame.ClipsDescendants = true
-        local ILPStroke = Util.Instance("UIStroke", Frame)
-        ILPStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-        ILPStroke.Color = Color3.new(1, 1, 1)
-        ILPStroke.LineJoinMode = Enum.LineJoinMode.Round
-        ILPStroke.Thickness = 1.5
-        ILPStroke.Transparency = 0
         AddToRenderStep(function(t)
-                ILPStroke.Color = GetUIColor(t)
+                Frame.BorderColor3 = GetUIColor(t)
                 Frame.BackgroundColor3 = GetUIBGColor(t)
         end, Frame)
         local Padding = Util.Instance("UIPadding", Frame)
@@ -2601,13 +2475,13 @@ function UI.CreateItemListPage()
         BackButtonText.Position = UDim2.new(0.5, 0, 0.5, 0)
         BackButtonText.Size = UDim2.new(1, margin * -2, 1, -margin)
         BackButtonText.BackgroundTransparency = 1
-        BackButtonText.Font = Enum.Font.GothamBold
+        BackButtonText.Font = Enum.Font.Code
         BackButtonText.TextColor3 = Color3.new(1, 1, 1)
         BackButtonText.TextTransparency = 0
         BackButtonText.TextXAlignment = Enum.TextXAlignment.Center
         BackButtonText.TextYAlignment = Enum.TextYAlignment.Center
         BackButtonText.TextWrapped = true
-        BackButtonText.TextSize = 16
+        BackButtonText.TextSize = 20
         BackButtonText.Text = "<"
         RegisterTextLabel(BackButtonText)
         Stylize(BackButton)
@@ -2623,14 +2497,14 @@ function UI.CreateItemListPage()
         SearchBoxText.Position = UDim2.new(0.5, 0, 0.5, 0)
         SearchBoxText.Size = UDim2.new(1, margin * -2, 1, -margin)
         SearchBoxText.BackgroundTransparency = 1
-        SearchBoxText.Font = Enum.Font.Gotham
+        SearchBoxText.Font = Enum.Font.Code
         SearchBoxText.TextColor3 = Color3.new(1, 1, 1)
         SearchBoxText.PlaceholderColor3 = Color3.new(0.7, 0.7, 0.7)
         SearchBoxText.TextTransparency = 0
         SearchBoxText.TextXAlignment = Enum.TextXAlignment.Left
         SearchBoxText.TextYAlignment = Enum.TextYAlignment.Center
         SearchBoxText.TextWrapped = true
-        SearchBoxText.TextSize = 14
+        SearchBoxText.TextSize = 20
         SearchBoxText.ClearTextOnFocus = false
         SearchBoxText.Focused:Connect(function()
                 UISound.Click:Play()
@@ -2652,12 +2526,12 @@ function UI.CreateItemListPage()
         ListBox.CanvasSize = UDim2.new(0, 0, 0, 0)
         ListBox.ClipsDescendants = true
         ListBox.ScrollingDirection = Enum.ScrollingDirection.Y
-        ListBox.ScrollBarThickness = 4
+        ListBox.ScrollBarThickness = 3
         ListBox.ElasticBehavior = Enum.ElasticBehavior.Always
         ListBox.TopImage = "rbxasset://textures/ui/Scroll/scroll-middle.png"
         ListBox.MidImage = "rbxasset://textures/ui/Scroll/scroll-middle.png"
         ListBox.BottomImage = "rbxasset://textures/ui/Scroll/scroll-middle.png"
-        ListBox.ScrollBarImageTransparency = 0.3
+        ListBox.ScrollBarImageTransparency = 0.5
         ListBox.ScrollBarImageColor3 = UITextColor.Value
         Util.LinkDestroyI2C(ListBox, UITextColor.Changed:Connect(function(val)
                 ListBox.ScrollBarImageColor3 = val
@@ -2713,13 +2587,6 @@ function UI.CreateItemListItem(parent)
         ListBox.AutomaticSize = Enum.AutomaticSize.Y
         ListBox.Text = ""
         Stylize(ListBox)
-        local _ilTI = TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-        ListBox.MouseEnter:Connect(function()
-                TweenService:Create(ListBox, _ilTI, { BackgroundTransparency = 0.18 }):Play()
-        end)
-        ListBox.MouseLeave:Connect(function()
-                TweenService:Create(ListBox, _ilTI, { BackgroundTransparency = 0 }):Play()
-        end)
         Padding = Util.Instance("UIPadding", ListBox)
         Padding.PaddingTop = UDim.new(0, 5)
         Padding.PaddingBottom = UDim.new(0, 5)
@@ -4138,10 +4005,8 @@ Reanimate.CreateCharacter = function(InitCFrame)
         BodyForce.Parent = RCRootPart
         BodyForce.Force = Vector3.zero
         RC.Parent = workspace
-        pcall(function() RC:SetAttribute("_UhhhhhRC_Owner", tostring(Player.UserId)) end)
         RCRootPart.RootPriority = 67
         RCRootPart.CFrame = cf
-
         local SafeY = cf.Y
         local IsFloat = false
         local SeatWeld = nil
@@ -4465,6 +4330,7 @@ Util.ShowPartHitbox = function(part)
         Debris:AddItem(w, 1)
 end
 
+local RIGHTGRIP_C0 = CFrame.new(0, -1, 0, 1, 0, 0, 0, 0, 1, 0, -1, 0)
 Util.PredictionFling = function(target)
         if typeof(target) == "Instance" then
                 if target:IsA("Model") then
@@ -4732,10 +4598,6 @@ function LimbReanimator.Start()
                                                 if h ~= nil then
                                                         fake.Handle.Size = h.Size
                                                 end
-                                                local rightArm = Reanimate.Character and Reanimate.Character:FindFirstChild("Right Arm")
-                                                if rightArm and RightGrip.Part0 ~= rightArm then
-                                                        RightGrip.Part0 = rightArm
-                                                end
                                         else
                                                 fake:Destroy()
                                                 FakeTools[v] = nil
@@ -4803,7 +4665,7 @@ function LimbReanimator.Start()
         Reanimate.CreateCharacter(InitCFrame)
 
         local lastrep = 0
-        local function UpdateTransforms(ReanimCharacter, RootPart, rootcf, rootvel, flingtarget, flingcf, dt)
+        local function UpdateTransforms(ReanimCharacter, RootPart, rootcf, rootvel, flingtarget, flingcf)
                 if not RootPart:IsGrounded() then
                         if flingtarget then
                                 if LimbReanimator.UseNaNFling then
@@ -4857,11 +4719,7 @@ function LimbReanimator.Start()
                                                 end
                                         end
                                         if dorep or not map.CFrame then
-                                                if map.CFrame then
-                                                        map.CFrame = map.CFrame:Lerp(cf, 1 - math.exp(-200 * (dt or 1/60)))
-                                                else
-                                                        map.CFrame = cf
-                                                end
+                                                map.CFrame = cf
                                         end
                                         Util.SetMotor6DOffset(v, map.CFrame)
                                 end
@@ -4950,7 +4808,7 @@ function LimbReanimator.Start()
                                 end
                         end
                         if Character and Humanoid and RootPart then
-                                local dt = RunService.Heartbeat:Wait()
+                                RunService.Heartbeat:Wait()
                                 local t = os.clock()
                                 local flingtarget = LimbReanimator.FlingTargets[1]
                                 if flingtarget then
@@ -4971,7 +4829,7 @@ function LimbReanimator.Start()
                                                 flingtarget = nil
                                         end
                                 end
-                                UpdateTransforms(ReanimCharacter, RootPart, rootcf, rootvel, flingtarget, flingcf, dt)
+                                UpdateTransforms(ReanimCharacter, RootPart, rootcf, rootvel, flingtarget, flingcf)
                                 if LimbReanimator.UseNaNFling then
                                         if os.clock() - lastspawn > 0.1 then
                                                 pcall(sethiddenproperty, Humanoid, "MoveDirectionInternal", Vector3.new(0/0, 0/0, 0/0))
@@ -4982,7 +4840,6 @@ function LimbReanimator.Start()
                                 else
                                         pcall(sethiddenproperty, Humanoid, "NetworkHumanoidState", Enum.HumanoidStateType[({"Running", "PlatformStanding", "Jumping", "Ragdoll", "Seated", "Physics"})[math.random(1, 6)]])
                                 end
-
                                 RunService.PreRender:Wait()
                                 if Reanimate:ShouldRotationType() then
                                         Reanimate:CameraLockCharacter()
@@ -5001,30 +4858,6 @@ function LimbReanimator.Start()
         end
         Reanimate.Stopping = false
         Reanimate.DestroyCharacter()
-end
-
-local LimbPermReanimator = {}
-LimbPermReanimator.Name = "Limbs + Permadeath"
-LimbPermReanimator.FlingTargets = LimbReanimator.FlingTargets
-LimbPermReanimator._TempNotFling = LimbReanimator._TempNotFling
-function LimbPermReanimator.ShowHitboxes()
-        LimbReanimator.ShowHitboxes()
-end
-function LimbPermReanimator.Fling(target, duration)
-        return LimbReanimator.Fling(target, duration)
-end
-function LimbPermReanimator.Config(parent)
-        LimbReanimator.Config(parent)
-end
-function LimbPermReanimator.Start()
-        local char = Player.Character
-        if char and replicatesignal then
-                local hum = char:FindFirstChildOfClass("Humanoid")
-                if hum then
-                        pcall(replicatesignal, hum.ServerBreakJoints)
-                end
-        end
-        LimbReanimator.Start()
 end
 
 local HatReanimator = {}
@@ -5053,7 +4886,6 @@ HatReanimator.HatCollideMethod = SaveData.Reanimator.HatsCollideMethod
 HatReanimator.IWantAllHats = SaveData.Reanimator.IWantAllHats
 HatReanimator.IWantHatCollide = SaveData.Reanimator.IWantHatCollide
 HatReanimator.Permadeath = false--not SaveData.Reanimator.HatsPatchmahub
-HatReanimator.SkipKill = false
 HatReanimator.RespawnPosition = SaveData.Reanimator.RespawnPosition
 -- 0 - hide body
 -- 1 - behind character
@@ -5215,7 +5047,6 @@ function HatReanimator.Config(parent)
         UI.CreateDropdown(parent, "toolanim Method", {
                 "Disabled",
                 "Sword",
-                "Motor6D",
         }, HatReanimator.ToolAnimMethod + 1).Changed:Connect(function(val)
                 HatReanimator.ToolAnimMethod = val - 1
                 SaveData.Reanimator.HatsToolAnim = val - 1
@@ -6625,12 +6456,10 @@ function HatReanimator.Start()
                                 end
                         end
                 end
-                if not HatReanimator.SkipKill then
-                        lgloop = RunService.Heartbeat:Connect(function(dt)
-                                selhatcol.HRPTP(dt, character, Humanoid, RootPosition, RootPart, readystate)
-                        end)
-                end
-                if hatcols and not HatReanimator.SkipKill then task.wait(0.2) end
+                lgloop = RunService.Heartbeat:Connect(function(dt)
+                        selhatcol.HRPTP(dt, character, Humanoid, RootPosition, RootPart, readystate)
+                end)
+                if hatcols then task.wait(0.2) end
                 HatReanimator.Status.ReanimState = "Loading Permadeath."
                 if perma then
                         HatReanimator.Status.Permadeath = "no."
@@ -6638,7 +6467,7 @@ function HatReanimator.Start()
                         HatReanimator.Status.Permadeath = "Disabled, nothing to do."
                 end
                 if not character:IsDescendantOf(workspace) then
-                        if lgloop then lgloop:Disconnect() end
+                        lgloop:Disconnect()
                         return
                 end
                 readystate = 1
@@ -6652,7 +6481,7 @@ function HatReanimator.Start()
                 claimarea = Vector3.new(claimarea.X, math.max(FallenPartsDestroyHeight + 16, claimarea.Y + 4), claimarea.Z)
                 task.wait(selhatcol.Wait1 or 0.1)
                 if not character:IsDescendantOf(workspace) then
-                        if lgloop then lgloop:Disconnect() end
+                        lgloop:Disconnect()
                         return
                 end
                 readystate = 2
@@ -6675,20 +6504,18 @@ function HatReanimator.Start()
                 Humanoid:ChangeState(Enum.HumanoidStateType.FallingDown)
                 task.wait(selhatcol.Wait2 or 0.15)
                 if not character:IsDescendantOf(workspace) then
-                        if lgloop then lgloop:Disconnect() end
+                        lgloop:Disconnect()
                         for _,c in bringconns do
                                 c:Disconnect()
                         end
                         return
                 end
-                if not HatReanimator.SkipKill then
-                        pcall(replicatesignal, Humanoid.ServerBreakJoints)
-                        Humanoid.EvaluateStateMachine = true
-                        Humanoid.BreakJointsOnDeath = true
-                        Humanoid.Health = 0
-                        Humanoid:SetStateEnabled(Enum.HumanoidStateType.Dead, true)
-                        Humanoid:ChangeState(Enum.HumanoidStateType.Dead)
-                end
+                pcall(replicatesignal, Humanoid.ServerBreakJoints)
+                Humanoid.EvaluateStateMachine = true
+                Humanoid.BreakJointsOnDeath = true
+                Humanoid.Health = 0
+                Humanoid:SetStateEnabled(Enum.HumanoidStateType.Dead, true)
+                Humanoid:ChangeState(Enum.HumanoidStateType.Dead)
                 readystate = 3
                 HatReanimator.Status.ReanimState = "Reanimate State: 3"
                 IsRespawning = false
@@ -6727,7 +6554,7 @@ function HatReanimator.Start()
                                 tool.Parent = backpack
                         end
                 end
-                if lgloop then lgloop:Disconnect() end
+                lgloop:Disconnect()
                 if perma then task.wait(1) end
                 for _,c in bringconns do
                         c:Disconnect()
@@ -6772,11 +6599,9 @@ function HatReanimator.Start()
                 local h = Player.Character:FindFirstChildOfClass("Humanoid")
                 if h and h.RootPart then
                         InitCFrame = h.RootPart.CFrame
-                        if not HatReanimator.SkipKill then
-                                pcall(function() Player.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Dead) end)
-                                pcall(function() Player.Character.Humanoid.Health = 0 end)
-                                pcall(replicatesignal, Player.Character.Humanoid.ServerBreakJoints)
-                        end
+                        pcall(function() Player.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Dead) end)
+                        pcall(function() Player.Character.Humanoid.Health = 0 end)
+                        pcall(replicatesignal, Player.Character.Humanoid.ServerBreakJoints)
                         --pcall(replicatesignal, Player.ConnectDiedSignalBackend)
                         Player.Character.DescendantAdded:Connect(CharOnDesc)
                         for _,v in Player.Character:GetDescendants() do
@@ -6786,10 +6611,9 @@ function HatReanimator.Start()
                 end
         end
 
-        if not HatReanimator.SkipKill then
-                Reanimate.CreateCharacter(InitCFrame)
-                Reanimate.Starting = false
-        end
+        Reanimate.CreateCharacter(InitCFrame)
+
+        Reanimate.Starting = false
         local letitgo = 0
         while not Reanimate.Stopping do
                 RunService.PreSimulation:Wait()
@@ -7114,31 +6938,8 @@ function HatReanimator.Start()
                                 end
                                 for handle, cf in handlethese do
                                         if not blacklist[handle] then
-                                                if HatReanimator.ToolAnimMethod == 2 then
-                                                        -- Motor6D method: use ReplicateCurrentOffset6D/Angle6D on the
-                                                        -- real RightGrip Motor6D — same technique as limb reanimation.
-                                                        -- The motor's C0 (grip attach on arm) and C1 (tool grip offset)
-                                                        -- already encode the exact grip pose, so CFrame.identity = grip.
-                                                        -- No physics back-propagation, correct server replication.
-                                                        local realGrip = handle:FindFirstChild("RightGrip")
-                                                        if realGrip and realGrip:IsA("Motor6D") then
-                                                                -- Keep C0 scale-correct
-                                                                if realGrip.C0 ~= rightgrip then
-                                                                        realGrip.C0 = rightgrip
-                                                                end
-                                                                -- CFrame.identity = sit exactly at the grip pose encoded by C0/C1
-                                                                Util.SetMotor6DTransform(realGrip, CFrame.identity)
-                                                                table.insert(slocked, handle)
-                                                        else
-                                                                -- No Motor6D found — fall back to physics push
-                                                                if SetUACFrameNetless(handle, dt, cf, rightarm.Velocity, HatReanimator.HatFling, HatReanimator.HatSpin) then
-                                                                        table.insert(slocked, handle)
-                                                                end
-                                                        end
-                                                else
-                                                        if SetUACFrameNetless(handle, dt, cf, rightarm.Velocity, HatReanimator.HatFling, HatReanimator.HatSpin) then
-                                                                table.insert(slocked, handle)
-                                                        end
+                                                if SetUACFrameNetless(handle, dt, cf, rightarm.Velocity, HatReanimator.HatFling, HatReanimator.HatSpin) then
+                                                        table.insert(slocked, handle)
                                                 end
                                         end
                                 end
@@ -7197,33 +6998,8 @@ function HatReanimator.Start()
         for _,v in HatRefs do if v.PH then v.PH:Destroy() end end
         CharConn:Disconnect()
         --replicatesignal(Player.ConnectDiedSignalBackend)
-        if not HatReanimator.SkipKill then
-                Reanimate.Stopping = false
-                Reanimate.DestroyCharacter()
-        end
-end
-
-local CombinedReanimator = {}
-CombinedReanimator.Name = "Limbs + Hats"
-CombinedReanimator.FlingTargets = LimbReanimator.FlingTargets
-CombinedReanimator._TempNotFling = LimbReanimator._TempNotFling
-function CombinedReanimator.ShowHitboxes()
-        LimbReanimator.ShowHitboxes()
-        HatReanimator.ShowHitboxes()
-end
-function CombinedReanimator.Fling(target, duration)
-        return LimbReanimator.Fling(target, duration)
-end
-function CombinedReanimator.Config(parent)
-        LimbReanimator.Config(parent)
-        UI.CreateSeparator(parent)
-        HatReanimator.Config(parent)
-end
-function CombinedReanimator.Start()
-        HatReanimator.SkipKill = true
-        task.spawn(HatReanimator.Start)
-        LimbReanimator.Start()
-        HatReanimator.SkipKill = false
+        Reanimate.Stopping = false
+        Reanimate.DestroyCharacter()
 end
 
 task.wait()
@@ -7258,20 +7034,12 @@ end
 
 do
         SaveData.SelectedReanimator = SaveData.SelectedReanimator or 1
-        local ReanimateMethodSelect = UI.CreateDropdown(MainPage, "Reanimator", {"Limb Reanimator", "Hats Reanimator", "Limbs + Permadeath", "Limbs + Hats"}, SaveData.SelectedReanimator)
+        local ReanimateMethodSelect = UI.CreateDropdown(MainPage, "Reanimator", {"Limb Reanimator", "Hats Reanimator"}, SaveData.SelectedReanimator)
         local ReanimatorConfigTitle = UI.CreateText(MainPage, "-=+ Limb Reanimator Config +=-", 15, Enum.TextXAlignment.Center)
         local SelectedReanimator = LimbReanimator
         if SaveData.SelectedReanimator == 2 then
                 SelectedReanimator = HatReanimator
                 ReanimatorConfigTitle.Text = "-=+ Hats Reanimator Config +=-"
-        end
-        if SaveData.SelectedReanimator == 3 then
-                SelectedReanimator = LimbPermReanimator
-                ReanimatorConfigTitle.Text = "-=+ Limbs + Permadeath Config +=-"
-        end
-        if SaveData.SelectedReanimator == 4 then
-                SelectedReanimator = CombinedReanimator
-                ReanimatorConfigTitle.Text = "-=+ Limbs + Hats Config +=-"
         end
         local ReanimatorConfigCanvas = UI.CreateCanvas(MainPage)
         ReanimateMethodSelect.Changed:Connect(function(value)
@@ -7283,14 +7051,6 @@ do
                 if value == 2 then
                         SelectedReanimator = HatReanimator
                         ReanimatorConfigTitle.Text = "-=+ Hats Reanimator Config +=-"
-                end
-                if value == 3 then
-                        SelectedReanimator = LimbPermReanimator
-                        ReanimatorConfigTitle.Text = "-=+ Limbs + Permadeath Config +=-"
-                end
-                if value == 4 then
-                        SelectedReanimator = CombinedReanimator
-                        ReanimatorConfigTitle.Text = "-=+ Limbs + Hats Config +=-"
                 end
                 Util.ClearAllChildrenGui(ReanimatorConfigCanvas)
                 SelectedReanimator.Config(ReanimatorConfigCanvas)
@@ -8075,780 +7835,10 @@ local MovementStyleIndex = 2
 local _MovementStyleIndex = nil
 local CurrentDance = nil
 local _CurrentDance = nil
-local DancePaused = false
-local _soundWasPaused = false
-local DanceShuffle = false
-local DanceQueue = {}
-local DanceQueueMode = false
-local _queuePlayIndex = 0
-local _openQueue = nil
-local _rebuildQueue = nil
 local OldReanimCharacter = nil
-local _danceItemLabels = {} -- maps dance object -> DancesPage list name label
-
-do -- Dance Player Popup
-        local _watchedDance = nil
-        local _popupLastDance = nil
-        local _popupVisible = false
-        local _popupDragRef = nil
-        local _popupDragLive = false
-        local _popupDragStart = Vector2.zero
-        local _popupDragStartOffset = Vector2.zero
-        local _popupDragOffset = (function()
-                local d = SaveData.DancePopupDragOffset
-                if type(d) == "table" and type(d[1]) == "number" and type(d[2]) == "number" then
-                        return Vector2.new(d[1], d[2])
-                end
-                return Vector2.zero
-        end)()
-
-        local DancePopupFrame = Instance.new("Frame", UIMainFrame)
-        DancePopupFrame.Active = true
-        DancePopupFrame.AnchorPoint = Vector2.new(0.5, 1)
-        DancePopupFrame.Position = UDim2.new(0.5, 0, 1, 80)
-        DancePopupFrame.BackgroundTransparency = 0
-        DancePopupFrame.BackgroundColor3 = Color3.new(0, 0, 0)
-        DancePopupFrame.BorderSizePixel = 0
-        DancePopupFrame.ClipsDescendants = true
-        DancePopupFrame.Visible = false
-        DancePopupFrame.ZIndex = 10
-        Stylize(DancePopupFrame, { Glow = true })
-
-        local _popupMinimized = not not SaveData.DancePopupMinimized
-        local POPUP_FULL_H = 164
-        local POPUP_MIN_H  = 38
-        DancePopupFrame.Size = UDim2.new(0, 320, 0, _popupMinimized and POPUP_MIN_H or POPUP_FULL_H)
-
-        local DancePopupClose = Util.Instance("TextButton", DancePopupFrame)
-        DancePopupClose.AnchorPoint = Vector2.new(1, 0)
-        DancePopupClose.Position = UDim2.new(1, -8, 0, 8)
-        DancePopupClose.Size = UDim2.new(0, 22, 0, 22)
-        DancePopupClose.BackgroundTransparency = 0
-        DancePopupClose.BorderSizePixel = 0
-        DancePopupClose.Text = "\xc3\x97"
-        DancePopupClose.Font = Enum.Font.GothamBold
-        DancePopupClose.TextSize = 15
-        DancePopupClose.ZIndex = 12
-        Stylize(DancePopupClose)
-        RegisterTextLabel(DancePopupClose)
-
-        local DancePopupMinimize = Util.Instance("TextButton", DancePopupFrame)
-        DancePopupMinimize.AnchorPoint = Vector2.new(1, 0)
-        DancePopupMinimize.Position = UDim2.new(1, -34, 0, 8)
-        DancePopupMinimize.Size = UDim2.new(0, 22, 0, 22)
-        DancePopupMinimize.BackgroundTransparency = 0
-        DancePopupMinimize.BorderSizePixel = 0
-        DancePopupMinimize.Text = ""
-        DancePopupMinimize.ZIndex = 12
-        Stylize(DancePopupMinimize)
-        do
-                local MA = Util.Instance("Frame", DancePopupMinimize)
-                MA.AnchorPoint = Vector2.new(0.5, 0.5)
-                MA.Position = UDim2.new(0.5, 0, 0.5, 0)
-                MA.Size = UDim2.new(0, 12, 0, 2)
-                MA.Rotation = _popupMinimized and 180 or 0
-                MA.BackgroundTransparency = 0
-                MA.BackgroundColor3 = UITextColor.Value
-                MA.BorderSizePixel = 0
-                MA.Name = "MA"
-                UITextColor.Changed:Connect(function(val) MA.BackgroundColor3 = val end)
-                local MB = Util.Instance("Frame", MA)
-                MB.AnchorPoint = Vector2.new(0.5, 0.5)
-                MB.Position = UDim2.new(0.5, 0, 0.5, 0)
-                MB.Size = _popupMinimized and UDim2.new(0, 2, 0, 12) or UDim2.new(0, 2, 0, 0)
-                MB.BackgroundTransparency = 0
-                MB.BackgroundColor3 = UITextColor.Value
-                MB.BorderSizePixel = 0
-                MB.Name = "MB"
-                UITextColor.Changed:Connect(function(val) MB.BackgroundColor3 = val end)
-        end
-
-        local DancePopupQueueToggle = Util.Instance("TextButton", DancePopupFrame)
-        DancePopupQueueToggle.AnchorPoint = Vector2.new(1, 0)
-        DancePopupQueueToggle.Position = UDim2.new(1, -60, 0, 8)
-        DancePopupQueueToggle.Size = UDim2.new(0, 22, 0, 22)
-        DancePopupQueueToggle.BackgroundTransparency = 0
-        DancePopupQueueToggle.BorderSizePixel = 0
-        DancePopupQueueToggle.Text = "\xe2\x89\xa1"
-        DancePopupQueueToggle.Font = Enum.Font.GothamBold
-        DancePopupQueueToggle.TextSize = 14
-        DancePopupQueueToggle.ZIndex = 12
-        Stylize(DancePopupQueueToggle)
-        RegisterTextLabel(DancePopupQueueToggle)
-        DancePopupQueueToggle.Activated:Connect(function()
-                if _openQueue then _openQueue() end
-        end)
-
-        DancePopupMinimize.Activated:Connect(function()
-                _popupMinimized = not _popupMinimized
-                local targetH = _popupMinimized and POPUP_MIN_H or POPUP_FULL_H
-                local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Cubic, Enum.EasingDirection.Out)
-                TweenService:Create(DancePopupFrame, tweenInfo,
-                        { Size = UDim2.new(0, 320, 0, targetH) }
-                ):Play()
-                TweenService:Create(DancePopupMinimize.MA, tweenInfo,
-                        { Rotation = _popupMinimized and 180 or 0 }
-                ):Play()
-                TweenService:Create(DancePopupMinimize.MA.MB, tweenInfo,
-                        { Size = _popupMinimized and UDim2.new(0, 2, 0, 12) or UDim2.new(0, 2, 0, 0) }
-                ):Play()
-                SaveData.DancePopupMinimized = _popupMinimized
-                SaveData.DancePopupDragOffset = {_popupDragOffset.X, _popupDragOffset.Y}
-        end)
-
-        -- Header title
-        local DancePopupHeaderTitle = Util.Instance("TextLabel", DancePopupFrame)
-        DancePopupHeaderTitle.Position = UDim2.new(0, 12, 0, 9)
-        DancePopupHeaderTitle.Size = UDim2.new(1, -90, 0, 20)
-        DancePopupHeaderTitle.BackgroundTransparency = 1
-        DancePopupHeaderTitle.Font = Enum.Font.GothamBlack
-        DancePopupHeaderTitle.TextSize = 14
-        DancePopupHeaderTitle.TextXAlignment = Enum.TextXAlignment.Left
-        DancePopupHeaderTitle.ZIndex = 12
-        DancePopupHeaderTitle.Text = "Now Playing"
-        RegisterTextLabel(DancePopupHeaderTitle)
-
-        -- Header accent strip (theme-colored, faded at edges)
-        local DancePopupHeaderSep = Util.Instance("Frame", DancePopupFrame)
-        DancePopupHeaderSep.AnchorPoint = Vector2.new(0.5, 0)
-        DancePopupHeaderSep.Position = UDim2.new(0.5, 0, 0, 38)
-        DancePopupHeaderSep.Size = UDim2.new(1, -20, 0, 2)
-        DancePopupHeaderSep.BackgroundTransparency = 0.42
-        DancePopupHeaderSep.BackgroundColor3 = Color3.new(1, 1, 1)
-        DancePopupHeaderSep.BorderSizePixel = 0
-        DancePopupHeaderSep.ZIndex = 11
-        Util.Instance("UICorner", DancePopupHeaderSep).CornerRadius = UDim.new(1, 0)
-        Util.Instance("UIGradient", DancePopupHeaderSep).Transparency = NumberSequence.new({
-                NumberSequenceKeypoint.new(0, 1),
-                NumberSequenceKeypoint.new(0.15, 0),
-                NumberSequenceKeypoint.new(0.85, 0),
-                NumberSequenceKeypoint.new(1, 1),
-        })
-        AddToRenderStep(function(t)
-                DancePopupHeaderSep.BackgroundColor3 = GetUIColor(t)
-        end, DancePopupHeaderSep)
-
-        -- Transparent drag handle covering only the header bar (title area)
-        local DancePopupDragArea = Util.Instance("Frame", DancePopupFrame)
-        DancePopupDragArea.Active = true
-        DancePopupDragArea.Position = UDim2.new(0, 0, 0, 0)
-        DancePopupDragArea.Size = UDim2.new(1, 0, 1, 0)
-        DancePopupDragArea.BackgroundTransparency = 1
-        DancePopupDragArea.ZIndex = 11
-
-        local DancePopupName = Util.Instance("TextLabel", DancePopupFrame)
-        DancePopupName.AnchorPoint = Vector2.new(0, 0)
-        DancePopupName.Position = UDim2.new(0, 12, 0, 44)
-        DancePopupName.Size = UDim2.new(1, -24, 0, 22)
-        DancePopupName.BackgroundTransparency = 1
-        DancePopupName.Font = Enum.Font.GothamBold
-        DancePopupName.TextSize = 15
-        DancePopupName.TextXAlignment = Enum.TextXAlignment.Left
-        DancePopupName.TextTruncate = Enum.TextTruncate.AtEnd
-        DancePopupName.ZIndex = 12
-        DancePopupName.Text = ""
-        RegisterTextLabel(DancePopupName)
-
-        local DancePopupDesc = Util.Instance("TextLabel", DancePopupFrame)
-        DancePopupDesc.AnchorPoint = Vector2.new(0, 0)
-        DancePopupDesc.Position = UDim2.new(0, 12, 0, 68)
-        DancePopupDesc.Size = UDim2.new(1, -24, 0, 38)
-        DancePopupDesc.BackgroundTransparency = 1
-        DancePopupDesc.Font = Enum.Font.Gotham
-        DancePopupDesc.TextSize = 12
-        DancePopupDesc.TextXAlignment = Enum.TextXAlignment.Left
-        DancePopupDesc.TextYAlignment = Enum.TextYAlignment.Top
-        DancePopupDesc.TextWrapped = true
-        DancePopupDesc.ZIndex = 12
-        DancePopupDesc.Text = ""
-        RegisterTextLabel(DancePopupDesc)
-
-        local DancePopupSep = Util.Instance("Frame", DancePopupFrame)
-        DancePopupSep.AnchorPoint = Vector2.new(0.5, 0)
-        DancePopupSep.Position = UDim2.new(0.5, 0, 0, 110)
-        DancePopupSep.Size = UDim2.new(1, -20, 0, 2)
-        DancePopupSep.BackgroundTransparency = 0.42
-        DancePopupSep.BackgroundColor3 = Color3.new(1, 1, 1)
-        DancePopupSep.BorderSizePixel = 0
-        DancePopupSep.ZIndex = 11
-        Util.Instance("UICorner", DancePopupSep).CornerRadius = UDim.new(1, 0)
-        Util.Instance("UIGradient", DancePopupSep).Transparency = NumberSequence.new({
-                NumberSequenceKeypoint.new(0, 1),
-                NumberSequenceKeypoint.new(0.15, 0),
-                NumberSequenceKeypoint.new(0.85, 0),
-                NumberSequenceKeypoint.new(1, 1),
-        })
-        AddToRenderStep(function(t)
-                DancePopupSep.BackgroundColor3 = GetUIColor(t)
-        end, DancePopupSep)
-
-        local function MakeCtrlBtn(label, xOff)
-                local b = Util.Instance("TextButton", DancePopupFrame)
-                b.AnchorPoint = Vector2.new(0.5, 0)
-                b.Position = UDim2.new(0.5, xOff, 0, 118)
-                b.Size = UDim2.new(0, 48, 0, 36)
-                b.BackgroundTransparency = 0
-                b.BorderSizePixel = 0
-                b.Text = label
-                b.Font = Enum.Font.GothamBold
-                b.TextSize = 14
-                b.ZIndex = 12
-                Stylize(b)
-                RegisterTextLabel(b)
-                return b
-        end
-
-        -- 3 buttons: Prev, Play/Pause, Next — evenly spaced
-        local DancePopupPrev      = MakeCtrlBtn("|<",  -52)
-        local DancePopupPlayPause = MakeCtrlBtn("||",    0)
-        local DancePopupNext      = MakeCtrlBtn(">|",   52)
-
-        local function GetShownPos()
-                return UDim2.new(0.5, _popupDragOffset.X, 1, -20 + _popupDragOffset.Y)
-        end
-        local function GetHiddenPos()
-                return UDim2.new(0.5, _popupDragOffset.X, 1, 80 + _popupDragOffset.Y)
-        end
-
-        local function ShowDancePopup(dance)
-                _popupLastDance = dance
-                DancePopupName.Text = dance.Name
-                DancePopupDesc.Text = dance.Description
-                DancePaused = false
-                _soundWasPaused = false
-                -- Always expand fully when showing a dance
-                if _popupMinimized then
-                        _popupMinimized = false
-                        DancePopupMinimize.Text = "-"
-                        DancePopupFrame.Size = UDim2.new(0, 320, 0, POPUP_FULL_H)
-                end
-                DancePopupFrame.Visible = true
-                _popupVisible = true
-                TweenService:Create(DancePopupFrame,
-                        TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
-                        { Position = GetShownPos() }
-                ):Play()
-        end
-
-        local function HideDancePopup()
-                _popupVisible = false
-                local t = TweenService:Create(DancePopupFrame,
-                        TweenInfo.new(0.22, Enum.EasingStyle.Quad, Enum.EasingDirection.In),
-                        { Position = GetHiddenPos() }
-                )
-                t:Play()
-                t.Completed:Connect(function()
-                        if not _popupVisible then
-                                DancePopupFrame.Visible = false
-                        end
-                end)
-        end
-
-        -- Drag: grab anywhere on the frame; 6px threshold prevents button-click interference
-        DancePopupDragArea.InputBegan:Connect(function(input)
-                if _popupDragRef then return end
-                if input.UserInputState ~= Enum.UserInputState.Begin then return end
-                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                        _popupDragRef = input
-                        _popupDragLive = false
-                        _popupDragStart = Vector2.new(input.Position.X, input.Position.Y)
-                        _popupDragStartOffset = _popupDragOffset
-                end
-        end)
-        UserInputService.InputChanged:Connect(function(input)
-                if not _popupDragRef then return end
-                if input.UserInputType == Enum.UserInputType.MouseMovement or (input.UserInputType == Enum.UserInputType.Touch and _popupDragRef == input) then
-                        local delta = Vector2.new(input.Position.X, input.Position.Y) - _popupDragStart
-                        if not _popupDragLive and delta.Magnitude < 6 then return end
-                        _popupDragLive = true
-                        _popupDragOffset = _popupDragStartOffset + delta
-                        if _popupVisible then DancePopupFrame.Position = GetShownPos() end
-                end
-        end)
-        UserInputService.InputEnded:Connect(function(input)
-                if _popupDragRef and _popupDragRef == input then
-                        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                                _popupDragRef = nil
-                                _popupDragLive = false
-                                SaveData.DancePopupDragOffset = {_popupDragOffset.X, _popupDragOffset.Y}
-                        end
-                end
-        end)
-
-        DancePopupClose.Activated:Connect(function()
-                CurrentDance = nil
-                DancePaused = false
-                _soundWasPaused = false
-                HideDancePopup()
-        end)
-
-
-        DancePopupPlayPause.Activated:Connect(function()
-                if DancePaused then
-                        DancePaused = false
-                        if _soundWasPaused then
-                                UISound.DanceMusic:Resume()
-                                _soundWasPaused = false
-                        end
-                        if not CurrentDance and _popupLastDance then
-                                CurrentDance = _popupLastDance
-                        end
-                else
-                        DancePaused = true
-                        if UISound.DanceMusic.IsPlaying then
-                                UISound.DanceMusic:Pause()
-                                _soundWasPaused = true
-                        end
-                end
-        end)
-
-        DancePopupPrev.Activated:Connect(function()
-                if #DanceableDances == 0 then return end
-                local idx
-                if DanceShuffle then
-                        idx = math.random(#DanceableDances)
-                else
-                        local cur = CurrentDance or _popupLastDance
-                        idx = (cur and table.find(DanceableDances, cur)) or 1
-                        idx = ((idx - 2) % #DanceableDances) + 1
-                end
-                CurrentDance = DanceableDances[idx]
-                DancePaused = false
-                _soundWasPaused = false
-                ShowDancePopup(CurrentDance)
-        end)
-
-        DancePopupNext.Activated:Connect(function()
-                if #DanceableDances == 0 then return end
-                local idx
-                if DanceShuffle then
-                        idx = math.random(#DanceableDances)
-                else
-                        local cur = CurrentDance or _popupLastDance
-                        idx = (cur and table.find(DanceableDances, cur)) or 0
-                        idx = (idx % #DanceableDances) + 1
-                end
-                CurrentDance = DanceableDances[idx]
-                DancePaused = false
-                _soundWasPaused = false
-                ShowDancePopup(CurrentDance)
-        end)
-
-        AddToRenderStep(function()
-                -- Keep play/pause button text in sync with state
-                DancePopupPlayPause.Text = DancePaused and ">" or "||"
-                -- Update dance list labels to reflect playing/paused state
-                for dance, label in _danceItemLabels do
-                        if dance == CurrentDance then
-                                if DancePaused then
-                                        label.Text = "|| " .. dance.Name .. " &gt;"
-                                else
-                                        label.Text = "&gt; " .. dance.Name .. " &gt;"
-                                end
-                        else
-                                label.Text = dance.Name .. " &gt;"
-                        end
-                end
-                -- Watch for dance changes
-                if _watchedDance ~= CurrentDance then
-                        _watchedDance = CurrentDance
-                        if CurrentDance then
-                                ShowDancePopup(CurrentDance)
-                        elseif _popupVisible then
-                                HideDancePopup()
-                        end
-                end
-        end)
-end
 
 if type(SaveData.MovesetIndex) == "number" then
         MovementStyleIndex = SaveData.MovesetIndex
-end
-DanceShuffle = not not SaveData.DanceShuffle
-
-do -- Dance Queue Panel
-        local _queueMinimized = false
-        local _queueVisible = false
-        local _queueDragRef = nil
-        local _queueDragStart = Vector2.zero
-        local _queueDragStartOffset = Vector2.zero
-        local _queueDragOffset = (function()
-                local d = SaveData.QueueDragOffset
-                if type(d) == "table" and type(d[1]) == "number" and type(d[2]) == "number" then
-                        return Vector2.new(d[1], d[2])
-                end
-                return Vector2.zero
-        end)()
-        local QUEUE_FULL_H = 240
-        local QUEUE_MIN_H  = 38
-
-        local QueueFrame = Instance.new("Frame", UIMainFrame)
-        QueueFrame.Active = true
-        QueueFrame.AnchorPoint = Vector2.new(0.5, 1)
-        QueueFrame.Position = UDim2.new(0.5, 0, 1, 80)
-        QueueFrame.Size = UDim2.new(0, 320, 0, QUEUE_FULL_H)
-        QueueFrame.BackgroundTransparency = 0
-        QueueFrame.BackgroundColor3 = Color3.new(0, 0, 0)
-        QueueFrame.BorderSizePixel = 0
-        QueueFrame.ClipsDescendants = true
-        QueueFrame.Visible = false
-        QueueFrame.ZIndex = 10
-        Stylize(QueueFrame, { Glow = true })
-
-        local QueueDragArea = Util.Instance("Frame", QueueFrame)
-        QueueDragArea.Active = true
-        QueueDragArea.Position = UDim2.new(0, 0, 0, 0)
-        QueueDragArea.Size = UDim2.new(1, 0, 1, 0)
-        QueueDragArea.BackgroundTransparency = 1
-        QueueDragArea.ZIndex = 12
-
-        local QueueTitle = Util.Instance("TextLabel", QueueFrame)
-        QueueTitle.Position = UDim2.new(0, 12, 0, 9)
-        QueueTitle.Size = UDim2.new(1, -90, 0, 20)
-        QueueTitle.BackgroundTransparency = 1
-        QueueTitle.Font = Enum.Font.GothamBlack
-        QueueTitle.TextSize = 15
-        QueueTitle.TextXAlignment = Enum.TextXAlignment.Left
-        QueueTitle.ZIndex = 12
-        QueueTitle.Text = "\xe2\x96\xb6 Queue (0)"
-        RegisterTextLabel(QueueTitle)
-
-        local QueueClose = Util.Instance("TextButton", QueueFrame)
-        QueueClose.AnchorPoint = Vector2.new(1, 0)
-        QueueClose.Position = UDim2.new(1, -8, 0, 8)
-        QueueClose.Size = UDim2.new(0, 22, 0, 22)
-        QueueClose.BackgroundTransparency = 0
-        QueueClose.BorderSizePixel = 0
-        QueueClose.Text = "\xc3\x97"
-        QueueClose.Font = Enum.Font.GothamBold
-        QueueClose.TextSize = 15
-        QueueClose.ZIndex = 12
-        Stylize(QueueClose)
-        RegisterTextLabel(QueueClose)
-
-        local QueueMinimize = Util.Instance("TextButton", QueueFrame)
-        QueueMinimize.AnchorPoint = Vector2.new(1, 0)
-        QueueMinimize.Position = UDim2.new(1, -34, 0, 8)
-        QueueMinimize.Size = UDim2.new(0, 22, 0, 22)
-        QueueMinimize.BackgroundTransparency = 0
-        QueueMinimize.BorderSizePixel = 0
-        QueueMinimize.Text = ""
-        QueueMinimize.ZIndex = 12
-        Stylize(QueueMinimize)
-        do
-                local QA = Util.Instance("Frame", QueueMinimize)
-                QA.AnchorPoint = Vector2.new(0.5, 0.5)
-                QA.Position = UDim2.new(0.5, 0, 0.5, 0)
-                QA.Size = UDim2.new(0, 12, 0, 2)
-                QA.Rotation = 0
-                QA.BackgroundTransparency = 0
-                QA.BackgroundColor3 = UITextColor.Value
-                QA.BorderSizePixel = 0
-                QA.Name = "QA"
-                UITextColor.Changed:Connect(function(val) QA.BackgroundColor3 = val end)
-                local QB = Util.Instance("Frame", QA)
-                QB.AnchorPoint = Vector2.new(0.5, 0.5)
-                QB.Position = UDim2.new(0.5, 0, 0.5, 0)
-                QB.Size = UDim2.new(0, 2, 0, 0)
-                QB.BackgroundTransparency = 0
-                QB.BackgroundColor3 = UITextColor.Value
-                QB.BorderSizePixel = 0
-                QB.Name = "QB"
-                UITextColor.Changed:Connect(function(val) QB.BackgroundColor3 = val end)
-        end
-
-        local QueueSep1 = Util.Instance("Frame", QueueFrame)
-        QueueSep1.AnchorPoint = Vector2.new(0.5, 0)
-        QueueSep1.Position = UDim2.new(0.5, 0, 0, 38)
-        QueueSep1.Size = UDim2.new(1, -20, 0, 2)
-        QueueSep1.BackgroundTransparency = 0.42
-        QueueSep1.BackgroundColor3 = Color3.new(1, 1, 1)
-        QueueSep1.BorderSizePixel = 0
-        QueueSep1.ZIndex = 11
-        Util.Instance("UICorner", QueueSep1).CornerRadius = UDim.new(1, 0)
-        Util.Instance("UIGradient", QueueSep1).Transparency = NumberSequence.new({
-                NumberSequenceKeypoint.new(0, 1),
-                NumberSequenceKeypoint.new(0.15, 0),
-                NumberSequenceKeypoint.new(0.85, 0),
-                NumberSequenceKeypoint.new(1, 1),
-        })
-        AddToRenderStep(function(t)
-                QueueSep1.BackgroundColor3 = GetUIColor(t)
-        end, QueueSep1)
-
-        local QueueScroll = Instance.new("ScrollingFrame", QueueFrame)
-        QueueScroll.Position = UDim2.new(0, 4, 0, 40)
-        QueueScroll.Size = UDim2.new(1, -8, 0, 120)
-        QueueScroll.BackgroundTransparency = 1
-        QueueScroll.BorderSizePixel = 0
-        QueueScroll.ScrollBarThickness = 4
-        QueueScroll.ScrollBarImageColor3 = Color3.new(1, 1, 1)
-        QueueScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
-        QueueScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
-        QueueScroll.ZIndex = 11
-        local QueueListLayout = Instance.new("UIListLayout", QueueScroll)
-        QueueListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-        QueueListLayout.Padding = UDim.new(0, 2)
-
-        local QueueSep2 = Util.Instance("Frame", QueueFrame)
-        QueueSep2.AnchorPoint = Vector2.new(0.5, 0)
-        QueueSep2.Position = UDim2.new(0.5, 0, 0, 163)
-        QueueSep2.Size = UDim2.new(1, -20, 0, 2)
-        QueueSep2.BackgroundTransparency = 0.42
-        QueueSep2.BackgroundColor3 = Color3.new(1, 1, 1)
-        QueueSep2.BorderSizePixel = 0
-        QueueSep2.ZIndex = 11
-        Util.Instance("UICorner", QueueSep2).CornerRadius = UDim.new(1, 0)
-        Util.Instance("UIGradient", QueueSep2).Transparency = NumberSequence.new({
-                NumberSequenceKeypoint.new(0, 1),
-                NumberSequenceKeypoint.new(0.15, 0),
-                NumberSequenceKeypoint.new(0.85, 0),
-                NumberSequenceKeypoint.new(1, 1),
-        })
-        AddToRenderStep(function(t)
-                QueueSep2.BackgroundColor3 = GetUIColor(t)
-        end, QueueSep2)
-
-        local QueueStartBtn = Util.Instance("TextButton", QueueFrame)
-        QueueStartBtn.AnchorPoint = Vector2.new(0.5, 0)
-        QueueStartBtn.Position = UDim2.new(0.5, 0, 0, 167)
-        QueueStartBtn.Size = UDim2.new(1, -16, 0, 26)
-        QueueStartBtn.BackgroundTransparency = 0
-        QueueStartBtn.BorderSizePixel = 0
-        QueueStartBtn.Text = "\xe2\x96\xb6 Start Queue"
-        QueueStartBtn.Font = Enum.Font.GothamBold
-        QueueStartBtn.TextSize = 12
-        QueueStartBtn.ZIndex = 12
-        Stylize(QueueStartBtn)
-        RegisterTextLabel(QueueStartBtn)
-
-        local QueueModeBtn = Util.Instance("TextButton", QueueFrame)
-        QueueModeBtn.AnchorPoint = Vector2.new(0, 1)
-        QueueModeBtn.Position = UDim2.new(0, 8, 1, -8)
-        QueueModeBtn.Size = UDim2.new(0.56, -12, 0, 26)
-        QueueModeBtn.BackgroundTransparency = 0
-        QueueModeBtn.BorderSizePixel = 0
-        QueueModeBtn.Font = Enum.Font.GothamBold
-        QueueModeBtn.TextSize = 11
-        QueueModeBtn.ZIndex = 12
-        Stylize(QueueModeBtn)
-        RegisterTextLabel(QueueModeBtn)
-
-        local QueueClearBtn = Util.Instance("TextButton", QueueFrame)
-        QueueClearBtn.AnchorPoint = Vector2.new(1, 1)
-        QueueClearBtn.Position = UDim2.new(1, -8, 1, -8)
-        QueueClearBtn.Size = UDim2.new(0.44, -12, 0, 26)
-        QueueClearBtn.BackgroundTransparency = 0
-        QueueClearBtn.BorderSizePixel = 0
-        QueueClearBtn.Text = "Clear All"
-        QueueClearBtn.Font = Enum.Font.GothamBold
-        QueueClearBtn.TextSize = 11
-        QueueClearBtn.ZIndex = 12
-        Stylize(QueueClearBtn)
-        RegisterTextLabel(QueueClearBtn)
-
-        local function GetQueueShownPos()
-                return UDim2.new(0.5, _queueDragOffset.X, 1, -20 - 162 - 12 + _queueDragOffset.Y)
-        end
-        local function GetQueueHiddenPos()
-                return UDim2.new(0.5, _queueDragOffset.X, 1, 80 + _queueDragOffset.Y)
-        end
-
-        local function RebuildQueueList()
-                for _, c in QueueScroll:GetChildren() do
-                        if not c:IsA("UIListLayout") then c:Destroy() end
-                end
-                QueueTitle.Text = "\xe2\x96\xb6 Queue (" .. #DanceQueue .. ")"
-                if #DanceQueue == 0 then
-                        local empty = Util.Instance("TextLabel", QueueScroll)
-                        empty.Size = UDim2.new(1, 0, 0, 40)
-                        empty.BackgroundTransparency = 1
-                        empty.Font = Enum.Font.Gotham
-                        empty.TextSize = 11
-                        empty.TextColor3 = Color3.new(0.55, 0.55, 0.55)
-                        empty.TextWrapped = true
-                        empty.ZIndex = 13
-                        empty.Text = "Queue is empty — add dances from their detail page"
-                        RegisterTextLabel(empty)
-                        return
-                end
-                for i, dance in DanceQueue do
-                        local row = Instance.new("Frame", QueueScroll)
-                        row.Size = UDim2.new(1, 0, 0, 28)
-                        row.BackgroundTransparency = (DanceQueueMode and _queuePlayIndex == i) and 0.75 or 1
-                        row.BackgroundColor3 = Color3.new(0.1, 0.45, 0.18)
-                        row.BorderSizePixel = 0
-                        row.LayoutOrder = i
-                        row.ZIndex = 12
-
-                        local numLbl = Util.Instance("TextLabel", row)
-                        numLbl.Position = UDim2.new(0, 4, 0, 0)
-                        numLbl.Size = UDim2.new(0, 22, 1, 0)
-                        numLbl.BackgroundTransparency = 1
-                        numLbl.Font = Enum.Font.GothamBold
-                        numLbl.TextSize = 11
-                        numLbl.ZIndex = 13
-                        numLbl.Text = tostring(i)
-                        RegisterTextLabel(numLbl)
-
-                        local nameLbl = Util.Instance("TextLabel", row)
-                        nameLbl.Position = UDim2.new(0, 28, 0, 0)
-                        nameLbl.Size = UDim2.new(1, -106, 1, 0)
-                        nameLbl.BackgroundTransparency = 1
-                        nameLbl.Font = Enum.Font.Gotham
-                        nameLbl.TextSize = 12
-                        nameLbl.TextXAlignment = Enum.TextXAlignment.Left
-                        nameLbl.TextTruncate = Enum.TextTruncate.AtEnd
-                        nameLbl.ZIndex = 13
-                        nameLbl.Text = dance.Name
-                        RegisterTextLabel(nameLbl)
-
-                        local function MkBtn(txt, xr)
-                                local b = Util.Instance("TextButton", row)
-                                b.AnchorPoint = Vector2.new(1, 0.5)
-                                b.Position = UDim2.new(1, xr, 0.5, 0)
-                                b.Size = UDim2.new(0, 22, 0, 22)
-                                b.BackgroundTransparency = 0
-                                b.BorderSizePixel = 0
-                                b.Text = txt
-                                b.Font = Enum.Font.GothamBold
-                                b.TextSize = 11
-                                b.ZIndex = 13
-                                Stylize(b)
-                                RegisterTextLabel(b)
-                                return b
-                        end
-
-                        local idx = i
-                        local rmBtn  = MkBtn("x",   -2)
-                        local dnBtn  = MkBtn("v",  -26)
-                        local upBtn  = MkBtn("^",  -50)
-                        upBtn.Activated:Connect(function()
-                                if idx > 1 then
-                                        DanceQueue[idx], DanceQueue[idx-1] = DanceQueue[idx-1], DanceQueue[idx]
-                                        RebuildQueueList()
-                                end
-                        end)
-                        dnBtn.Activated:Connect(function()
-                                if idx < #DanceQueue then
-                                        DanceQueue[idx], DanceQueue[idx+1] = DanceQueue[idx+1], DanceQueue[idx]
-                                        RebuildQueueList()
-                                end
-                        end)
-                        rmBtn.Activated:Connect(function()
-                                table.remove(DanceQueue, idx)
-                                if _queuePlayIndex >= idx then
-                                        _queuePlayIndex = math.max(0, _queuePlayIndex - 1)
-                                end
-                                RebuildQueueList()
-                        end)
-                end
-        end
-
-        local function ShowQueuePanel()
-                RebuildQueueList()
-                QueueFrame.Visible = true
-                _queueVisible = true
-                TweenService:Create(QueueFrame,
-                        TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
-                        { Position = GetQueueShownPos() }
-                ):Play()
-        end
-        local function HideQueuePanel()
-                _queueVisible = false
-                local t = TweenService:Create(QueueFrame,
-                        TweenInfo.new(0.22, Enum.EasingStyle.Quad, Enum.EasingDirection.In),
-                        { Position = GetQueueHiddenPos() }
-                )
-                t:Play()
-                t.Completed:Connect(function()
-                        if not _queueVisible then QueueFrame.Visible = false end
-                end)
-        end
-
-        _openQueue = function()
-                if _queueVisible then HideQueuePanel() else ShowQueuePanel() end
-        end
-        _rebuildQueue = RebuildQueueList
-
-        -- Drag — full panel is draggable; threshold prevents button clicks from moving it
-        local _queueDragLive = false
-        QueueDragArea.InputBegan:Connect(function(input)
-                if _queueDragRef then return end
-                if input.UserInputState ~= Enum.UserInputState.Begin then return end
-                if input.UserInputType ~= Enum.UserInputType.MouseButton1 and input.UserInputType ~= Enum.UserInputType.Touch then return end
-                _queueDragRef = input
-                _queueDragLive = false
-                _queueDragStart = Vector2.new(input.Position.X, input.Position.Y)
-                _queueDragStartOffset = _queueDragOffset
-        end)
-        UserInputService.InputChanged:Connect(function(input)
-                if not _queueDragRef then return end
-                if input.UserInputType == Enum.UserInputType.MouseMovement or (input.UserInputType == Enum.UserInputType.Touch and _queueDragRef == input) then
-                        local mousePos = Vector2.new(input.Position.X, input.Position.Y)
-                        local delta = mousePos - _queueDragStart
-                        if not _queueDragLive and delta.Magnitude < 6 then return end
-                        _queueDragLive = true
-                        _queueDragOffset = _queueDragStartOffset + delta
-                        if _queueVisible then QueueFrame.Position = GetQueueShownPos() end
-                end
-        end)
-        UserInputService.InputEnded:Connect(function(input)
-                if _queueDragRef and _queueDragRef == input then
-                        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                                _queueDragRef = nil
-                                _queueDragLive = false
-                                SaveData.QueueDragOffset = {_queueDragOffset.X, _queueDragOffset.Y}
-                        end
-                end
-        end)
-
-        QueueMinimize.Activated:Connect(function()
-                _queueMinimized = not _queueMinimized
-                local targetH = _queueMinimized and QUEUE_MIN_H or QUEUE_FULL_H
-                local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Cubic, Enum.EasingDirection.Out)
-                TweenService:Create(QueueFrame, tweenInfo,
-                        { Size = UDim2.new(0, 320, 0, targetH) }
-                ):Play()
-                TweenService:Create(QueueMinimize.QA, tweenInfo,
-                        { Rotation = _queueMinimized and 180 or 0 }
-                ):Play()
-                TweenService:Create(QueueMinimize.QA.QB, tweenInfo,
-                        { Size = _queueMinimized and UDim2.new(0, 2, 0, 12) or UDim2.new(0, 2, 0, 0) }
-                ):Play()
-        end)
-
-        QueueClose.Activated:Connect(function() HideQueuePanel() end)
-
-        QueueStartBtn.Activated:Connect(function()
-                if #DanceQueue == 0 then return end
-                DanceQueueMode = true
-                _queuePlayIndex = 1
-                CurrentDance = DanceQueue[1]
-                DancePaused = false
-                SaveData.DanceQueueMode = DanceQueueMode
-                RebuildQueueList()
-        end)
-
-        QueueModeBtn.Activated:Connect(function()
-                DanceQueueMode = not DanceQueueMode
-                _queuePlayIndex = 0
-                SaveData.DanceQueueMode = DanceQueueMode
-                RebuildQueueList()
-        end)
-
-        QueueClearBtn.Activated:Connect(function()
-                table.clear(DanceQueue)
-                _queuePlayIndex = 0
-                RebuildQueueList()
-        end)
-
-        AddToRenderStep(function()
-                QueueModeBtn.Text = DanceQueueMode and "Queue Mode: ON" or "Queue Mode: OFF"
-        end)
-
-        DanceQueueMode = not not SaveData.DanceQueueMode
-        RebuildQueueList()
 end
 
 local MovesetsPage = UI.CreateItemListPage()
@@ -9369,7 +8359,6 @@ local function AddDance(m)
                 local msdesc = UI.CreateText(item, string.split(m.Description, "\n")[1], 12, Enum.TextXAlignment.Left)
                 msname.Name = "LabelName"
                 msdesc.Name = "LabelDesc"
-                _danceItemLabels[m] = msname
                 item.Parent.Name = m.Name .. " " .. m.Description
                 Util.LinkDestroyI2C(item, item.Activated:Connect(function()
                         local page = UI.CreatePage()
@@ -9393,89 +8382,17 @@ local function AddDance(m)
                         UI.CreateText(page, m.Name, 20, Enum.TextXAlignment.Left)
                         UI.CreateText(page, m.Description, 15, Enum.TextXAlignment.Left)
                         local equip, equiptext = UI.CreateButton(page, "Play Dance", 20)
-                        local function UpdateEquipText()
-                                if CurrentDance == m and not DancePaused then
-                                        equiptext.Text = "Stop Dance"
-                                elseif CurrentDance == m and DancePaused then
-                                        equiptext.Text = "Dance"
-                                else
-                                        equiptext.Text = "Play Dance"
-                                end
+                        if CurrentDance == m then
+                                equiptext.Text = "Stop Dance"
                         end
-                        UpdateEquipText()
-                        local equipRSConn = RunService.RenderStepped:Connect(UpdateEquipText)
-                        equip.Destroying:Connect(function() equipRSConn:Disconnect() end)
                         equip.Activated:Connect(function()
-                                if CurrentDance == m and not DancePaused then
+                                if CurrentDance == m then
+                                        equiptext.Text = "Play Dance"
                                         CurrentDance = nil
-                                elseif CurrentDance == m and DancePaused then
-                                        DancePaused = false
-                                        if _soundWasPaused then
-                                                UISound.DanceMusic:Resume()
-                                                _soundWasPaused = false
-                                        end
                                 else
-                                        DancePaused = false
-                                        _soundWasPaused = false
+                                        equiptext.Text = "Stop Dance"
                                         CurrentDance = m
                                 end
-                                UpdateEquipText()
-                        end)
-                        local pausebtn, pausetext = UI.CreateButton(page, "Pause", 20)
-                        local function UpdatePauseText()
-                                if CurrentDance ~= m then
-                                        pausebtn.Parent.Visible = false
-                                elseif DancePaused then
-                                        pausebtn.Parent.Visible = true
-                                        pausetext.Text = "Resume"
-                                else
-                                        pausebtn.Parent.Visible = true
-                                        pausetext.Text = "Pause"
-                                end
-                        end
-                        UpdatePauseText()
-                        local pauseRSConn = RunService.RenderStepped:Connect(UpdatePauseText)
-                        pausebtn.Destroying:Connect(function() pauseRSConn:Disconnect() end)
-                        pausebtn.Activated:Connect(function()
-                                if CurrentDance ~= m then return end
-                                if DancePaused then
-                                        DancePaused = false
-                                        if _soundWasPaused then
-                                                UISound.DanceMusic:Resume()
-                                                _soundWasPaused = false
-                                        end
-                                else
-                                        DancePaused = true
-                                        if UISound.DanceMusic.IsPlaying then
-                                                UISound.DanceMusic:Pause()
-                                                _soundWasPaused = true
-                                        end
-                                end
-                                UpdatePauseText()
-                                UpdateEquipText()
-                        end)
-                        local shufflebtn, shuffletext = UI.CreateButton(page, "Shuffle: OFF", 20)
-                        local function UpdateShuffleText()
-                                shuffletext.Text = DanceShuffle and "Shuffle: ON" or "Shuffle: OFF"
-                        end
-                        UpdateShuffleText()
-                        local shuffleRSConn = RunService.RenderStepped:Connect(UpdateShuffleText)
-                        shufflebtn.Destroying:Connect(function() shuffleRSConn:Disconnect() end)
-                        shufflebtn.Activated:Connect(function()
-                                DanceShuffle = not DanceShuffle
-                                SaveData.DanceShuffle = DanceShuffle
-                                UpdateShuffleText()
-                        end)
-                        local addqueuebtn, addqueuetext = UI.CreateButton(page, "+ Add to Queue", 20)
-                        addqueuebtn.Activated:Connect(function()
-                                table.insert(DanceQueue, m)
-                                addqueuetext.Text = "Added! (" .. #DanceQueue .. " in queue)"
-                                task.delay(1.5, function()
-                                        if addqueuetext and addqueuetext.Parent then
-                                                addqueuetext.Text = "+ Add to Queue"
-                                        end
-                                end)
-                                if _rebuildQueue then _rebuildQueue() end
                         end)
                         UI.CreateSeparator(page)
                         UI.CreateText(page, "* Configuration *", 15, Enum.TextXAlignment.Center)
@@ -9547,7 +8464,6 @@ task.spawn(function()
 end)
 task.spawn(function()
         local _oldcharacterreference = nil
-        local _danceInitialized = false
         local errorsandwarnings = {}
         local currenterrorid = 1
         while true do local dt = RunService.Heartbeat:Wait() xpcall(function(dt)
@@ -9588,29 +8504,15 @@ task.spawn(function()
                                                         pcall(_CurrentDance.Destroy, ReanimCharacter)
                                                 end
                                                 _CurrentDance = CurrentDance
-                                                _danceInitialized = false
                                                 ReanimCharacter:SetAttribute("IsDancing", nil)
                                                 ReanimCharacter:SetAttribute("DanceInternalName", nil)
                                                 SetOverrideDanceMusic(nil)
                                         end
                                         if _CurrentDance then
                                                 if ReanimCharacter:GetAttribute("IsDancing") then
-                                                        if not DancePaused then
-                                                                _CurrentDance.Update(dt, ReanimCharacter)
-                                                        end
+                                                        _CurrentDance.Update(dt, ReanimCharacter)
                                                 else
-                                                        if _danceInitialized then -- loop removed: always advance/stop at end
-                                                                if DanceShuffle and #DanceableDances > 0 then
-                                                                        CurrentDance = DanceableDances[math.random(#DanceableDances)]
-                                                                elseif DanceQueueMode and #DanceQueue > 0 then
-                                                                        _queuePlayIndex = (_queuePlayIndex % #DanceQueue) + 1
-                                                                        CurrentDance = DanceQueue[_queuePlayIndex]
-                                                                        if _rebuildQueue then _rebuildQueue() end
-                                                                else
-                                                                        CurrentDance = nil
-                                                                end
-                                                        elseif AssetEnsure(_CurrentDance.Assets) then
-                                                                _danceInitialized = true
+                                                        if AssetEnsure(_CurrentDance.Assets) then
                                                                 ReanimCharacter:SetAttribute("IsDancing", true)
                                                                 ReanimCharacter:SetAttribute("DanceInternalName", _CurrentDance.InternalName)
                                                                 _CurrentDance.Init(ReanimCharacter)
@@ -9664,9 +8566,6 @@ task.spawn(function()
                 end
         end, dt) end
 end)
-
--- ===================================================================
-
 UI.CreateSeparator(MainPage)
 task.wait()
 local CreditsPage = UI.CreatePage()
@@ -10718,185 +9617,6 @@ local d = function()
                         end
                 end
         end
-        do -- P2P Sync System
-                local P2P_TAG = "_UhhhhhP2P"
-
-                local P2P_PREFIX = "UHH1|"
-                local function P2PEncode(hash)
-                        return P2P_PREFIX .. (hash or "")
-                end
-                -- Returns hash, isValid. isValid=false means wrong script/version.
-                local function P2PDecode(val)
-                        if type(val) ~= "string" then return "", false end
-                        if val:sub(1, #P2P_PREFIX) ~= P2P_PREFIX then return "", false end
-                        return val:sub(#P2P_PREFIX + 1), true
-                end
-                -- Locate the marker; checks HumanoidRootPart first (server-replicated), then character
-                local function GetP2PMarker(character)
-                        -- Check character model first (new placement); then HRP for backwards compat
-                        local sv = character:FindFirstChild(P2P_TAG)
-                        if sv then return sv end
-                        local hrp = character:FindFirstChild("HumanoidRootPart")
-                        if hrp then
-                                local sv2 = hrp:FindFirstChild(P2P_TAG)
-                                if sv2 then return sv2 end
-                        end
-                        return nil
-                end
-
-                -- Place detection marker directly on the character Model.
-                -- Placing it on HRP caused the marker to be invisible to other clients
-                -- when StreamingEnabled moved HRP out of range (character in the void).
-                -- The character Model itself is always replicated regardless of distance.
-                local function PlaceMarker(character)
-                        pcall(function()
-                                -- Clean up old marker from either location
-                                local oldOnChar = character:FindFirstChild(P2P_TAG)
-                                if oldOnChar then oldOnChar:Destroy() end
-                                local hrp = character:FindFirstChild("HumanoidRootPart")
-                                if hrp then
-                                        local oldOnHrp = hrp:FindFirstChild(P2P_TAG)
-                                        if oldOnHrp then oldOnHrp:Destroy() end
-                                end
-                                local sv = Instance.new("StringValue")
-                                sv.Name = P2P_TAG
-                                sv.Value = P2PEncode("")
-                                sv.Parent = character
-                        end)
-                end
-
-                -- Place marker on local character, re-place on respawn
-                local lchar = Player.Character
-                if lchar then PlaceMarker(lchar) end
-                Player.CharacterAdded:Connect(function(char)
-                        task.wait()
-                        PlaceMarker(char)
-                end)
-
-                -- Keep marker value up-to-date every 0.5s (checks HRP first, re-places if missing)
-                task.spawn(function()
-                        while true do
-                                task.wait(0.5)
-                                pcall(function()
-                                        local char = Player.Character
-                                        if not char then return end
-                                        local sv = GetP2PMarker(char)
-                                        if not sv then PlaceMarker(char) sv = GetP2PMarker(char) end
-                                        if sv then sv.Value = P2PEncode(CurrentDance and CurrentDance.Hash or "") end
-                                end)
-                        end
-                end)
-
-                -- Watch other players: detect their Uhhhhhh marker
-                local function WatchOtherPlayer(p)
-                        local function onChar(char)
-                                task.wait(1)
-                                if not char or not char.Parent then return end
-                                -- Also watch the character root and HumanoidRootPart for late marker arrival
-                                local function onChildAdded(child)
-                                        if child.Name == P2P_TAG then
-                                                -- marker detected (used by outline/panel features)
-                                        end
-                                end
-                                char.ChildAdded:Connect(onChildAdded)
-                                local hrp = char:FindFirstChild("HumanoidRootPart")
-                                if hrp then hrp.ChildAdded:Connect(onChildAdded) end
-                                char.ChildAdded:Connect(function(child)
-                                        if child.Name == "HumanoidRootPart" then
-                                                child.ChildAdded:Connect(onChildAdded)
-                                        end
-                                end)
-                        end
-                        if p.Character then task.spawn(onChar, p.Character) end
-                        p.CharacterAdded:Connect(onChar)
-                end
-                for _, p in Players:GetPlayers() do
-                        if p ~= Player then WatchOtherPlayer(p) end
-                end
-                Players.PlayerAdded:Connect(function(p) WatchOtherPlayer(p) end)
-                Players.PlayerRemoving:Connect(function(p) end)
-
-                -- ============================================================
-                -- Click-to-Outline (client-local only)
-                -- Left-click on any Uhhhhhh player in 3D to toggle a cyan outline.
-                -- Highlight is parented to SCREENGUI so it never replicates.
-                -- ============================================================
-                local _charOutlines = {}
-                local OUTLINE_CLR = Color3.new(0, 0.82, 1)
-
-                local function SetCharOutline(char, on)
-                        if not char then return end
-                        if on then
-                                if _charOutlines[char] then return end
-                                local h = Instance.new("Highlight")
-                                h.Adornee = char
-                                h.FillColor = OUTLINE_CLR
-                                h.FillTransparency = 0.72
-                                h.OutlineColor = OUTLINE_CLR
-                                h.OutlineTransparency = 0
-                                h.Parent = SCREENGUI
-                                _charOutlines[char] = h
-                                char.AncestryChanged:Connect(function()
-                                        if not char.Parent then
-                                                if _charOutlines[char] then
-                                                        _charOutlines[char]:Destroy()
-                                                        _charOutlines[char] = nil
-                                                end
-                                        end
-                                end)
-                        else
-                                if _charOutlines[char] then
-                                        _charOutlines[char]:Destroy()
-                                        _charOutlines[char] = nil
-                                end
-                        end
-                end
-
-                local function IsCharOutlined(char)
-                        return _charOutlines[char] ~= nil
-                end
-
-                -- 3D left-click detection
-                UserInputService.InputBegan:Connect(function(input, gpe)
-                        if gpe then return end
-                        if input.UserInputType ~= Enum.UserInputType.MouseButton1 then return end
-                        local cam = workspace.CurrentCamera
-                        if not cam then return end
-                        local ray = cam:ViewportPointToRay(input.Position.X, input.Position.Y)
-                        local rcp = RaycastParams.new()
-                        rcp.FilterDescendantsInstances = { Player.Character or workspace }
-                        rcp.FilterType = Enum.RaycastFilterType.Exclude
-                        local result = workspace:Raycast(ray.Origin, ray.Direction * 512, rcp)
-                        if not result then return end
-                        local hit = result.Instance
-                        if not hit then return end
-                        local hitChar = nil
-                        local inst = hit
-                        while inst and inst ~= workspace do
-                                if inst:IsA("Model") and inst:FindFirstChildOfClass("Humanoid") then
-                                        hitChar = inst
-                                        break
-                                end
-                                inst = inst.Parent
-                        end
-                        if not hitChar then return end
-                        local sv = GetP2PMarker(hitChar)
-                        if not sv then return end
-                        local _, valid = P2PDecode(sv.Value)
-                        if not valid then return end
-                        SetCharOutline(hitChar, not IsCharOutlined(hitChar))
-                        local pname = ""
-                        for _, p in Players:GetPlayers() do
-                                if p.Character == hitChar then pname = p.Name break end
-                        end
-                        Util.UINotify(
-                                IsCharOutlined(hitChar)
-                                and ("Outline ON: " .. pname)
-                                or  ("Outline OFF: " .. pname)
-                        )
-                end)
-        end -- P2P Sync System
-
         if WebSocket and WebSocket.connect then while task.wait(1) do
                 local look = WebSocket.connect("wss://ws-us2.pusher.com:443/app/00da9a105aadacead35f?client=lua&protocol=5&version=1.0.0")
                 if look then
