@@ -4751,7 +4751,7 @@ function LimbReanimator.Start()
         Reanimate.CreateCharacter(InitCFrame)
 
         local lastrep = 0
-        local function UpdateTransforms(ReanimCharacter, RootPart, rootcf, rootvel, flingtarget, flingcf)
+        local function UpdateTransforms(ReanimCharacter, RootPart, rootcf, rootvel, flingtarget, flingcf, dt)
                 if not RootPart:IsGrounded() then
                         if flingtarget then
                                 if LimbReanimator.UseNaNFling then
@@ -4805,7 +4805,11 @@ function LimbReanimator.Start()
                                                 end
                                         end
                                         if dorep or not map.CFrame then
-                                                map.CFrame = cf
+                                                if map.CFrame then
+                                                        map.CFrame = map.CFrame:Lerp(cf, 1 - math.exp(-200 * (dt or 1/60)))
+                                                else
+                                                        map.CFrame = cf
+                                                end
                                         end
                                         Util.SetMotor6DOffset(v, map.CFrame)
                                 end
@@ -4915,7 +4919,7 @@ function LimbReanimator.Start()
                                                 flingtarget = nil
                                         end
                                 end
-                                UpdateTransforms(ReanimCharacter, RootPart, rootcf, rootvel, flingtarget, flingcf)
+                                UpdateTransforms(ReanimCharacter, RootPart, rootcf, rootvel, flingtarget, flingcf, dt)
                                 if LimbReanimator.UseNaNFling then
                                         if os.clock() - lastspawn > 0.1 then
                                                 pcall(sethiddenproperty, Humanoid, "MoveDirectionInternal", Vector3.new(0/0, 0/0, 0/0))
@@ -9328,12 +9332,12 @@ local function AddDance(m)
                         local pausebtn, pausetext = UI.CreateButton(page, "Pause", 20)
                         local function UpdatePauseText()
                                 if CurrentDance ~= m then
-                                        pausebtn.Visible = false
+                                        pausebtn.Parent.Visible = false
                                 elseif DancePaused then
-                                        pausebtn.Visible = true
+                                        pausebtn.Parent.Visible = true
                                         pausetext.Text = "Resume"
                                 else
-                                        pausebtn.Visible = true
+                                        pausebtn.Parent.Visible = true
                                         pausetext.Text = "Pause"
                                 end
                         end
