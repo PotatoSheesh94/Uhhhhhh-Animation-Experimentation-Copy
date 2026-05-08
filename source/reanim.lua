@@ -4778,7 +4778,8 @@ function LimbReanimator.Start()
                                         end
                                         if dorep or not map.CFrame then
                                                 if map.CFrame and dt and dt > 0 then
-                                                        map.CFrame = map.CFrame:Lerp(cf, 1 - math.exp(-150 * dt))
+                                                        local _lerpSpeed = (LimbReanimator.Mode == 3) and 20 or 150
+                                                        map.CFrame = map.CFrame:Lerp(cf, 1 - math.exp(-_lerpSpeed * dt))
                                                 else
                                                         map.CFrame = cf
                                                 end
@@ -4845,7 +4846,7 @@ function LimbReanimator.Start()
                                                 if dist > 40 then
                                                         _mode3smoothcf = _m3target
                                                 else
-                                                                        _mode3smoothcf = _mode3smoothcf:Lerp(_m3target, 1 - math.exp(-80 * _m3elapsed))
+                                                                        _mode3smoothcf = _mode3smoothcf:Lerp(_m3target, 1 - math.exp(-20 * _m3elapsed))
                                                 end
                                         end
                                         rootcf = _mode3smoothcf
@@ -7936,6 +7937,7 @@ do
         DanceNowPlayingPanel.Visible = false
         DanceNowPlayingPanel.ZIndex = 50
         DanceNowPlayingPanel.ClipsDescendants = true
+        DanceNowPlayingPanel.Active = true
         Stylize(DanceNowPlayingPanel, {Glow = true})
         local _dpScale = Instance.new("UIScale", DanceNowPlayingPanel)
         AddToRenderStep(function()
@@ -8228,19 +8230,16 @@ do
                                 _panelNameLabel.Text = cd.Name
                                 _panelDescLabel.Text = cd.Description
                                 _panelPlayBtn.Text = "|| Pause"
-                                if _panelMinimized then
-                                        _panelMinimized = false
-                                        _panelContent.Visible = true
-                                        _panelMinBtn.Text = "_"
-                                end
                                 DanceNowPlayingPanel.Visible = true
                                 if not _panelVisible then
                                         _panelVisible = true
                                         DanceNowPlayingPanel.Size = UDim2.fromOffset(280, 38)
                                 end
-                                TweenService:Create(DanceNowPlayingPanel, TweenInfo.new(0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
-                                        Size = UDim2.fromOffset(280, 158)
-                                }):Play()
+                                if not _panelMinimized then
+                                        TweenService:Create(DanceNowPlayingPanel, TweenInfo.new(0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
+                                                Size = UDim2.fromOffset(280, 158)
+                                        }):Play()
+                                end
                         else
                                 if _panelVisible and not _panelKeepOpen then
                                         _panelVisible = false
@@ -8806,18 +8805,17 @@ local function AddDance(m)
                         UI.CreateText(page, m.Name, 20, Enum.TextXAlignment.Left)
                         UI.CreateText(page, m.Description, 15, Enum.TextXAlignment.Left)
                         local equip, equiptext = UI.CreateButton(page, "Play Dance", 20)
-                        if CurrentDance == m then
-                                equiptext.Text = "Stop Dance"
-                        end
+                        equiptext.Text = (CurrentDance == m) and "Stop Dance" or "Play Dance"
                         equip.Activated:Connect(function()
                                 if CurrentDance == m then
-                                        equiptext.Text = "Play Dance"
                                         CurrentDance = nil
                                 else
-                                        equiptext.Text = "Stop Dance"
                                         CurrentDance = m
                                 end
                         end)
+                        AddToRenderStep(function()
+                                equiptext.Text = (CurrentDance == m) and "Stop Dance" or "Play Dance"
+                        end, page)
                         UI.CreateSeparator(page)
                         UI.CreateText(page, "* Configuration *", 15, Enum.TextXAlignment.Center)
                         m.Config(page)
