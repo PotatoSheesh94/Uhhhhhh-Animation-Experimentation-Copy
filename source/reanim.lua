@@ -8094,7 +8094,6 @@ do
         local function DPNotify(text)
                 _dpNotifLabel.Text = text
                 _dpNotifTime = os.clock()
-                _dpNotifAnim = 0
                 _dpNotifFrame.Visible = true
         end
         AddToRenderStep(function(_, dt)
