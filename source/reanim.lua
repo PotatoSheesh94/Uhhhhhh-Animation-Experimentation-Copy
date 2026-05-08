@@ -903,15 +903,13 @@ local function Stylize(obj, options)
         Out.Enabled = true
         obj.BackgroundColor3 = Color3.new(0, 0, 0)
         local Glos = {}
+        local GloF = nil
         if options.Glow == true then
-                local GloF = Util.Instance("Frame", UIMainFrame)
+                GloF = Util.Instance("Frame", UIMainFrame)
                 Util.LinkDestroyI2I(obj, GloF)
                 GloF.Interactable = false
                 GloF.BackgroundTransparency = 1
                 local function update()
-                        GloF.AnchorPoint = obj.AnchorPoint
-                        GloF.Position = obj.Position - Util.Vector2ToUDim2Offset((obj.AnchorPoint * 2 - Vector2.one) * 5)
-                        GloF.Size = obj.Size - UDim2.fromOffset(10, 10)
                         GloF.Visible = obj.Visible
                         GloF.ZIndex = obj.ZIndex - 2
                 end
@@ -936,6 +934,7 @@ local function Stylize(obj, options)
                 obj = obj,
                 Out = Out,
                 Glos = Glos,
+                GloF = GloF,
                 options = options,
         })
 end
@@ -1001,8 +1000,9 @@ local function UpdateGrads(t)
         if v > v2 then
                 glc = bgc
         end
+        local frameOrig = UIMainFrame.AbsolutePosition
         for _,grad in StylizedObjs do
-                local obj, Out, Glos, options = grad.obj, grad.Out, grad.Glos, grad.options
+                local obj, Out, Glos, options, GloF = grad.obj, grad.Out, grad.Glos, grad.options, grad.GloF
                 Out.Color = c
                 if options.Depthed then
                         obj.BackgroundColor3 = bgcd
@@ -1011,6 +1011,15 @@ local function UpdateGrads(t)
                 end
                 for _,v in Glos do
                         v.ImageColor3 = glc
+                end
+                if GloF then
+                        local absPos = obj.AbsolutePosition
+                        local absSize = obj.AbsoluteSize
+                        if absSize.X > 0 and absSize.Y > 0 then
+                                GloF.AnchorPoint = Vector2.new(0, 0)
+                                GloF.Position = UDim2.fromOffset(absPos.X - frameOrig.X, absPos.Y - frameOrig.Y)
+                                GloF.Size = UDim2.fromOffset(absSize.X, absSize.Y)
+                        end
                 end
         end
 end
@@ -4686,6 +4695,7 @@ function LimbReanimator.Start()
                 table.clear(UnknownMotor6Ds)
                 for _,map in LimbMapping do
                         map.Reference = nil
+                        map.CFrame = nil
                 end
                 character.DescendantAdded:Connect(CharOnDesc)
                 for _,v in character:GetDescendants() do
@@ -4749,7 +4759,11 @@ function LimbReanimator.Start()
                                         local cf = CFrame.identity
                                         local p0, p1 = ReanimCharacter:FindFirstChild(map.RPart0), ReanimCharacter:FindFirstChild(map.RPart1)
                                         if map.RPart0 == "ROOT" then
-                                                p0 = RootPart
+                                                if LimbReanimator.Mode == 3 then
+                                                        p0 = ReanimCharacter:FindFirstChild("HumanoidRootPart") or RootPart
+                                                else
+                                                        p0 = RootPart
+                                                end
                                         end
                                         if p0 and p1 then
                                                 if map.Type == 1 then
