@@ -4748,6 +4748,7 @@ function LimbReanimator.Start()
                 for _,map in LimbMapping do
                         map.Reference = nil
                         map.CFrame = nil
+                        map.PrevTargetCF = nil
                 end
                 character.DescendantAdded:Connect(CharOnDesc)
                 for _,v in character:GetDescendants() do
@@ -4830,8 +4831,20 @@ function LimbReanimator.Start()
                                         end
                                         if dorep or not map.CFrame then
                                                 if map.CFrame and dt and dt > 0 then
-                                                        map.CFrame = map.CFrame:Lerp(cf, 1 - math.exp(-150 * dt))
+                                                        local _lerpSpeed = 150
+                                                        if LimbReanimator.Mode == 3 then
+                                                                local prevTarget = map.PrevTargetCF
+                                                                if prevTarget then
+                                                                        local dot = math.clamp(prevTarget.LookVector:Dot(cf.LookVector), -1, 1)
+                                                                        local jumpDiff = math.acos(dot)
+                                                                        local t = math.clamp((jumpDiff - 0.15) / 0.35, 0, 1)
+                                                                        _lerpSpeed = 150 * (1 - t) + 50 * t
+                                                                end
+                                                        end
+                                                        map.PrevTargetCF = cf
+                                                        map.CFrame = map.CFrame:Lerp(cf, 1 - math.exp(-_lerpSpeed * dt))
                                                 else
+                                                        map.PrevTargetCF = cf
                                                         map.CFrame = cf
                                                 end
                                         end
