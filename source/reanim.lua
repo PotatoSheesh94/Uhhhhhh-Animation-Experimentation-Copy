@@ -1406,7 +1406,7 @@ do
         local UINotifyFrame = Instance.new("Frame", UIMainFrame)
         UINotifyFrame.AnchorPoint = Vector2.new(0.5, 0)
         UINotifyFrame.Position = UDim2.new(0.5, 0, 1, 10)
-        UINotifyFrame.Size = UDim2.new(0, 300, 0, 30)
+        UINotifyFrame.Size = UDim2.new(0, 340, 0, 44)
         UINotifyFrame.BackgroundTransparency = 0
         UINotifyFrame.BackgroundColor3 = Color3.new(1, 1, 1)
         UINotifyFrame.BorderSizePixel = 0
@@ -1415,6 +1415,18 @@ do
         Stylize(UINotifyFrame, {
                 Glow = true,
         })
+        local NotifyIcon = Instance.new("TextLabel", UINotifyFrame)
+        NotifyIcon.AnchorPoint = Vector2.new(0, 0.5)
+        NotifyIcon.Position = UDim2.new(0, 10, 0.5, 0)
+        NotifyIcon.Size = UDim2.new(0, 22, 0, 30)
+        NotifyIcon.BackgroundTransparency = 1
+        NotifyIcon.Font = Enum.Font.Code
+        NotifyIcon.TextColor3 = Color3.new(1, 1, 1)
+        NotifyIcon.TextSize = 16
+        NotifyIcon.TextXAlignment = Enum.TextXAlignment.Center
+        NotifyIcon.TextYAlignment = Enum.TextYAlignment.Center
+        NotifyIcon.Text = ">>"
+        RegisterTextLabel(NotifyIcon)
         local Progress = Instance.new("Frame", UINotifyFrame)
         Progress.AnchorPoint = Vector2.new(0.5, 0)
         Progress.Position = UDim2.new(0.5, 0, 0, 0)
@@ -1425,27 +1437,27 @@ do
         local ProgressTop = Instance.new("Frame", Progress)
         ProgressTop.AnchorPoint = Vector2.new(0.5, 0)
         ProgressTop.Position = UDim2.new(0.5, 0, 0, 0)
-        ProgressTop.Size = UDim2.new(0, 0, 0, 4)
+        ProgressTop.Size = UDim2.new(0, 0, 0, 5)
         ProgressTop.BackgroundTransparency = 0
         ProgressTop.BackgroundColor3 = Color3.new(1, 1, 1)
         ProgressTop.BorderSizePixel = 0
         local ProgressBot = Instance.new("Frame", Progress)
         ProgressBot.AnchorPoint = Vector2.new(0.5, 1)
         ProgressBot.Position = UDim2.new(0.5, 0, 1, 0)
-        ProgressBot.Size = UDim2.new(0, 0, 0, 4)
+        ProgressBot.Size = UDim2.new(0, 0, 0, 5)
         ProgressBot.BackgroundTransparency = 0
         ProgressBot.BackgroundColor3 = Color3.new(1, 1, 1)
         ProgressBot.BorderSizePixel = 0
         local NotifyText = Util.Instance("TextLabel", UINotifyFrame)
-        NotifyText.AnchorPoint = Vector2.new(0.5, 0.5)
-        NotifyText.Position = UDim2.new(0.5, 0, 0.5, 0)
-        NotifyText.Size = UDim2.new(1, 0, 0, 20)
+        NotifyText.AnchorPoint = Vector2.new(0, 0.5)
+        NotifyText.Position = UDim2.new(0, 38, 0.5, 0)
+        NotifyText.Size = UDim2.new(1, -44, 0, 26)
         NotifyText.BackgroundTransparency = 1
         NotifyText.ClipsDescendants = true
         NotifyText.Font = Enum.Font.Code
         NotifyText.TextColor3 = Color3.new(1, 1, 1)
-        NotifyText.TextSize = 18
-        NotifyText.TextXAlignment = Enum.TextXAlignment.Center
+        NotifyText.TextSize = 16
+        NotifyText.TextXAlignment = Enum.TextXAlignment.Left
         NotifyText.Text = ""
         RegisterTextLabel(NotifyText)
         AddToRenderStep(function(t, dt)
@@ -1468,14 +1480,14 @@ do
                                 uinotif.ProgressSm = uinotif.Progress + (uinotif.ProgressSm - uinotif.Progress) * math.exp(-16 * dt)
                                 ProgressTop.BackgroundTransparency = 0
                                 ProgressBot.BackgroundTransparency = 0
-                                ProgressTop.Size = UDim2.new(uinotif.ProgressSm, 0, 0, 4)
-                                ProgressBot.Size = UDim2.new(uinotif.ProgressSm, 0, 0, 4)
+                                ProgressTop.Size = UDim2.new(uinotif.ProgressSm, 0, 0, 5)
+                                ProgressBot.Size = UDim2.new(uinotif.ProgressSm, 0, 0, 5)
                         else
                                 uinotif.ProgressSm = 1
                                 ProgressTop.BackgroundTransparency = s
                                 ProgressBot.BackgroundTransparency = s
-                                ProgressTop.Size = UDim2.new(1, 0, 0, 4)
-                                ProgressBot.Size = UDim2.new(1, 0, 0, 4)
+                                ProgressTop.Size = UDim2.new(1, 0, 0, 5)
+                                ProgressBot.Size = UDim2.new(1, 0, 0, 5)
                         end
                         ProgressTop.BackgroundColor3 = c
                         ProgressBot.BackgroundColor3 = c
@@ -2613,7 +2625,7 @@ CracktroFrame.InputEnded:Connect(function(input)
                 CracktroFrame.Visible = true
                 MainPage.Interactable = false
                 local tween = TweenService:Create(CracktroFrame, TweenInfo.new(0.5, Enum.EasingStyle.Cubic, Enum.EasingDirection.Out), {
-                        Position = UDim2.new(0.5, -362, 0.5, 0),
+                        Position = UDim2.new(0.5, -422, 0.5, 0),
                 })
                 tween:Play()
                 tween.Completed:Connect(function()
@@ -4667,7 +4679,7 @@ function LimbReanimator.Start()
         Reanimate.CreateCharacter(InitCFrame)
 
         local lastrep = 0
-        local function UpdateTransforms(ReanimCharacter, RootPart, rootcf, rootvel, flingtarget, flingcf)
+        local function UpdateTransforms(ReanimCharacter, RootPart, rootcf, rootvel, flingtarget, flingcf, dt)
                 if not RootPart:IsGrounded() then
                         if flingtarget then
                                 if LimbReanimator.UseNaNFling then
@@ -4721,7 +4733,11 @@ function LimbReanimator.Start()
                                                 end
                                         end
                                         if dorep or not map.CFrame then
-                                                map.CFrame = cf
+                                                if map.CFrame and dt and dt > 0 then
+                                                        map.CFrame = map.CFrame:Lerp(cf, 1 - math.exp(-14 * dt))
+                                                else
+                                                        map.CFrame = cf
+                                                end
                                         end
                                         Util.SetMotor6DOffset(v, map.CFrame)
                                 end
@@ -4810,7 +4826,7 @@ function LimbReanimator.Start()
                                 end
                         end
                         if Character and Humanoid and RootPart then
-                                RunService.Heartbeat:Wait()
+                                local _hbdt = RunService.Heartbeat:Wait()
                                 local t = os.clock()
                                 local flingtarget = LimbReanimator.FlingTargets[1]
                                 if flingtarget then
@@ -4831,7 +4847,7 @@ function LimbReanimator.Start()
                                                 flingtarget = nil
                                         end
                                 end
-                                UpdateTransforms(ReanimCharacter, RootPart, rootcf, rootvel, flingtarget, flingcf)
+                                UpdateTransforms(ReanimCharacter, RootPart, rootcf, rootvel, flingtarget, flingcf, _hbdt)
                                 if LimbReanimator.UseNaNFling then
                                         if os.clock() - lastspawn > 0.1 then
                                                 pcall(sethiddenproperty, Humanoid, "MoveDirectionInternal", Vector3.new(0/0, 0/0, 0/0))
@@ -4846,7 +4862,7 @@ function LimbReanimator.Start()
                                 if Reanimate:ShouldRotationType() then
                                         Reanimate:CameraLockCharacter()
                                 end
-                                UpdateTransforms(ReanimCharacter, RootPart, rootcf, rootvel, flingtarget, flingcf)
+                                UpdateTransforms(ReanimCharacter, RootPart, rootcf, rootvel, flingtarget, flingcf, _hbdt)
                         end
                 end
         end
@@ -7845,9 +7861,11 @@ end
 
 local MovesetsPage = UI.CreateItemListPage()
 MovesetsPage.ZIndex = 1
-MovesetsPage.Position = UDim2.new(0.5, 360, 0.5, 0)
+MovesetsPage.Position = UDim2.new(0.5, 420, 0.5, 0)
 MovesetsPage.Interactable = false
 MovesetsPage.Visible = false
+UI.CreateSeparator(MainPage)
+UI.CreateText(MainPage, "Dances &amp; Movesets", 15, Enum.TextXAlignment.Center)
 UI.CreateButton(MainPage, "Movesets &gt;", 20).Activated:Connect(function()
         MovesetsPage.Interactable = false
         MovesetsPage.Visible = true
@@ -7865,7 +7883,7 @@ MovesetsPage.Back.Activated:Connect(function()
         MovesetsPage.Visible = true
         MainPage.Interactable = false
         local tween = TweenService:Create(MovesetsPage, TweenInfo.new(0.5, Enum.EasingStyle.Cubic, Enum.EasingDirection.Out), {
-                Position = UDim2.new(0.5, 360, 0.5, 0),
+                Position = UDim2.new(0.5, 420, 0.5, 0),
         })
         tween:Play()
         tween.Completed:Connect(function()
@@ -7875,7 +7893,7 @@ MovesetsPage.Back.Activated:Connect(function()
 end)
 local DancesPage = UI.CreateItemListPage()
 DancesPage.ZIndex = 1
-DancesPage.Position = UDim2.new(0.5, 360, 0.5, 0)
+DancesPage.Position = UDim2.new(0.5, 420, 0.5, 0)
 DancesPage.Interactable = false
 DancesPage.Visible = false
 UI.CreateButton(MainPage, "Dances &gt;", 20).Activated:Connect(function()
@@ -7895,7 +7913,7 @@ DancesPage.Back.Activated:Connect(function()
         DancesPage.Visible = true
         MainPage.Interactable = false
         local tween = TweenService:Create(DancesPage, TweenInfo.new(0.5, Enum.EasingStyle.Cubic, Enum.EasingDirection.Out), {
-                Position = UDim2.new(0.5, 360, 0.5, 0),
+                Position = UDim2.new(0.5, 420, 0.5, 0),
         })
         tween:Play()
         tween.Completed:Connect(function()
@@ -7905,7 +7923,7 @@ DancesPage.Back.Activated:Connect(function()
 end)
 local KeybindsPage = UI.CreateItemListPage()
 KeybindsPage.ZIndex = 1
-KeybindsPage.Position = UDim2.new(0.5, 360, 0.5, 0)
+KeybindsPage.Position = UDim2.new(0.5, 420, 0.5, 0)
 KeybindsPage.Interactable = false
 KeybindsPage.Visible = false
 UI.CreateButton(MainPage, "Dance Keybinds &gt;", 20).Activated:Connect(function()
@@ -7925,7 +7943,7 @@ KeybindsPage.Back.Activated:Connect(function()
         KeybindsPage.Visible = true
         MainPage.Interactable = false
         local tween = TweenService:Create(KeybindsPage, TweenInfo.new(0.5, Enum.EasingStyle.Cubic, Enum.EasingDirection.Out), {
-                Position = UDim2.new(0.5, 360, 0.5, 0),
+                Position = UDim2.new(0.5, 420, 0.5, 0),
         })
         tween:Play()
         tween.Completed:Connect(function()
@@ -7935,7 +7953,7 @@ KeybindsPage.Back.Activated:Connect(function()
 end)
 local MarketPage = UI.CreatePage()
 MarketPage.ZIndex = 1
-MarketPage.Position = UDim2.new(0.5, 360, 0.5, 0)
+MarketPage.Position = UDim2.new(0.5, 420, 0.5, 0)
 MarketPage.Interactable = false
 MarketPage.Visible = false
 UI.CreateButton(MainPage, (math.random() < 0.5 and "Store" or "Marketplace") .. " &gt;", 20).Activated:Connect(function()
@@ -7955,7 +7973,7 @@ UI.CreateButton(MarketPage, "&lt; Hurry back", 20).Activated:Connect(function()
         MarketPage.Visible = true
         MainPage.Interactable = false
         local tween = TweenService:Create(MarketPage, TweenInfo.new(0.5, Enum.EasingStyle.Cubic, Enum.EasingDirection.Out), {
-                Position = UDim2.new(0.5, 360, 0.5, 0),
+                Position = UDim2.new(0.5, 420, 0.5, 0),
         })
         tween:Play()
         tween.Completed:Connect(function()
@@ -7969,6 +7987,7 @@ SaveData.KeybindsEnabled = not not SaveData.KeybindsEnabled
 UI.CreateSwitch(MainPage, "Dance Keybinds Enabled", SaveData.KeybindsEnabled).Changed:Connect(function(val)
         SaveData.KeybindsEnabled = val
 end)
+UI.CreateSeparator(MainPage)
 local Keybinds = {}
 local KeybindsPerPage = {"Z", "X", "C", "V", "B", "N", "G", "H", "J", "K", "L", "R", "T", "U", "P"}
 local KeybindPaging = 0
@@ -8299,14 +8318,14 @@ local function AddMoveset(m)
                 Util.LinkDestroyI2C(item, item.Activated:Connect(function()
                         local page = UI.CreatePage()
                         page.ZIndex = 2
-                        page.Position = UDim2.new(0.5, 360, 0.5, 0)
+                        page.Position = UDim2.new(0.5, 420, 0.5, 0)
                         page.Interactable = false
                         page.Visible = true
                         UI.CreateButton(page, " &lt; Hurry back", 20).Activated:Connect(function()
                                 page.Interactable = false
                                 MovesetsPage.Interactable = false
                                 local tween = TweenService:Create(page, TweenInfo.new(0.5, Enum.EasingStyle.Cubic, Enum.EasingDirection.Out), {
-                                        Position = UDim2.new(0.5, 360, 0.5, 0),
+                                        Position = UDim2.new(0.5, 420, 0.5, 0),
                                 })
                                 tween:Play()
                                 tween.Completed:Connect(function()
@@ -8365,14 +8384,14 @@ local function AddDance(m)
                 Util.LinkDestroyI2C(item, item.Activated:Connect(function()
                         local page = UI.CreatePage()
                         page.ZIndex = 2
-                        page.Position = UDim2.new(0.5, 360, 0.5, 0)
+                        page.Position = UDim2.new(0.5, 420, 0.5, 0)
                         page.Interactable = false
                         page.Visible = true
                         UI.CreateButton(page, " &lt; Hurry back", 20).Activated:Connect(function()
                                 page.Interactable = false
                                 DancesPage.Interactable = false
                                 local tween = TweenService:Create(page, TweenInfo.new(0.5, Enum.EasingStyle.Cubic, Enum.EasingDirection.Out), {
-                                        Position = UDim2.new(0.5, 360, 0.5, 0),
+                                        Position = UDim2.new(0.5, 420, 0.5, 0),
                                 })
                                 tween:Play()
                                 tween.Completed:Connect(function()
@@ -8572,7 +8591,7 @@ UI.CreateSeparator(MainPage)
 task.wait()
 local CreditsPage = UI.CreatePage()
 CreditsPage.ZIndex = 1
-CreditsPage.Position = UDim2.new(0.5, 360, 0.5, 0)
+CreditsPage.Position = UDim2.new(0.5, 420, 0.5, 0)
 CreditsPage.Interactable = false
 CreditsPage.Visible = false
 UI.CreateButton(MainPage, "Credits", 15).Activated:Connect(function()
@@ -8591,7 +8610,7 @@ UI.CreateButton(CreditsPage, "&lt; Hurry back", 20).Activated:Connect(function()
         CreditsPage.Interactable = false
         MainPage.Interactable = false
         local tween = TweenService:Create(CreditsPage, TweenInfo.new(0.5, Enum.EasingStyle.Cubic, Enum.EasingDirection.Out), {
-                Position = UDim2.new(0.5, 360, 0.5, 0),
+                Position = UDim2.new(0.5, 420, 0.5, 0),
         })
         tween:Play()
         tween.Completed:Connect(function()
@@ -8841,7 +8860,7 @@ UI.CreateText(CreditsPage, "<font color=\"#4444FF\">[ Discord invite ]</font>", 
 end)
 local ChangelogsPage = UI.CreatePage()
 ChangelogsPage.ZIndex = 1
-ChangelogsPage.Position = UDim2.new(0.5, 360, 0.5, 0)
+ChangelogsPage.Position = UDim2.new(0.5, 420, 0.5, 0)
 ChangelogsPage.Interactable = false
 ChangelogsPage.Visible = false
 UI.CreateButton(MainPage, "Changelogs", 15).Activated:Connect(function()
@@ -8860,7 +8879,7 @@ UI.CreateButton(ChangelogsPage, "&lt; Hurry back", 20).Activated:Connect(functio
         ChangelogsPage.Interactable = false
         MainPage.Interactable = false
         local tween = TweenService:Create(ChangelogsPage, TweenInfo.new(0.5, Enum.EasingStyle.Cubic, Enum.EasingDirection.Out), {
-                Position = UDim2.new(0.5, 360, 0.5, 0),
+                Position = UDim2.new(0.5, 420, 0.5, 0),
         })
         tween:Play()
         tween.Completed:Connect(function()
@@ -8889,7 +8908,7 @@ end)
 task.wait()
 local InitLogsPage = UI.CreatePage()
 InitLogsPage.ZIndex = 1
-InitLogsPage.Position = UDim2.new(0.5, 360, 0.5, 0)
+InitLogsPage.Position = UDim2.new(0.5, 420, 0.5, 0)
 InitLogsPage.Interactable = false
 InitLogsPage.Visible = false
 UI.CreateButton(MainPage, "Init Logs", 15).Activated:Connect(function()
@@ -8908,7 +8927,7 @@ UI.CreateButton(InitLogsPage, "&lt; Hurry back", 20).Activated:Connect(function(
         InitLogsPage.Interactable = false
         MainPage.Interactable = false
         local tween = TweenService:Create(InitLogsPage, TweenInfo.new(0.5, Enum.EasingStyle.Cubic, Enum.EasingDirection.Out), {
-                Position = UDim2.new(0.5, 360, 0.5, 0),
+                Position = UDim2.new(0.5, 420, 0.5, 0),
         })
         tween:Play()
         tween.Completed:Connect(function()
@@ -9250,7 +9269,7 @@ local function GetMarketList()
 end
 local LocalPage = UI.CreateItemListPage()
 LocalPage.ZIndex = 2
-LocalPage.Position = UDim2.new(0.5, 360, 0.5, 0)
+LocalPage.Position = UDim2.new(0.5, 420, 0.5, 0)
 LocalPage.Interactable = false
 LocalPage.Visible = false
 local function RefreshUserModules()
@@ -9280,14 +9299,14 @@ local function RefreshUserModules()
                         Util.LinkDestroyI2C(item, item.Activated:Connect(function()
                                 local page = UI.CreatePage()
                                 page.ZIndex = 3
-                                page.Position = UDim2.new(0.5, 360, 0.5, 0)
+                                page.Position = UDim2.new(0.5, 420, 0.5, 0)
                                 page.Interactable = false
                                 page.Visible = true
                                 UI.CreateButton(page, " &lt; Hurry back", 20).Activated:Connect(function()
                                         page.Interactable = false
                                         LocalPage.Interactable = false
                                         local tween = TweenService:Create(page, TweenInfo.new(0.5, Enum.EasingStyle.Cubic, Enum.EasingDirection.Out), {
-                                                Position = UDim2.new(0.5, 360, 0.5, 0),
+                                                Position = UDim2.new(0.5, 420, 0.5, 0),
                                         })
                                         tween:Play()
                                         tween.Completed:Connect(function()
@@ -9308,7 +9327,7 @@ local function RefreshUserModules()
                                                 page.Interactable = false
                                                 LocalPage.Interactable = false
                                                 local tween = TweenService:Create(page, TweenInfo.new(0.5, Enum.EasingStyle.Cubic, Enum.EasingDirection.Out), {
-                                                        Position = UDim2.new(0.5, 360, 0.5, 0),
+                                                        Position = UDim2.new(0.5, 420, 0.5, 0),
                                                 })
                                                 tween:Play()
                                                 tween.Completed:Connect(function()
@@ -9342,7 +9361,7 @@ local function RefreshUserModules()
                                                 page.Interactable = false
                                                 LocalPage.Interactable = false
                                                 local tween = TweenService:Create(page, TweenInfo.new(0.5, Enum.EasingStyle.Cubic, Enum.EasingDirection.Out), {
-                                                        Position = UDim2.new(0.5, 360, 0.5, 0),
+                                                        Position = UDim2.new(0.5, 420, 0.5, 0),
                                                 })
                                                 tween:Play()
                                                 tween.Completed:Connect(function()
@@ -9381,7 +9400,7 @@ LocalPage.Back.Activated:Connect(function()
         LocalPage.Visible = true
         MarketPage.Interactable = false
         local tween = TweenService:Create(LocalPage, TweenInfo.new(0.5, Enum.EasingStyle.Cubic, Enum.EasingDirection.Out), {
-                Position = UDim2.new(0.5, 360, 0.5, 0),
+                Position = UDim2.new(0.5, 420, 0.5, 0),
         })
         tween:Play()
         tween.Completed:Connect(function()
@@ -9391,7 +9410,7 @@ LocalPage.Back.Activated:Connect(function()
 end)
 local MarkettePage = UI.CreateItemListPage()
 MarkettePage.ZIndex = 2
-MarkettePage.Position = UDim2.new(0.5, 360, 0.5, 0)
+MarkettePage.Position = UDim2.new(0.5, 420, 0.5, 0)
 MarkettePage.Interactable = false
 MarkettePage.Visible = false
 local function RefreshOnlineUserModules()
@@ -9407,14 +9426,14 @@ local function RefreshOnlineUserModules()
                 Util.LinkDestroyI2C(item, item.Activated:Connect(function()
                         local page = UI.CreatePage()
                         page.ZIndex = 3
-                        page.Position = UDim2.new(0.5, 360, 0.5, 0)
+                        page.Position = UDim2.new(0.5, 420, 0.5, 0)
                         page.Interactable = false
                         page.Visible = true
                         UI.CreateButton(page, " &lt; Hurry back", 20).Activated:Connect(function()
                                 page.Interactable = false
                                 MarkettePage.Interactable = false
                                 local tween = TweenService:Create(page, TweenInfo.new(0.5, Enum.EasingStyle.Cubic, Enum.EasingDirection.Out), {
-                                        Position = UDim2.new(0.5, 360, 0.5, 0),
+                                        Position = UDim2.new(0.5, 420, 0.5, 0),
                                 })
                                 tween:Play()
                                 tween.Completed:Connect(function()
@@ -9465,7 +9484,7 @@ MarkettePage.Back.Activated:Connect(function()
         MarkettePage.Visible = true
         MarketPage.Interactable = false
         local tween = TweenService:Create(MarkettePage, TweenInfo.new(0.5, Enum.EasingStyle.Cubic, Enum.EasingDirection.Out), {
-                Position = UDim2.new(0.5, 360, 0.5, 0),
+                Position = UDim2.new(0.5, 420, 0.5, 0),
         })
         tween:Play()
         tween.Completed:Connect(function()
