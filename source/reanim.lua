@@ -1489,13 +1489,14 @@ do
                         uinotif.Animation = math.min(1, uinotif.Animation + dt * 2)
                 end
                 if uinotif.Animation < 1 then
-                        UINotifyFrame.Visible = true
                         local winPos = UIMainWindow.Position
                         local winAbsH = UIMainWindow.AbsoluteSize.Y
+                        if winAbsH == 0 then winAbsH = UIMainWindow.Size.Y.Offset end
                         UINotifyFrame.Position = UDim2.new(
                                 winPos.X.Scale, winPos.X.Offset,
                                 winPos.Y.Scale, winPos.Y.Offset + winAbsH / 2 + 8 + math.pow(uinotif.Animation, 3) * -25
                         )
+                        UINotifyFrame.Visible = true
                         if uinotif.Progress >= 1 then
                                 Progress.BackgroundTransparency = math.min(t - uinotif.LastNotif, 0.5) * 2 * 0.3 + 0.7
                         else
@@ -4810,7 +4811,11 @@ function LimbReanimator.Start()
                                         rootcf = CFrame.new(rootposition2)
                                 end
                                 if LimbReanimator.Mode == 2 or workspace.StreamingEnabled then
-                                        rootcf = CFrame.new(RCRootPart.Position + Vector3.new(0, -16, 0))
+                                        if CurrentDance then
+                                                rootcf = RCRootPart.CFrame * CFrame.new(0, -16, 0)
+                                        else
+                                                rootcf = CFrame.new(RCRootPart.Position + Vector3.new(0, -16, 0))
+                                        end
                                 end
                                 if LimbReanimator.Mode == 3 then
                                         local _m3target = RCRootPart.CFrame
@@ -8053,25 +8058,33 @@ do
         local DPRevertBtn = MakeDPBtn("<< Revert", 0, 0.02)
         _panelPlayBtn = MakeDPBtn("|| Pause", 0.5, 0.5)
         local DPNextBtn = MakeDPBtn("Next >>", 1, 0.98)
-        local _dpNotifLabel = Util.Instance("TextLabel", UIMainFrame)
-        _dpNotifLabel.AnchorPoint = Vector2.new(0.5, 0)
-        _dpNotifLabel.Size = UDim2.new(0, 220, 0, 18)
+        local _dpNotifFrame = Util.Instance("Frame", UIMainFrame)
+        _dpNotifFrame.AnchorPoint = Vector2.new(0.5, 0)
+        _dpNotifFrame.Size = UDim2.new(0, 200, 0, 24)
+        _dpNotifFrame.BackgroundTransparency = 0.3
+        _dpNotifFrame.BackgroundColor3 = Color3.new(0, 0, 0)
+        _dpNotifFrame.BorderSizePixel = 0
+        _dpNotifFrame.ZIndex = 54
+        _dpNotifFrame.Visible = false
+        Stylize(_dpNotifFrame, {Glow = true})
+        local _dpNotifLabel = Util.Instance("TextLabel", _dpNotifFrame)
+        _dpNotifLabel.AnchorPoint = Vector2.new(0.5, 0.5)
+        _dpNotifLabel.Position = UDim2.new(0.5, 0, 0.5, 0)
+        _dpNotifLabel.Size = UDim2.new(1, -10, 1, 0)
         _dpNotifLabel.BackgroundTransparency = 1
         _dpNotifLabel.Font = Enum.Font.Code
         _dpNotifLabel.TextSize = 11
         _dpNotifLabel.TextColor3 = Color3.new(1, 1, 1)
-        _dpNotifLabel.TextTransparency = 1
         _dpNotifLabel.TextXAlignment = Enum.TextXAlignment.Center
         _dpNotifLabel.ZIndex = 55
-        _dpNotifLabel.Visible = false
         RegisterTextLabel(_dpNotifLabel)
         local _dpNotifTime = -99
         local _dpNotifAnim = 1
         local function DPNotify(text)
                 _dpNotifLabel.Text = text
-                _dpNotifLabel.Visible = true
                 _dpNotifTime = os.clock()
                 _dpNotifAnim = 0
+                _dpNotifFrame.Visible = true
         end
         AddToRenderStep(function(_, dt)
                 local age = os.clock() - _dpNotifTime
@@ -8080,20 +8093,22 @@ do
                 else
                         _dpNotifAnim = math.min(1, _dpNotifAnim + dt * 4)
                 end
-                _dpNotifLabel.TextTransparency = _dpNotifAnim
                 if _dpNotifAnim >= 1 then
-                        _dpNotifLabel.Visible = false
+                        _dpNotifFrame.Visible = false
                 else
-                        _dpNotifLabel.Visible = true
                         local frameOrig = UIMainFrame.AbsolutePosition
                         local panelAbs = DanceNowPlayingPanel.AbsolutePosition
                         local panelSize = DanceNowPlayingPanel.AbsoluteSize
-                        _dpNotifLabel.Position = UDim2.fromOffset(
+                        if panelSize.Y == 0 then return end
+                        _dpNotifFrame.Position = UDim2.fromOffset(
                                 panelAbs.X + panelSize.X / 2 - frameOrig.X,
                                 panelAbs.Y + panelSize.Y + 5 - frameOrig.Y + math.pow(_dpNotifAnim, 3) * -18
                         )
+                        _dpNotifFrame.BackgroundTransparency = 0.3 + _dpNotifAnim * 0.7
+                        _dpNotifLabel.TextTransparency = _dpNotifAnim
+                        _dpNotifFrame.Visible = true
                 end
-        end, _dpNotifLabel)
+        end, _dpNotifFrame)
         DPCloseBtn.Activated:Connect(function()
                 _panelKeepOpen = false
                 CurrentDance = nil
