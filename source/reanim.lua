@@ -1107,7 +1107,7 @@ local UIMainWindow, WindowContent do
         UIMainWindow.Active = true
         UIMainWindow.AnchorPoint = Vector2.new(0.5, 0.5)
         UIMainWindow.Position = UDim2.new(0.5, 0, 0.5, 0)
-        UIMainWindow.Size = UDim2.new(0, 420, 0, 300)
+        UIMainWindow.Size = UDim2.new(0, 360, 0, 260)
         UIMainWindow.BackgroundTransparency = 0
         UIMainWindow.BackgroundColor3 = Color3.new(1, 1, 1)
         UIMainWindow.BorderSizePixel = 0
@@ -1294,7 +1294,7 @@ local UIMainWindow, WindowContent do
                         MainWindowPosOpen = UIMainWindow.Position
                         TweenService:Create(UIMainWindow, TweenInfo.new(0.5, Enum.EasingStyle.Cubic, Enum.EasingDirection.Out), {
                                 Position = MainWindowPosClose,
-                                Size = UDim2.fromOffset(135, 38)
+                                Size = UDim2.fromOffset(120, 36)
                         }):Play()
                         TweenService:Create(TopBarClose.A, TweenInfo.new(0.5, Enum.EasingStyle.Cubic, Enum.EasingDirection.Out), {
                                 Rotation = 180
@@ -1312,7 +1312,7 @@ local UIMainWindow, WindowContent do
                         SaveData.WindowClosedPosition = {MainWindowPosClose.X.Scale, MainWindowPosClose.X.Offset, MainWindowPosClose.Y.Scale, MainWindowPosClose.Y.Offset}
                         TweenService:Create(UIMainWindow, TweenInfo.new(0.5, Enum.EasingStyle.Cubic, Enum.EasingDirection.Out), {
                                 Position = MainWindowPosOpen,
-                                Size = UDim2.fromOffset(420, 300)
+                                Size = UDim2.fromOffset(360, 260)
                         }):Play()
                         TweenService:Create(TopBarClose.A, TweenInfo.new(0.5, Enum.EasingStyle.Cubic, Enum.EasingDirection.Out), {
                                 Rotation = 0
@@ -1365,10 +1365,20 @@ local UIMainWindow, WindowContent do
                         end
                 end
         end)
+        local TopBarSep = Util.Instance("Frame", UIMainWindow)
+        TopBarSep.Position = UDim2.new(0, 0, 0, 38)
+        TopBarSep.Size = UDim2.new(1, 0, 0, 1)
+        TopBarSep.BackgroundTransparency = 0.4
+        TopBarSep.BackgroundColor3 = UITextColor.Value
+        TopBarSep.BorderSizePixel = 0
+        TopBarSep.ZIndex = 2
+        Util.LinkDestroyI2C(TopBarSep, UITextColor.Changed:Connect(function(val)
+                TopBarSep.BackgroundColor3 = val
+        end))
         local _UIWindowScaler = Instance.new("UIScale", UIMainWindow)
         local function _RefreshWindowScale()
                 local vp = Util.GetScreenSize()
-                _UIWindowScaler.Scale = math.max(math.min(vp.X / 580, vp.Y / 440, 1), 0.55)
+                _UIWindowScaler.Scale = math.max(math.min(vp.X / 520, vp.Y / 400, 1), 0.48)
         end
         _RefreshWindowScale()
         Camera:GetPropertyChangedSignal("ViewportSize"):Connect(_RefreshWindowScale)
@@ -1514,7 +1524,7 @@ local CracktroFrame = Util.Instance("Frame", WindowContent)
 CracktroFrame.Active = true
 CracktroFrame.AnchorPoint = Vector2.new(0.5, 0.5)
 CracktroFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
-CracktroFrame.Size = UDim2.new(0, 420, 0, 262)
+CracktroFrame.Size = UDim2.new(0, 360, 0, 222)
 CracktroFrame.BackgroundTransparency = 0
 CracktroFrame.BackgroundColor3 = Color3.new(0, 0, 0)
 CracktroFrame.BorderSizePixel = 1
@@ -1784,7 +1794,7 @@ function UI.CreatePage()
         local Frame = Util.Instance("ScrollingFrame", WindowContent)
         Frame.AnchorPoint = Vector2.new(0.5, 0.5)
         Frame.Position = UDim2.new(0.5, 0, 0.5, 0)
-        Frame.Size = UDim2.new(0, 420, 0, 262)
+        Frame.Size = UDim2.new(0, 360, 0, 222)
         Frame.BackgroundTransparency = 0
         Frame.BackgroundColor3 = Color3.new(0, 0, 0)
         Frame.BorderSizePixel = 1
@@ -2470,7 +2480,7 @@ function UI.CreateItemListPage()
         local Frame = Util.Instance("Frame", WindowContent)
         Frame.AnchorPoint = Vector2.new(0.5, 0.5)
         Frame.Position = UDim2.new(0.5, 0, 0.5, 0)
-        Frame.Size = UDim2.new(0, 420, 0, 262)
+        Frame.Size = UDim2.new(0, 360, 0, 222)
         Frame.BackgroundTransparency = 0
         Frame.BackgroundColor3 = Color3.new(0, 0, 0)
         Frame.BorderSizePixel = 1
@@ -4758,6 +4768,8 @@ function LimbReanimator.Start()
         end
 
         Reanimate.Starting = false
+        local _mode3smoothcf = nil
+        local _mode3lasttime = 0
         while not Reanimate.Stopping do
                 RunService.PreSimulation:Wait()
                 workspace.FallenPartsDestroyHeight = 0/0
@@ -4796,7 +4808,16 @@ function LimbReanimator.Start()
                                         rootcf = CFrame.new(RCRootPart.Position + Vector3.new(0, -16, 0))
                                 end
                                 if LimbReanimator.Mode == 3 then
-                                        rootcf = RCRootPart.CFrame
+                                        local _m3target = RCRootPart.CFrame
+                                        local _m3now = os.clock()
+                                        local _m3elapsed = _m3now - _mode3lasttime
+                                        _mode3lasttime = _m3now
+                                        if _mode3smoothcf == nil or _m3elapsed > 0.5 then
+                                                _mode3smoothcf = _m3target
+                                        else
+                                                _mode3smoothcf = _mode3smoothcf:Lerp(_m3target, 1 - math.exp(-14 * _m3elapsed))
+                                        end
+                                        rootcf = _mode3smoothcf
                                 end
                                 if LimbReanimator.Mode == 4 then
                                         rootcf = RCTorso.CFrame
@@ -7871,6 +7892,7 @@ local _DanceMusicSavedTime = 0
 do
         local _panelVisible = false
         local _panelMinimized = false
+        local _panelKeepOpen = false
         local _panelNameLabel, _panelDescLabel, _panelPlayBtn, _panelContent, _panelMinBtn
         local DanceNowPlayingPanel = Util.Instance("Frame", UIMainFrame)
         DanceNowPlayingPanel.AnchorPoint = Vector2.new(1, 1)
@@ -8006,6 +8028,7 @@ do
         _panelPlayBtn = MakeDPBtn("|| Pause", 0.5, 0.5)
         local DPNextBtn = MakeDPBtn("Next >>", 1, 0.98)
         DPCloseBtn.Activated:Connect(function()
+                _panelKeepOpen = false
                 CurrentDance = nil
                 DancePaused = false
                 UISound.DanceMusic:Stop()
@@ -8019,9 +8042,13 @@ do
                 }):Play()
         end)
         DPRevertBtn.Activated:Connect(function()
+                _panelKeepOpen = true
                 CurrentDance = nil
                 DancePaused = false
                 UISound.DanceMusic:Stop()
+                _panelNameLabel.Text = "// idle"
+                _panelDescLabel.Text = "pick a dance to play"
+                _panelPlayBtn.Text = "> Play"
         end)
         _panelPlayBtn.Activated:Connect(function()
                 DancePaused = not DancePaused
@@ -8053,6 +8080,7 @@ do
                 if cd ~= _dpLastDance then
                         _dpLastDance = cd
                         if cd then
+                                _panelKeepOpen = false
                                 _panelNameLabel.Text = cd.Name
                                 _panelDescLabel.Text = cd.Description
                                 _panelPlayBtn.Text = "|| Pause"
@@ -8070,13 +8098,13 @@ do
                                         Size = UDim2.fromOffset(280, 158)
                                 }):Play()
                         else
-                                if _panelVisible then
+                                if _panelVisible and not _panelKeepOpen then
                                         _panelVisible = false
                                         TweenService:Create(DanceNowPlayingPanel, TweenInfo.new(0.2, Enum.EasingStyle.Quint, Enum.EasingDirection.In), {
                                                 Size = UDim2.fromOffset(280, 0)
                                         }):Play()
                                         task.delay(0.25, function()
-                                                if not CurrentDance then
+                                                if not CurrentDance and not _panelKeepOpen then
                                                         DanceNowPlayingPanel.Visible = false
                                                 end
                                         end)
