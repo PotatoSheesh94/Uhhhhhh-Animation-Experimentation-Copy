@@ -1490,11 +1490,11 @@ do
                 end
                 if uinotif.Animation < 1 then
                         UINotifyFrame.Visible = true
-                        local winAbsPos = UIMainWindow.AbsolutePosition
-                        local winAbsSize = UIMainWindow.AbsoluteSize
-                        UINotifyFrame.Position = UDim2.fromOffset(
-                                winAbsPos.X + winAbsSize.X / 2,
-                                winAbsPos.Y + winAbsSize.Y + 8 + math.pow(uinotif.Animation, 3) * -25
+                        local winPos = UIMainWindow.Position
+                        local winAbsH = UIMainWindow.AbsoluteSize.Y
+                        UINotifyFrame.Position = UDim2.new(
+                                winPos.X.Scale, winPos.X.Offset,
+                                winPos.Y.Scale, winPos.Y.Offset + winAbsH / 2 + 8 + math.pow(uinotif.Animation, 3) * -25
                         )
                         if uinotif.Progress >= 1 then
                                 Progress.BackgroundTransparency = math.min(t - uinotif.LastNotif, 0.5) * 2 * 0.3 + 0.7
@@ -8085,11 +8085,12 @@ do
                         _dpNotifLabel.Visible = false
                 else
                         _dpNotifLabel.Visible = true
+                        local frameOrig = UIMainFrame.AbsolutePosition
                         local panelAbs = DanceNowPlayingPanel.AbsolutePosition
                         local panelSize = DanceNowPlayingPanel.AbsoluteSize
                         _dpNotifLabel.Position = UDim2.fromOffset(
-                                panelAbs.X + panelSize.X / 2,
-                                panelAbs.Y + panelSize.Y + 5 + math.pow(_dpNotifAnim, 3) * -18
+                                panelAbs.X + panelSize.X / 2 - frameOrig.X,
+                                panelAbs.Y + panelSize.Y + 5 - frameOrig.Y + math.pow(_dpNotifAnim, 3) * -18
                         )
                 end
         end, _dpNotifLabel)
