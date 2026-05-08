@@ -4778,7 +4778,14 @@ function LimbReanimator.Start()
                                         end
                                         if dorep or not map.CFrame then
                                                 if map.CFrame and dt and dt > 0 then
-                                                        local _lerpSpeed = (LimbReanimator.Mode == 3) and 100 or 150
+                                                        local _lerpSpeed
+                                                        if LimbReanimator.Mode == 3 then
+                                                                local angDiff = math.acos(math.clamp(map.CFrame.LookVector:Dot(cf.LookVector), -1, 1))
+                                                                local t = math.clamp(angDiff / 0.35, 0, 1)
+                                                                _lerpSpeed = 130 * (1 - t) + 14 * t
+                                                        else
+                                                                _lerpSpeed = 150
+                                                        end
                                                         map.CFrame = map.CFrame:Lerp(cf, 1 - math.exp(-_lerpSpeed * dt))
                                                 else
                                                         map.CFrame = cf
