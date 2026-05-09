@@ -4741,7 +4741,7 @@ function LimbReanimator.Start()
 
         local lastrep = 0
         local function UpdateTransforms(ReanimCharacter, RootPart, rootcf, rootvel, flingtarget, flingcf)
-                if not RootPart:IsGrounded() or LimbReanimator.Mode == 3 then
+                if not RootPart:IsGrounded() then
                         if flingtarget then
                                 if LimbReanimator.UseNaNFling then
                                         RootPart.CFrame = CFrame.new(flingcf.Position + Vector3.new(0, 0, math.random(0, 1) * 0.005)) * CFrame.Angles(0, os.clock() * 15, 0)
