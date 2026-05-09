@@ -4231,6 +4231,8 @@ end
 do
         local AntiflingHumanoids = {}
         local AntiflingBaseParts = {}
+        local AntiflingCharacters = {}
+        local _antiflingFrame = 0
         local OnStepped = function()
                 for i,v in AntiflingBaseParts do
                         if v:IsDescendantOf(workspace) then
@@ -4245,6 +4247,36 @@ do
                                 if v.EvaluateStateMachine then v.EvaluateStateMachine = false end
                         else
                                 table.remove(AntiflingHumanoids, i)
+                        end
+                end
+                _antiflingFrame += 1
+                if _antiflingFrame % 3 == 0 then
+                        for i, char in AntiflingCharacters do
+                                if char:IsDescendantOf(workspace) then
+                                        local root = char:FindFirstChild("HumanoidRootPart")
+                                        if root then
+                                                local pos = root.Position
+                                                local isInVoid = pos.Y < -100 or pos.Y ~= pos.Y
+                                                if isInVoid then
+                                                        for _, v in char:GetDescendants() do
+                                                                if v:IsA("Motor6D") then
+                                                                        v.Transform = CFrame.identity
+                                                                end
+                                                        end
+                                                        local hum = char:FindFirstChildOfClass("Humanoid")
+                                                        if hum then
+                                                                local animator = hum:FindFirstChildOfClass("Animator")
+                                                                if animator then
+                                                                        for _, track in animator:GetPlayingAnimationTracks() do
+                                                                                pcall(track.Stop, track, 0)
+                                                                        end
+                                                                end
+                                                        end
+                                                end
+                                        end
+                                else
+                                        table.remove(AntiflingCharacters, i)
+                                end
                         end
                 end
         end
@@ -4269,6 +4301,9 @@ do
                 character.DescendantAdded:Connect(OnBasePart)
                 for _,v in character:GetDescendants() do
                         OnBasePart(v)
+                end
+                if not table.find(AntiflingCharacters, character) then
+                        table.insert(AntiflingCharacters, character)
                 end
         end
         local OnPlayer = function(player)
@@ -8374,6 +8409,36 @@ DancesPage.Back.Activated:Connect(function()
                 DancesPage.Visible = false
         end)
 end)
+local FavoriteDancesPage = UI.CreateItemListPage()
+FavoriteDancesPage.ZIndex = 1
+FavoriteDancesPage.Position = UDim2.new(0.5, 420, 0.5, 0)
+FavoriteDancesPage.Interactable = false
+FavoriteDancesPage.Visible = false
+UI.CreateButton(MainPage, "Favorite Dances &gt;", 20).Activated:Connect(function()
+        FavoriteDancesPage.Interactable = false
+        FavoriteDancesPage.Visible = true
+        MainPage.Interactable = false
+        local tween = TweenService:Create(FavoriteDancesPage, TweenInfo.new(0.5, Enum.EasingStyle.Cubic, Enum.EasingDirection.In), {
+                Position = UDim2.new(0.5, 0, 0.5, 0),
+        })
+        tween:Play()
+        tween.Completed:Connect(function()
+                FavoriteDancesPage.Interactable = true
+        end)
+end)
+FavoriteDancesPage.Back.Activated:Connect(function()
+        FavoriteDancesPage.Interactable = false
+        FavoriteDancesPage.Visible = true
+        MainPage.Interactable = false
+        local tween = TweenService:Create(FavoriteDancesPage, TweenInfo.new(0.5, Enum.EasingStyle.Cubic, Enum.EasingDirection.Out), {
+                Position = UDim2.new(0.5, 420, 0.5, 0),
+        })
+        tween:Play()
+        tween.Completed:Connect(function()
+                MainPage.Interactable = true
+                FavoriteDancesPage.Visible = false
+        end)
+end)
 local KeybindsPage = UI.CreateItemListPage()
 KeybindsPage.ZIndex = 1
 KeybindsPage.Position = UDim2.new(0.5, 420, 0.5, 0)
@@ -8684,6 +8749,9 @@ end)
 if type(SaveData.ModuleConfigs) ~= "table" then
         SaveData.ModuleConfigs = {}
 end
+if type(SaveData.FavoriteDances) ~= "table" then
+        SaveData.FavoriteDances = {}
+end
 local function GiveFunctionsToFunction(func)
         local env = b_getfenv(func)
         env.RandomString = Util.RandomString
@@ -8718,14 +8786,105 @@ local function GiveFunctionsToFunction(func)
         env.HiddenGui = SCREENGUI
         env.FallenPartsDestroyHeight = FallenPartsDestroyHeight
 end
+local GetModuleHash
+local RefreshFavorites
+RefreshFavorites = function()
+        Util.ClearAllChildrenGui(FavoriteDancesPage.List)
+        local favs = SaveData.FavoriteDances or {}
+        local found = 0
+        for _, m in DanceableDances do
+                local hash = GetModuleHash(m)
+                if table.find(favs, hash) then
+                        found += 1
+                        local item = UI.CreateItemListItem(FavoriteDancesPage.List)
+                        local msname = UI.CreateText(item, m.Name .. " &gt;", 20, Enum.TextXAlignment.Left)
+                        local msdesc = UI.CreateText(item, string.split(m.Description, "\n")[1], 12, Enum.TextXAlignment.Left)
+                        msname.Name = "LabelName"
+                        msdesc.Name = "LabelDesc"
+                        item.Parent.Name = m.Name .. " " .. m.Description
+                        AddToRenderStep(function()
+                                msname.Text = (CurrentDance == m) and ("\u{25BA} " .. m.Name) or (m.Name .. " &gt;")
+                        end, item)
+                        Util.LinkDestroyI2C(item, item.Activated:Connect(function()
+                                local page = UI.CreatePage()
+                                page.ZIndex = 2
+                                page.Position = UDim2.new(0.5, 420, 0.5, 0)
+                                page.Interactable = false
+                                page.Visible = true
+                                UI.CreateButton(page, " &lt; Hurry back", 20).Activated:Connect(function()
+                                        page.Interactable = false
+                                        FavoriteDancesPage.Interactable = false
+                                        local tween = TweenService:Create(page, TweenInfo.new(0.5, Enum.EasingStyle.Cubic, Enum.EasingDirection.Out), {
+                                                Position = UDim2.new(0.5, 420, 0.5, 0),
+                                        })
+                                        tween:Play()
+                                        tween.Completed:Connect(function()
+                                                FavoriteDancesPage.Interactable = true
+                                                page:Destroy()
+                                        end)
+                                end)
+                                UI.CreateSeparator(page)
+                                UI.CreateText(page, m.Name, 20, Enum.TextXAlignment.Left)
+                                UI.CreateText(page, m.Description, 15, Enum.TextXAlignment.Left)
+                                local equip, equiptext = UI.CreateButton(page, "Play Dance", 20)
+                                equiptext.Text = (CurrentDance == m) and "Stop Dance" or "Play Dance"
+                                equip.Activated:Connect(function()
+                                        if CurrentDance == m then
+                                                CurrentDance = nil
+                                        else
+                                                CurrentDance = m
+                                        end
+                                end)
+                                AddToRenderStep(function()
+                                        equiptext.Text = (CurrentDance == m) and "Stop Dance" or "Play Dance"
+                                end, page)
+                                local unfav, unfavtext = UI.CreateButton(page, "\u{2605} Remove from Favorites", 20)
+                                unfav.Activated:Connect(function()
+                                        local h = GetModuleHash(m)
+                                        local idx = table.find(SaveData.FavoriteDances, h)
+                                        if idx then
+                                                table.remove(SaveData.FavoriteDances, idx)
+                                        end
+                                        page.Interactable = false
+                                        FavoriteDancesPage.Interactable = false
+                                        local tween = TweenService:Create(page, TweenInfo.new(0.5, Enum.EasingStyle.Cubic, Enum.EasingDirection.Out), {
+                                                Position = UDim2.new(0.5, 420, 0.5, 0),
+                                        })
+                                        tween:Play()
+                                        tween.Completed:Connect(function()
+                                                FavoriteDancesPage.Interactable = true
+                                                page:Destroy()
+                                                RefreshFavorites()
+                                        end)
+                                end)
+                                UI.CreateSeparator(page)
+                                UI.CreateText(page, "* Configuration *", 15, Enum.TextXAlignment.Center)
+                                m.Config(page)
+                                FavoriteDancesPage.Interactable = false
+                                local tween = TweenService:Create(page, TweenInfo.new(0.5, Enum.EasingStyle.Cubic, Enum.EasingDirection.In), {
+                                        Position = UDim2.new(0.5, 0, 0.5, 0),
+                                })
+                                tween:Play()
+                                tween.Completed:Connect(function()
+                                        page.Interactable = true
+                                end)
+                        end))
+                end
+        end
+        if found == 0 then
+                UI.CreateText(FavoriteDancesPage.List, "No favorites yet!\nOpen a dance and press the Favorite button.", 15, Enum.TextXAlignment.Center)
+        end
+end
 local function ClearModules()
         table.clear(MovementStyles)
         table.clear(DanceableDances)
         Util.ClearAllChildrenGui(MovesetsPage.List)
         Util.ClearAllChildrenGui(DancesPage.List)
+        Util.ClearAllChildrenGui(FavoriteDancesPage.List)
+        UI.CreateText(FavoriteDancesPage.List, "No favorites yet!\nOpen a dance and press the Favorite button.", 15, Enum.TextXAlignment.Center)
         RefreshKeybinds()
 end
-local function GetModuleHash(m)
+GetModuleHash = function(m)
         if m.Hash then return m.Hash end
         local str = m.Name .. "somethingsomethingidkLOL:3:3:3:3" .. m.Description
         str = buffer.fromstring(string.rep(str, 8))
@@ -8870,6 +9029,21 @@ local function AddDance(m)
                         AddToRenderStep(function()
                                 equiptext.Text = (CurrentDance == m) and "Stop Dance" or "Play Dance"
                         end, page)
+                        local favBtn, favBtnText = UI.CreateButton(page, "\u{2606} Favorite", 20)
+                        AddToRenderStep(function()
+                                local isFavNow = table.find(SaveData.FavoriteDances, GetModuleHash(m)) ~= nil
+                                favBtnText.Text = isFavNow and "\u{2605} Favorited" or "\u{2606} Favorite"
+                        end, page)
+                        favBtn.Activated:Connect(function()
+                                local h = GetModuleHash(m)
+                                local idx = table.find(SaveData.FavoriteDances, h)
+                                if idx then
+                                        table.remove(SaveData.FavoriteDances, idx)
+                                else
+                                        table.insert(SaveData.FavoriteDances, h)
+                                end
+                                RefreshFavorites()
+                        end)
                         UI.CreateSeparator(page)
                         UI.CreateText(page, "* Configuration *", 15, Enum.TextXAlignment.Center)
                         m.Config(page)
@@ -9569,6 +9743,8 @@ local function ForceModuleReload(force)
         end
         InitLogsText.Text ..= "\n[LOG] Refreshing Dance keybinds..."
         RefreshKeybinds()
+        InitLogsText.Text ..= "\n[LOG] Refreshing Favorite Dances..."
+        RefreshFavorites()
         InitLogsText.Text ..= "\n[LOG] Loaded " .. (#MovementStyles + #DanceableDances) .. " modules - " .. #MovementStyles .. " Movesets, " .. #DanceableDances .. " Dances."
         InitLogsText.Text ..= "\n[LOG] Init complete!"
         Util.UINotify("Init complete" .. (InitLogsText.Text:find("ERROR") and " with errors" or ""))
@@ -9606,47 +9782,169 @@ UI.CreateButton(MainPage, "Reload User Modules", 20).Activated:Connect(function(
         ForceModuleReload("SKIPHASH")
 end)
 UI.CreateText(MainPage, "\n\n\n<b>DANGER ZONE</b>", 15, Enum.TextXAlignment.Center)
-local clearcontenthash, clearcontenthashtext = UI.CreateButton(MainPage, "CLEAR ALL DOWNLOADED CONTENT", 15)
-local clearcontenthashclicks = 0
-clearcontenthash.Activated:Connect(function()
-        clearcontenthashclicks += 1
-        if clearcontenthashclicks == 1 then
-                clearcontenthashtext.Text = "ARE YOU SURE ABOUT THAT!?"
-                task.wait(1)
-                if clearcontenthashclicks == 1 then
-                        clearcontenthashclicks = 0
-                        clearcontenthashtext.Text = "CLEAR ALL DOWNLOADED CONTENT"
+do
+        local _dzDialogOpen = false
+        local function ShowDangerZoneDialog(onConfirmed)
+                if _dzDialogOpen then return end
+                _dzDialogOpen = true
+                local overlay = Util.Instance("Frame", UIMainFrame)
+                overlay.AnchorPoint = Vector2.new(0.5, 0.5)
+                overlay.Position = UDim2.new(0.5, 0, 0.5, 0)
+                overlay.Size = UDim2.new(1, 0, 1, 0)
+                overlay.BackgroundColor3 = Color3.new(0, 0, 0)
+                overlay.BackgroundTransparency = 0.45
+                overlay.BorderSizePixel = 0
+                overlay.ZIndex = 9998
+                overlay.Active = true
+                local box = Util.Instance("Frame", overlay)
+                box.AnchorPoint = Vector2.new(0.5, 0.5)
+                box.Position = UDim2.new(0.5, 0, 0.5, 0)
+                box.Size = UDim2.new(0, 280, 0, 0)
+                box.AutomaticSize = Enum.AutomaticSize.Y
+                box.BackgroundColor3 = Color3.new(0, 0, 0)
+                box.BorderSizePixel = 1
+                box.BorderColor3 = Color3.new(1, 0, 0)
+                box.ZIndex = 9999
+                Stylize(box, {Glow = true})
+                local layout = Util.Instance("UIListLayout", box)
+                layout.FillDirection = Enum.FillDirection.Vertical
+                layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+                layout.VerticalAlignment = Enum.VerticalAlignment.Top
+                layout.Padding = UDim.new(0, 6)
+                layout.SortOrder = Enum.SortOrder.LayoutOrder
+                local pad = Util.Instance("UIPadding", box)
+                pad.PaddingTop = UDim.new(0, 10)
+                pad.PaddingBottom = UDim.new(0, 10)
+                pad.PaddingLeft = UDim.new(0, 10)
+                pad.PaddingRight = UDim.new(0, 10)
+                local function MakeLabel(txt, sz)
+                        local lbl = Util.Instance("TextLabel", box)
+                        lbl.Size = UDim2.new(1, 0, 0, 0)
+                        lbl.AutomaticSize = Enum.AutomaticSize.Y
+                        lbl.BackgroundTransparency = 1
+                        lbl.Font = Enum.Font.Code
+                        lbl.TextSize = sz
+                        lbl.TextColor3 = Color3.new(1, 1, 1)
+                        lbl.TextWrapped = true
+                        lbl.RichText = true
+                        lbl.TextXAlignment = Enum.TextXAlignment.Center
+                        lbl.ZIndex = 9999
+                        lbl.Text = txt
+                        RegisterTextLabel(lbl)
+                        return lbl
                 end
-        elseif clearcontenthashclicks == 2 then
-                clearcontenthashtext.Text = "VERY SURE??????"
-                task.wait(1)
-                if clearcontenthashclicks == 2 then
-                        clearcontenthashclicks = 0
-                        clearcontenthashtext.Text = "CLEAR ALL DOWNLOADED CONTENT"
+                local function MakeBtn(txt)
+                        local btn = Util.Instance("TextButton", box)
+                        btn.Size = UDim2.new(1, 0, 0, 32)
+                        btn.BackgroundColor3 = Color3.new(0.15, 0.15, 0.15)
+                        btn.BorderSizePixel = 0
+                        btn.Font = Enum.Font.Code
+                        btn.TextSize = 16
+                        btn.TextColor3 = Color3.new(1, 1, 1)
+                        btn.ZIndex = 9999
+                        btn.Text = txt
+                        btn.AutoButtonColor = true
+                        Stylize(btn)
+                        RegisterTextLabel(btn)
+                        return btn
                 end
-        elseif clearcontenthashclicks == 3 then
-                SaveData.ContentHash = nil
-                local function cleardir(path)
-                        for _,x in listfiles(path) do
-                                if x:sub(1, #path) == path then
-                                        pcall(delfile, x)
-                                end
+                local function CloseDialog()
+                        _dzDialogOpen = false
+                        overlay:Destroy()
+                end
+                local step = 1
+                local stepLabel = MakeLabel("", 14)
+                local inputFrame = Util.Instance("Frame", box)
+                inputFrame.Size = UDim2.new(1, 0, 0, 36)
+                inputFrame.BackgroundColor3 = Color3.new(0.12, 0.12, 0.12)
+                inputFrame.BorderSizePixel = 0
+                inputFrame.ZIndex = 9999
+                inputFrame.Visible = false
+                Stylize(inputFrame, {Depthed = true})
+                local inputBox = Util.Instance("TextBox", inputFrame)
+                inputBox.AnchorPoint = Vector2.new(0.5, 0.5)
+                inputBox.Position = UDim2.new(0.5, 0, 0.5, 0)
+                inputBox.Size = UDim2.new(1, -10, 1, -8)
+                inputBox.BackgroundTransparency = 1
+                inputBox.Font = Enum.Font.Code
+                inputBox.TextSize = 14
+                inputBox.TextColor3 = Color3.new(1, 1, 1)
+                inputBox.PlaceholderColor3 = Color3.new(0.6, 0.6, 0.6)
+                inputBox.PlaceholderText = 'type: "enter the danger zone"'
+                inputBox.ClearTextOnFocus = false
+                inputBox.ZIndex = 9999
+                inputBox.Text = ""
+                RegisterTextLabel(inputBox)
+                local yesBtn = MakeBtn("Yes")
+                local noBtn = MakeBtn("No")
+                local function RenderStep()
+                        if step == 1 then
+                                stepLabel.Text = "<b>Do you really wanna access\nthe danger zone?</b>"
+                                inputFrame.Visible = false
+                                yesBtn.Visible = true
+                                noBtn.Visible = true
+                        elseif step == 2 then
+                                stepLabel.Text = 'Type  "enter the danger zone"  below to proceed.'
+                                inputFrame.Visible = true
+                                yesBtn.Visible = true
+                                noBtn.Visible = true
+                                yesBtn.Text = "Confirm"
+                                noBtn.Text = "Cancel"
+                        elseif step == 3 then
+                                stepLabel.Text = "<b>Are you really sure you\nwanna do this?</b>"
+                                inputFrame.Visible = false
+                                yesBtn.Visible = true
+                                noBtn.Visible = true
+                                yesBtn.Text = "Yes, do it"
+                                noBtn.Text = "No, cancel"
                         end
                 end
-                pcall(cleardir, "UhhhhhhReanim/Content/Anims")
-                pcall(cleardir, "UhhhhhhReanim/Content/Sounds")
-                pcall(cleardir, "UhhhhhhReanim/Content/Images")
-                pcall(cleardir, "UhhhhhhReanim/Content/Models")
-                pcall(cleardir, "UhhhhhhReanim/Content/Unknown")
-                ForceModuleReload(false)
-                clearcontenthashtext.Text = "Sayonara = Matane!"
-                task.wait(1)
-                if clearcontenthashclicks >= 3 then
-                        clearcontenthashclicks = 0
-                        clearcontenthashtext.Text = "CLEAR ALL DOWNLOADED CONTENT"
-                end
+                RenderStep()
+                yesBtn.Activated:Connect(function()
+                        if step == 1 then
+                                step = 2
+                                RenderStep()
+                        elseif step == 2 then
+                                if inputBox.Text:lower() == "enter the danger zone" then
+                                        step = 3
+                                        RenderStep()
+                                else
+                                        stepLabel.Text = '<font color="#FF4444">Incorrect! Type exactly:\n"enter the danger zone"</font>'
+                                end
+                        elseif step == 3 then
+                                CloseDialog()
+                                onConfirmed()
+                        end
+                end)
+                noBtn.Activated:Connect(function()
+                        CloseDialog()
+                end)
         end
-end)
+        local clearcontenthash, clearcontenthashtext = UI.CreateButton(MainPage, "CLEAR ALL DOWNLOADED CONTENT", 15)
+        clearcontenthash.Activated:Connect(function()
+                ShowDangerZoneDialog(function()
+                        clearcontenthashtext.Text = "Working..."
+                        SaveData.ContentHash = nil
+                        local function cleardir(path)
+                                for _,x in listfiles(path) do
+                                        if x:sub(1, #path) == path then
+                                                pcall(delfile, x)
+                                        end
+                                end
+                        end
+                        pcall(cleardir, "UhhhhhhReanim/Content/Anims")
+                        pcall(cleardir, "UhhhhhhReanim/Content/Sounds")
+                        pcall(cleardir, "UhhhhhhReanim/Content/Images")
+                        pcall(cleardir, "UhhhhhhReanim/Content/Models")
+                        pcall(cleardir, "UhhhhhhReanim/Content/Unknown")
+                        ForceModuleReload(false)
+                        clearcontenthashtext.Text = "Sayonara = Matane!"
+                        task.delay(2, function()
+                                clearcontenthashtext.Text = "CLEAR ALL DOWNLOADED CONTENT"
+                        end)
+                end)
+        end)
+end
 
 UI.CreateText(MarketPage, "welcome to <b>the user generated content marketplace thing</b>", 15, Enum.TextXAlignment.Center)
 UI.CreateText(MarketPage, "this where you download ur movesets and dances made by actual people and totally not ai", 15, Enum.TextXAlignment.Center)
