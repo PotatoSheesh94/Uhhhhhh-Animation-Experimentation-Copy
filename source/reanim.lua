@@ -4938,7 +4938,7 @@ function LimbReanimator.Start()
                                         end
                                         pcall(sethiddenproperty, Humanoid, "NetworkHumanoidState", Enum.HumanoidStateType.Freefall)
                                 else
-                                        pcall(sethiddenproperty, Humanoid, "NetworkHumanoidState", Enum.HumanoidStateType[({"Running", "PlatformStanding", "Jumping", "Ragdoll", "Seated", "Physics"})[math.random(1, 6)]])
+                                        pcall(sethiddenproperty, Humanoid, "NetworkHumanoidState", Enum.HumanoidStateType.Running)
                                 end
                                 RunService.PreRender:Wait()
                                 if Reanimate:ShouldRotationType() then
@@ -8205,7 +8205,7 @@ do
                 }):Play()
                 if _panelMinimized then
                         local tw = TweenService:Create(DanceNowPlayingPanel, TweenInfo.new(0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.In), {
-                                Size = UDim2.fromOffset(280, 38)
+                                Size = UDim2.fromOffset(160, 38)
                         })
                         tw:Play()
                         tw.Completed:Connect(function()
