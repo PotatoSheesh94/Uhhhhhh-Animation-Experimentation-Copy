@@ -4140,10 +4140,14 @@ Reanimate.CreateCharacter = function(InitCFrame)
                 end
                 if LastJump ~= CJump then
                         if CJump then
-                                if Reanimate.InfiniteJump and RCHumanoid:GetState() == Enum.HumanoidStateType.Freefall and RCHumanoid.JumpPower > 0 then
-                                        RCRootPart.Velocity = Vector3.new(
-                                                RCRootPart.Velocity.X, RCHumanoid.JumpPower, RCRootPart.Velocity.Z
-                                        )
+                                if RCHumanoid:GetState() == Enum.HumanoidStateType.Freefall and RCHumanoid.JumpPower > 0 then
+                                        -- always allow jump in freefall: needed for void-mode reanimation where
+                                        -- the RC root is permanently below the map and never reaches Landed state
+                                        if Reanimate.InfiniteJump or RCRootPart.Position.Y < -50 then
+                                                RCRootPart.Velocity = Vector3.new(
+                                                        RCRootPart.Velocity.X, RCHumanoid.JumpPower, RCRootPart.Velocity.Z
+                                                )
+                                        end
                                 end
                         end
                 end
@@ -4253,24 +4257,19 @@ do
                 if _antiflingFrame % 3 == 0 then
                         for i, char in AntiflingCharacters do
                                 if char:IsDescendantOf(workspace) then
-                                        local root = char:FindFirstChild("HumanoidRootPart")
-                                        if root then
-                                                local pos = root.Position
-                                                local isInVoid = pos.Y < -100 or pos.Y ~= pos.Y
-                                                if isInVoid then
-                                                        for _, v in char:GetDescendants() do
-                                                                if v:IsA("Motor6D") then
-                                                                        v.Transform = CFrame.identity
-                                                                end
-                                                        end
-                                                        local hum = char:FindFirstChildOfClass("Humanoid")
-                                                        if hum then
-                                                                local animator = hum:FindFirstChildOfClass("Animator")
-                                                                if animator then
-                                                                        for _, track in animator:GetPlayingAnimationTracks() do
-                                                                                pcall(track.Stop, track, 0)
-                                                                        end
-                                                                end
+                                        -- always reset motor6D transforms so reanimating players
+                                        -- do not appear glitchy/distorted from this client's view
+                                        for _, v in char:GetDescendants() do
+                                                if v:IsA("Motor6D") then
+                                                        v.Transform = CFrame.identity
+                                                end
+                                        end
+                                        local hum = char:FindFirstChildOfClass("Humanoid")
+                                        if hum then
+                                                local animator = hum:FindFirstChildOfClass("Animator")
+                                                if animator then
+                                                        for _, track in animator:GetPlayingAnimationTracks() do
+                                                                pcall(track.Stop, track, 0)
                                                         end
                                                 end
                                         end
@@ -8886,24 +8885,9 @@ local function ClearModules()
 end
 GetModuleHash = function(m)
         if m.Hash then return m.Hash end
-        local str = m.Name .. "somethingsomethingidkLOL:3:3:3:3" .. m.Description
-        str = buffer.fromstring(string.rep(str, 8))
-        local hash = {36, 91, 225, 10, 232, 117, 96, 243, 93, 128, 61, 97, 101, 120, 130, 69, 177, 80, 131, 27, 137, 242, 155, 245, 22, 123, 197, 145, 146, 206, 157, 20, 36, 91, 225, 10, 232, 117, 96, 243, 93, 128, 61, 97, 101, 120, 130, 69, 177, 80, 131, 27, 137, 242, 155, 245, 22, 123, 197, 145, 146, 206, 157, 20}
-        local off = buffer.readu8(str, 0) % 64
-        local l = buffer.len(str)
-        for i=1, l do
-                local j = ((off + i) % 64) + 1
-                hash[j] = bit32.bxor(hash[j], buffer.readu8(str, i - 1)) % 256
-        end
-        str = ""
-        local hex = {"0","1","2","3","4","5","6","7","8","9","A","B","C","D","E","F"}
-        for i=1, #hash do
-                local x = hash[i]
-                local a, b = x % 16, x // 16
-                str ..= hex[b + 1] .. hex[a + 1]
-        end
-        m.Hash = str
-        return str
+        -- use name + description as a stable, unique key per dance/moveset
+        m.Hash = tostring(m.Name) .. "\1" .. tostring(m.Description)
+        return m.Hash
 end
 local function AddMoveset(m)
         if type(m) == "table" then
@@ -9755,32 +9739,110 @@ local function ForceModuleReload(force)
 end
 UI.CreateSeparator(MainPage)
 UI.CreateText(MainPage, "<b>MODULES MANAGEMENT</b>", 15, Enum.TextXAlignment.Center)
-UI.CreateButton(MainPage, "Reload Modules", 20).Activated:Connect(function()
-        CracktroFrame.Interactable = false
-        CracktroFrame.Visible = true
-        MainPage.Interactable = false
-        local tween = TweenService:Create(CracktroFrame, TweenInfo.new(0.5, Enum.EasingStyle.Cubic, Enum.EasingDirection.In), {
-                Position = UDim2.new(0.5, 0, 0.5, 0),
-        })
-        tween:Play()
-        tween.Completed:Connect(function()
-                CracktroFrame.Interactable = true
+do
+        local _reloadConfirmOpen = false
+        local function ShowReloadConfirm(question, onYes)
+                if _reloadConfirmOpen then return end
+                _reloadConfirmOpen = true
+                local overlay = Util.Instance("Frame", UIMainFrame)
+                overlay.AnchorPoint = Vector2.new(0.5, 0.5)
+                overlay.Position = UDim2.new(0.5, 0, 0.5, 0)
+                overlay.Size = UDim2.new(1, 0, 1, 0)
+                overlay.BackgroundColor3 = Color3.new(0, 0, 0)
+                overlay.BackgroundTransparency = 0.45
+                overlay.BorderSizePixel = 0
+                overlay.ZIndex = 9998
+                overlay.Active = true
+                local box = Util.Instance("Frame", overlay)
+                box.AnchorPoint = Vector2.new(0.5, 0.5)
+                box.Position = UDim2.new(0.5, 0, 0.5, 0)
+                box.Size = UDim2.new(0, 260, 0, 0)
+                box.AutomaticSize = Enum.AutomaticSize.Y
+                box.BackgroundColor3 = Color3.new(0, 0, 0)
+                box.BorderSizePixel = 1
+                box.BorderColor3 = Color3.new(0.6, 0.6, 0.6)
+                box.ZIndex = 9999
+                local layout = Util.Instance("UIListLayout", box)
+                layout.FillDirection = Enum.FillDirection.Vertical
+                layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+                layout.Padding = UDim.new(0, 6)
+                layout.SortOrder = Enum.SortOrder.LayoutOrder
+                local pad = Util.Instance("UIPadding", box)
+                pad.PaddingTop = UDim.new(0, 10)
+                pad.PaddingBottom = UDim.new(0, 10)
+                pad.PaddingLeft = UDim.new(0, 10)
+                pad.PaddingRight = UDim.new(0, 10)
+                local lbl = Util.Instance("TextLabel", box)
+                lbl.Size = UDim2.new(1, 0, 0, 0)
+                lbl.AutomaticSize = Enum.AutomaticSize.Y
+                lbl.BackgroundTransparency = 1
+                lbl.Font = Enum.Font.Code
+                lbl.TextSize = 15
+                lbl.TextColor3 = Color3.new(1, 1, 1)
+                lbl.TextWrapped = true
+                lbl.RichText = true
+                lbl.TextXAlignment = Enum.TextXAlignment.Center
+                lbl.ZIndex = 9999
+                lbl.Text = question
+                RegisterTextLabel(lbl)
+                local function MakeBtn(txt)
+                        local btn = Util.Instance("TextButton", box)
+                        btn.Size = UDim2.new(1, 0, 0, 30)
+                        btn.BackgroundColor3 = Color3.new(0.15, 0.15, 0.15)
+                        btn.BorderSizePixel = 0
+                        btn.Font = Enum.Font.Code
+                        btn.TextSize = 15
+                        btn.TextColor3 = Color3.new(1, 1, 1)
+                        btn.ZIndex = 9999
+                        btn.Text = txt
+                        btn.AutoButtonColor = true
+                        Stylize(btn)
+                        RegisterTextLabel(btn)
+                        return btn
+                end
+                local yesBtn = MakeBtn("Yes")
+                local noBtn  = MakeBtn("No")
+                local function CloseDialog()
+                        _reloadConfirmOpen = false
+                        overlay:Destroy()
+                end
+                yesBtn.Activated:Connect(function()
+                        CloseDialog()
+                        onYes()
+                end)
+                noBtn.Activated:Connect(CloseDialog)
+        end
+        UI.CreateButton(MainPage, "Reload Modules", 20).Activated:Connect(function()
+                ShowReloadConfirm("Are you sure you wanna reload the modules?", function()
+                        CracktroFrame.Interactable = false
+                        CracktroFrame.Visible = true
+                        MainPage.Interactable = false
+                        local tween = TweenService:Create(CracktroFrame, TweenInfo.new(0.5, Enum.EasingStyle.Cubic, Enum.EasingDirection.In), {
+                                Position = UDim2.new(0.5, 0, 0.5, 0),
+                        })
+                        tween:Play()
+                        tween.Completed:Connect(function()
+                                CracktroFrame.Interactable = true
+                        end)
+                        ForceModuleReload("ALL")
+                end)
         end)
-        ForceModuleReload("ALL")
-end)
-UI.CreateButton(MainPage, "Reload User Modules", 20).Activated:Connect(function()
-        CracktroFrame.Interactable = false
-        CracktroFrame.Visible = true
-        MainPage.Interactable = false
-        local tween = TweenService:Create(CracktroFrame, TweenInfo.new(0.5, Enum.EasingStyle.Cubic, Enum.EasingDirection.In), {
-                Position = UDim2.new(0.5, 0, 0.5, 0),
-        })
-        tween:Play()
-        tween.Completed:Connect(function()
-                CracktroFrame.Interactable = true
+        UI.CreateButton(MainPage, "Reload User Modules", 20).Activated:Connect(function()
+                ShowReloadConfirm("Are you sure you wanna reload the user modules?", function()
+                        CracktroFrame.Interactable = false
+                        CracktroFrame.Visible = true
+                        MainPage.Interactable = false
+                        local tween = TweenService:Create(CracktroFrame, TweenInfo.new(0.5, Enum.EasingStyle.Cubic, Enum.EasingDirection.In), {
+                                Position = UDim2.new(0.5, 0, 0.5, 0),
+                        })
+                        tween:Play()
+                        tween.Completed:Connect(function()
+                                CracktroFrame.Interactable = true
+                        end)
+                        ForceModuleReload("SKIPHASH")
+                end)
         end)
-        ForceModuleReload("SKIPHASH")
-end)
+end
 UI.CreateText(MainPage, "\n\n\n<b>DANGER ZONE</b>", 15, Enum.TextXAlignment.Center)
 do
         local _dzDialogOpen = false
