@@ -4938,7 +4938,7 @@ function LimbReanimator.Start()
                                         end
                                         pcall(sethiddenproperty, Humanoid, "NetworkHumanoidState", Enum.HumanoidStateType.Freefall)
                                 else
-                                        pcall(sethiddenproperty, Humanoid, "NetworkHumanoidState", Enum.HumanoidStateType.Running)
+                                        pcall(sethiddenproperty, Humanoid, "NetworkHumanoidState", RCHumanoid and RCHumanoid:GetState() or Enum.HumanoidStateType.Running)
                                 end
                                 RunService.PreRender:Wait()
                                 if Reanimate:ShouldRotationType() then
@@ -8203,9 +8203,14 @@ do
                 TweenService:Create(_panelMinBtn.A.B, TweenInfo.new(0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
                         Size = _panelMinimized and UDim2.new(0, 2, 0, 16) or UDim2.new(0, 2, 0, 0)
                 }):Play()
+                local _screen = Util.GetScreenSize()
+                local _hDelta = 120 * _dpScale.Scale / _screen.Y
+                local _px = DanceNowPlayingPanel.Position.X
+                local _py = DanceNowPlayingPanel.Position.Y
                 if _panelMinimized then
                         local tw = TweenService:Create(DanceNowPlayingPanel, TweenInfo.new(0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.In), {
-                                Size = UDim2.fromOffset(160, 38)
+                                Size = UDim2.fromOffset(280, 38),
+                                Position = UDim2.new(_px.Scale, _px.Offset, _py.Scale - _hDelta, _py.Offset),
                         })
                         tw:Play()
                         tw.Completed:Connect(function()
@@ -8213,8 +8218,11 @@ do
                         end)
                 else
                         _panelContent.Visible = true
+                        local _px2 = DanceNowPlayingPanel.Position.X
+                        local _py2 = DanceNowPlayingPanel.Position.Y
                         TweenService:Create(DanceNowPlayingPanel, TweenInfo.new(0.35, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
-                                Size = UDim2.fromOffset(280, 158)
+                                Size = UDim2.fromOffset(280, 158),
+                                Position = UDim2.new(_px2.Scale, _px2.Offset, _py2.Scale + _hDelta, _py2.Offset),
                         }):Play()
                 end
         end)
