@@ -1391,7 +1391,7 @@ local UIMainWindow, WindowContent do
         _RefreshWindowScale = function()
                 local vp = Util.GetScreenSize()
                 local autoScale = math.max(math.min(vp.X / 460, vp.Y / 350, 1), 0.5)
-                _UIWindowScaler.Scale = autoScale * math.clamp(SaveData.UIScale or 1, 0.5, 2)
+                _UIWindowScaler.Scale = autoScale
         end
         _RefreshWindowScale()
         Camera:GetPropertyChangedSignal("ViewportSize"):Connect(_RefreshWindowScale)
@@ -3031,55 +3031,6 @@ UI.CreateDropdown(MainPage, "UI Theme", {
 }, SaveData.UITheme).Changed:Connect(function(val)
         SaveData.UITheme = val
         SetUITheme(SaveData.UITheme)
-end)
-local UISettingsPage = UI.CreatePage()
-UISettingsPage.ZIndex = 1
-UISettingsPage.Position = UDim2.new(0.5, 420, 0.5, 0)
-UISettingsPage.Interactable = false
-UISettingsPage.Visible = false
-UI.CreateButton(MainPage, "UI Settings &gt;", 20).Activated:Connect(function()
-        UISettingsPage.Interactable = false
-        UISettingsPage.Visible = true
-        MainPage.Interactable = false
-        local tween = TweenService:Create(UISettingsPage, TweenInfo.new(0.5, Enum.EasingStyle.Cubic, Enum.EasingDirection.In), {
-                Position = UDim2.new(0.5, 0, 0.5, 0),
-        })
-        tween:Play()
-        tween.Completed:Connect(function()
-                UISettingsPage.Interactable = true
-        end)
-end)
-UI.CreateButton(UISettingsPage, "&lt; Back", 20).Activated:Connect(function()
-        UISettingsPage.Interactable = false
-        UISettingsPage.Visible = true
-        MainPage.Interactable = false
-        local tween = TweenService:Create(UISettingsPage, TweenInfo.new(0.5, Enum.EasingStyle.Cubic, Enum.EasingDirection.Out), {
-                Position = UDim2.new(0.5, 420, 0.5, 0),
-        })
-        tween:Play()
-        tween.Completed:Connect(function()
-                MainPage.Interactable = true
-                UISettingsPage.Visible = false
-        end)
-end)
-UI.CreateSeparator(UISettingsPage)
-UI.CreateText(UISettingsPage, "UI Settings", 18, Enum.TextXAlignment.Center)
-UI.CreateSeparator(UISettingsPage)
-UI.CreateText(UISettingsPage, "UI Size", 15, Enum.TextXAlignment.Left)
-local UIScaleSlider = UI.CreateSlider(UISettingsPage, "UI Scale", SaveData.UIScale, 0.5, 2, 0.05)
-UIScaleSlider.Changed:Connect(function(val)
-        SaveData.UIScale = val
-        _RefreshWindowScale()
-end)
-UI.CreateSeparator(UISettingsPage)
-UI.CreateButton(UISettingsPage, "Save", 20).Activated:Connect(function()
-        Util.UINotify("UI settings saved!")
-end)
-UI.CreateButton(UISettingsPage, "Reset to Default", 20).Activated:Connect(function()
-        SaveData.UIScale = 1
-        UIScaleSlider.Value = 1
-        _RefreshWindowScale()
-        Util.UINotify("UI settings reset to default!")
 end)
 UI.CreateSeparator(MainPage)
 
@@ -8009,7 +7960,7 @@ do
         AddToRenderStep(function()
                 local vp = Util.GetScreenSize()
                 local autoScale = math.max(math.min(vp.X / 580, vp.Y / 440, 1), 0.55)
-                _dpScale.Scale = autoScale * math.clamp(SaveData.UIScale or 1, 0.5, 2)
+                _dpScale.Scale = autoScale
         end)
         local DPHeader = Util.Instance("Frame", DanceNowPlayingPanel)
         DPHeader.Size = UDim2.new(1, 0, 0, 38)
