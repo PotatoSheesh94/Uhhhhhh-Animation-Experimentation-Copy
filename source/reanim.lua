@@ -4741,7 +4741,7 @@ function LimbReanimator.Start()
 
         local lastrep = 0
         local function UpdateTransforms(ReanimCharacter, RootPart, rootcf, rootvel, flingtarget, flingcf)
-                if not RootPart:IsGrounded() then
+                if not RootPart:IsGrounded() and LimbReanimator.Mode ~= 3 then
                         if flingtarget then
                                 if LimbReanimator.UseNaNFling then
                                         RootPart.CFrame = CFrame.new(flingcf.Position + Vector3.new(0, 0, math.random(0, 1) * 0.005)) * CFrame.Angles(0, os.clock() * 15, 0)
@@ -4824,11 +4824,6 @@ function LimbReanimator.Start()
                                 if RootPart and Humanoid:GetState() ~= Enum.HumanoidStateType.Dead then
                                         if LimbReanimator.Mode ~= 3 then
                                                 Humanoid:ChangeState(Enum.HumanoidStateType.Freefall)
-                                        else
-                                                local camcf = Reanimate.Camera:GetMovementCFrame()
-                                                local _,cx,_ = camcf:ToEulerAngles(Enum.RotationOrder.YXZ)
-                                                Humanoid:Move(CFrame.Angles(0, cx, 0):VectorToWorldSpace(Reanimate.Control.Move))
-                                                Humanoid.Jump = Reanimate.Control.Jump
                                         end
                                         ReanimOkay = LimbReanimator.FlingTargets[1] == nil
                                 end
@@ -4879,9 +4874,11 @@ function LimbReanimator.Start()
                                 end
                         end
                         for _,v in BaseParts do
-                                v.CanCollide = false
-                                v.Velocity = Vector3.zero
-                                v.RotVelocity = Vector3.zero
+                                if LimbReanimator.Mode ~= 3 then
+                                        v.CanCollide = false
+                                        v.Velocity = Vector3.zero
+                                        v.RotVelocity = Vector3.zero
+                                end
                                 if not v:FindFirstAncestorWhichIsA("Tool") then
                                         local lltm = ltm
                                         if Reanimate.FirstPersonBody then
