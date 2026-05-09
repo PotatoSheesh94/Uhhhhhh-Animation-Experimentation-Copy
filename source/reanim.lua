@@ -4741,7 +4741,7 @@ function LimbReanimator.Start()
 
         local lastrep = 0
         local function UpdateTransforms(ReanimCharacter, RootPart, rootcf, rootvel, flingtarget, flingcf)
-                if not RootPart:IsGrounded() and LimbReanimator.Mode ~= 3 then
+                if not RootPart:IsGrounded() then
                         if flingtarget then
                                 if LimbReanimator.UseNaNFling then
                                         RootPart.CFrame = CFrame.new(flingcf.Position + Vector3.new(0, 0, math.random(0, 1) * 0.005)) * CFrame.Angles(0, os.clock() * 15, 0)
@@ -4822,9 +4822,7 @@ function LimbReanimator.Start()
                                 end
                                 RootPart = Humanoid.RootPart
                                 if RootPart and Humanoid:GetState() ~= Enum.HumanoidStateType.Dead then
-                                        if LimbReanimator.Mode ~= 3 then
-                                                Humanoid:ChangeState(Enum.HumanoidStateType.Freefall)
-                                        end
+                                        Humanoid:ChangeState(Enum.HumanoidStateType.Freefall)
                                         ReanimOkay = LimbReanimator.FlingTargets[1] == nil
                                 end
                         end
@@ -4856,7 +4854,17 @@ function LimbReanimator.Start()
                                                 if dist > 40 then
                                                         _mode3smoothcf = _m3target
                                                 else
-                                                                                        _mode3smoothcf = _mode3smoothcf:Lerp(_m3target, 1 - math.exp(-80 * _m3elapsed))
+                                                        local sp = _mode3smoothcf.Position
+                                                        local tp = _m3target.Position
+                                                        local xzA = 1 - math.exp(-15 * _m3elapsed)
+                                                        local yA  = 1 - math.exp(-30 * _m3elapsed)
+                                                        local rA  = 1 - math.exp(-20 * _m3elapsed)
+                                                        local newPos = Vector3.new(
+                                                                sp.X + (tp.X - sp.X) * xzA,
+                                                                sp.Y + (tp.Y - sp.Y) * yA,
+                                                                sp.Z + (tp.Z - sp.Z) * xzA
+                                                        )
+                                                        _mode3smoothcf = CFrame.new(newPos) * (_mode3smoothcf:Lerp(_m3target, rA)).Rotation
                                                 end
                                         end
                                         rootcf = _mode3smoothcf
@@ -4874,11 +4882,9 @@ function LimbReanimator.Start()
                                 end
                         end
                         for _,v in BaseParts do
-                                if LimbReanimator.Mode ~= 3 then
-                                        v.CanCollide = false
-                                        v.Velocity = Vector3.zero
-                                        v.RotVelocity = Vector3.zero
-                                end
+                                v.CanCollide = false
+                                v.Velocity = Vector3.zero
+                                v.RotVelocity = Vector3.zero
                                 if not v:FindFirstAncestorWhichIsA("Tool") then
                                         local lltm = ltm
                                         if Reanimate.FirstPersonBody then
@@ -4932,7 +4938,7 @@ function LimbReanimator.Start()
                                                 pcall(sethiddenproperty, Humanoid, "MoveDirectionInternal", Vector3.zero)
                                         end
                                         pcall(sethiddenproperty, Humanoid, "NetworkHumanoidState", Enum.HumanoidStateType.Freefall)
-                                elseif LimbReanimator.Mode ~= 3 then
+                                else
                                         pcall(sethiddenproperty, Humanoid, "NetworkHumanoidState", Enum.HumanoidStateType[({"Running", "PlatformStanding", "Jumping", "Ragdoll", "Seated", "Physics"})[math.random(1, 6)]])
                                 end
                                 RunService.PreRender:Wait()
