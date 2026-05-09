@@ -8008,7 +8008,8 @@ do
         local _dpScale = Instance.new("UIScale", DanceNowPlayingPanel)
         AddToRenderStep(function()
                 local vp = Util.GetScreenSize()
-                _dpScale.Scale = math.max(math.min(vp.X / 580, vp.Y / 440, 1), 0.55)
+                local autoScale = math.max(math.min(vp.X / 580, vp.Y / 440, 1), 0.55)
+                _dpScale.Scale = autoScale * math.clamp(SaveData.UIScale or 1, 0.5, 2)
         end)
         local DPHeader = Util.Instance("Frame", DanceNowPlayingPanel)
         DPHeader.Size = UDim2.new(1, 0, 0, 38)
@@ -8032,10 +8033,30 @@ do
         _panelMinBtn.Position = UDim2.new(1, -38, 0, 0)
         _panelMinBtn.Size = UDim2.new(0, 38, 1, 0)
         _panelMinBtn.BackgroundTransparency = 1
-        _panelMinBtn.Font = Enum.Font.Code
-        _panelMinBtn.TextSize = 20
-        _panelMinBtn.Text = "_"
-        RegisterTextLabel(_panelMinBtn)
+        _panelMinBtn.Text = ""
+        do
+                local A = Util.Instance("Frame", _panelMinBtn)
+                A.AnchorPoint = Vector2.new(0.5, 0.5)
+                A.Position = UDim2.new(0.5, 0, 0.5, 0)
+                A.Size = UDim2.new(0, 16, 0, 2)
+                A.Rotation = 0
+                A.BackgroundTransparency = 0
+                A.BackgroundColor3 = UITextColor.Value
+                A.BorderSizePixel = 0
+                A.Name = "A"
+                local B = Util.Instance("Frame", A)
+                B.AnchorPoint = Vector2.new(0.5, 0.5)
+                B.Position = UDim2.new(0.5, 0, 0.5, 0)
+                B.Size = UDim2.new(0, 2, 0, 0)
+                B.BackgroundTransparency = 0
+                B.BackgroundColor3 = UITextColor.Value
+                B.BorderSizePixel = 0
+                B.Name = "B"
+                UITextColor.Changed:Connect(function(val)
+                        A.BackgroundColor3 = val
+                        B.BackgroundColor3 = val
+                end)
+        end
         local DPCloseBtn = Util.Instance("TextButton", DPHeader)
         DPCloseBtn.AnchorPoint = Vector2.new(1, 0)
         DPCloseBtn.Position = UDim2.new(1, 0, 0, 0)
@@ -8225,7 +8246,12 @@ do
         end)
         _panelMinBtn.Activated:Connect(function()
                 _panelMinimized = not _panelMinimized
-                _panelMinBtn.Text = _panelMinimized and "+" or "_"
+                TweenService:Create(_panelMinBtn.A, TweenInfo.new(0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
+                        Rotation = _panelMinimized and 180 or 0
+                }):Play()
+                TweenService:Create(_panelMinBtn.A.B, TweenInfo.new(0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
+                        Size = _panelMinimized and UDim2.new(0, 2, 0, 16) or UDim2.new(0, 2, 0, 0)
+                }):Play()
                 if _panelMinimized then
                         local tw = TweenService:Create(DanceNowPlayingPanel, TweenInfo.new(0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.In), {
                                 Size = UDim2.fromOffset(280, 38)
