@@ -4803,6 +4803,8 @@ function LimbReanimator.Start()
         end
 
         Reanimate.Starting = false
+        local _mode3smoothcf = nil
+        local _mode3lasttime = 0
         while not Reanimate.Stopping do
                 RunService.PreSimulation:Wait()
                 workspace.FallenPartsDestroyHeight = 0/0
@@ -4841,7 +4843,31 @@ function LimbReanimator.Start()
                                         rootcf = CFrame.new(RCRootPart.Position + Vector3.new(0, -16, 0))
                                 end
                                 if LimbReanimator.Mode == 3 then
-                                        rootcf = RCRootPart.CFrame
+                                        local _m3target = RCRootPart.CFrame
+                                        local _m3now = os.clock()
+                                        local _m3elapsed = math.min(_m3now - _mode3lasttime, 0.05)
+                                        _mode3lasttime = _m3now
+                                        if _mode3smoothcf == nil then
+                                                _mode3smoothcf = _m3target
+                                        else
+                                                local dist = (_mode3smoothcf.Position - _m3target.Position).Magnitude
+                                                if dist > 40 then
+                                                        _mode3smoothcf = _m3target
+                                                else
+                                                        local sp = _mode3smoothcf.Position
+                                                        local tp = _m3target.Position
+                                                        local xzA = 1 - math.exp(-15 * _m3elapsed)
+                                                        local yA  = 1 - math.exp(-30 * _m3elapsed)
+                                                        local rA  = 1 - math.exp(-20 * _m3elapsed)
+                                                        local newPos = Vector3.new(
+                                                                sp.X + (tp.X - sp.X) * xzA,
+                                                                sp.Y + (tp.Y - sp.Y) * yA,
+                                                                sp.Z + (tp.Z - sp.Z) * xzA
+                                                        )
+                                                        _mode3smoothcf = CFrame.new(newPos) * (_mode3smoothcf:Lerp(_m3target, rA)).Rotation
+                                                end
+                                        end
+                                        rootcf = _mode3smoothcf
                                 end
                                 if LimbReanimator.Mode == 4 then
                                         rootcf = RCTorso.CFrame
