@@ -4628,11 +4628,9 @@ function LimbReanimator.Start()
                 if v:IsA("BasePart") then
                         if not table.find(BaseParts, v) then
                                 table.insert(BaseParts, v)
-                                if LimbReanimator.Mode ~= 3 then
-                                        v.CanCollide = false
-                                end
+                                v.CanCollide = false
                                 v:GetPropertyChangedSignal("CanCollide"):Connect(function()
-                                        if v.CanCollide and LimbReanimator.Mode ~= 3 then v.CanCollide = false end
+                                        if v.CanCollide then v.CanCollide = false end
                                 end)
                         end
                 elseif v:IsA("Motor6D") then
@@ -4743,7 +4741,7 @@ function LimbReanimator.Start()
 
         local lastrep = 0
         local function UpdateTransforms(ReanimCharacter, RootPart, rootcf, rootvel, flingtarget, flingcf)
-                if not RootPart:IsGrounded() and LimbReanimator.Mode ~= 3 then
+                if not RootPart:IsGrounded() then
                         if flingtarget then
                                 if LimbReanimator.UseNaNFling then
                                         RootPart.CFrame = CFrame.new(flingcf.Position + Vector3.new(0, 0, math.random(0, 1) * 0.005)) * CFrame.Angles(0, os.clock() * 15, 0)
@@ -4805,6 +4803,12 @@ function LimbReanimator.Start()
         end
 
         Reanimate.Starting = false
+        local _mode3smoothcf = nil
+        local _mode3lasttime = 0
+        local _mode3jumpvel = 0
+        local _mode3jumpy = 0
+        local _mode3canjump = true
+        local _mode3lastjump = false
         while not Reanimate.Stopping do
                 RunService.PreSimulation:Wait()
                 workspace.FallenPartsDestroyHeight = 0/0
@@ -4822,9 +4826,7 @@ function LimbReanimator.Start()
                                 end
                                 RootPart = Humanoid.RootPart
                                 if RootPart and Humanoid:GetState() ~= Enum.HumanoidStateType.Dead then
-                                        if LimbReanimator.Mode ~= 3 then
-                                                Humanoid:ChangeState(Enum.HumanoidStateType.Freefall)
-                                        end
+                                        Humanoid:ChangeState(Enum.HumanoidStateType.Freefall)
                                         ReanimOkay = LimbReanimator.FlingTargets[1] == nil
                                 end
                         end
@@ -4845,13 +4847,44 @@ function LimbReanimator.Start()
                                         rootcf = CFrame.new(RCRootPart.Position + Vector3.new(0, -16, 0))
                                 end
                                 if LimbReanimator.Mode == 3 then
-                                        if RootPart then
-                                                RCRootPart.CFrame = RootPart.CFrame
-                                                local camcf = Reanimate.Camera:GetMovementCFrame()
-                                                local _,cx,_ = camcf:ToEulerAngles(Enum.RotationOrder.YXZ)
-                                                Humanoid:Move(CFrame.Angles(0, cx, 0):VectorToWorldSpace(Reanimate.Control.Move))
-                                                Humanoid.Jump = Reanimate.Control.Jump
+                                        local _m3target = RCRootPart.CFrame
+                                        local _m3now = os.clock()
+                                        local _m3elapsed = math.min(_m3now - _mode3lasttime, 0.05)
+                                        _mode3lasttime = _m3now
+                                        if _mode3smoothcf == nil then
+                                                _mode3smoothcf = _m3target
                                         end
+                                        local cjump = Reanimate.Control.Jump
+                                        if cjump and not _mode3lastjump and _mode3canjump then
+                                                _mode3jumpvel = RCHumanoid.JumpPower
+                                                _mode3canjump = false
+                                        end
+                                        _mode3lastjump = cjump
+                                        if not _mode3canjump then
+                                                _mode3jumpvel -= workspace.Gravity * _m3elapsed
+                                                _mode3jumpy += _mode3jumpvel * _m3elapsed
+                                                if _mode3jumpy <= 0 then
+                                                        _mode3jumpy = 0
+                                                        _mode3jumpvel = 0
+                                                        _mode3canjump = true
+                                                end
+                                        end
+                                        local dist = (_mode3smoothcf.Position - _m3target.Position).Magnitude
+                                        if dist > 40 then
+                                                _mode3smoothcf = _m3target
+                                        else
+                                                local sp = _mode3smoothcf.Position
+                                                local tp = _m3target.Position
+                                                local xzA = 1 - math.exp(-15 * _m3elapsed)
+                                                local rA  = 1 - math.exp(-20 * _m3elapsed)
+                                                local newPos = Vector3.new(
+                                                        sp.X + (tp.X - sp.X) * xzA,
+                                                        tp.Y + _mode3jumpy,
+                                                        sp.Z + (tp.Z - sp.Z) * xzA
+                                                )
+                                                _mode3smoothcf = CFrame.new(newPos) * (_mode3smoothcf:Lerp(_m3target, rA)).Rotation
+                                        end
+                                        rootcf = _mode3smoothcf
                                 end
                                 if LimbReanimator.Mode == 4 then
                                         rootcf = RCTorso.CFrame
@@ -4866,11 +4899,9 @@ function LimbReanimator.Start()
                                 end
                         end
                         for _,v in BaseParts do
-                                if LimbReanimator.Mode ~= 3 then
-                                        v.CanCollide = false
-                                        v.Velocity = Vector3.zero
-                                        v.RotVelocity = Vector3.zero
-                                end
+                                v.CanCollide = false
+                                v.Velocity = Vector3.zero
+                                v.RotVelocity = Vector3.zero
                                 if not v:FindFirstAncestorWhichIsA("Tool") then
                                         local lltm = ltm
                                         if Reanimate.FirstPersonBody then
