@@ -4796,7 +4796,19 @@ function LimbReanimator.Start()
                                         if dorep or not map.CFrame then
                                                 map.CFrame = cf
                                         end
-                                        Util.SetMotor6DOffset(v, map.CFrame)
+                                        local applyCF = map.CFrame
+                                        if LimbReanimator.Mode == 3 then
+                                                if not map.SmoothCFrame then
+                                                        map.SmoothCFrame = map.CFrame
+                                                else
+                                                        local alpha = 1 - math.exp(-20 * (_m3jdt * 0.5))
+                                                        map.SmoothCFrame = map.SmoothCFrame:Lerp(map.CFrame, alpha)
+                                                end
+                                                applyCF = map.SmoothCFrame
+                                        else
+                                                map.SmoothCFrame = nil
+                                        end
+                                        Util.SetMotor6DOffset(v, applyCF)
                                 end
                         end
                 end
@@ -4805,6 +4817,7 @@ function LimbReanimator.Start()
         Reanimate.Starting = false
         local _mode3smoothcf = nil
         local _mode3lasttime = 0
+        local _m3jdt = 0
         while not Reanimate.Stopping do
                 RunService.PreSimulation:Wait()
                 workspace.FallenPartsDestroyHeight = 0/0
@@ -4847,6 +4860,7 @@ function LimbReanimator.Start()
                                         local _m3now = os.clock()
                                         local _m3elapsed = math.min(_m3now - _mode3lasttime, 0.05)
                                         _mode3lasttime = _m3now
+                                        _m3jdt = _m3elapsed
                                         if _mode3smoothcf == nil then
                                                 _mode3smoothcf = _m3target
                                         else
