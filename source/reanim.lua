@@ -4740,6 +4740,7 @@ function LimbReanimator.Start()
         Reanimate.CreateCharacter(InitCFrame)
 
         local lastrep = 0
+        local _m3jdt = 0
         local function UpdateTransforms(ReanimCharacter, RootPart, rootcf, rootvel, flingtarget, flingcf)
                 if not RootPart:IsGrounded() then
                         if flingtarget then
@@ -4817,7 +4818,6 @@ function LimbReanimator.Start()
         Reanimate.Starting = false
         local _mode3smoothcf = nil
         local _mode3lasttime = 0
-        local _m3jdt = 0
         while not Reanimate.Stopping do
                 RunService.PreSimulation:Wait()
                 workspace.FallenPartsDestroyHeight = 0/0
