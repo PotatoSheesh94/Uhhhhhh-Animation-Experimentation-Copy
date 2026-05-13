@@ -3066,112 +3066,6 @@ UI.CreateSwitch(MainPage, "Mute Sounds", SaveData.MuteUISound).Changed:Connect(f
 end)
 UI.CreateSeparator(MainPage)
 
-do
-        if SaveData.UhhDetector == nil then SaveData.UhhDetector = true end
-        SaveData.UhhDetectorColor = SaveData.UhhDetectorColor or 10
-
-        local _UhhEnabled = SaveData.UhhDetector
-        local _UhhColorIdx = SaveData.UhhDetectorColor
-        local _UhhColorNames = {"Red","Orange","Yellow","Green","Cyan","Blue","Purple","Pink","White","Rainbow"}
-        local _UhhColors = {
-                Color3.new(1, 0, 0),
-                Color3.new(1, 0.5, 0),
-                Color3.new(1, 1, 0),
-                Color3.new(0, 1, 0),
-                Color3.new(0, 1, 1),
-                Color3.new(0.4, 0.6, 1),
-                Color3.new(0.6, 0, 1),
-                Color3.new(1, 0, 0.8),
-                Color3.new(1, 1, 1),
-                nil,
-        }
-        local _UhhHighlights = {}
-
-        UI.CreateText(MainPage, "Uhhhhhh User Detection", 15, Enum.TextXAlignment.Center)
-        local _UhhStatusLabel = UI.CreateText(MainPage, "Scanning... (0 found)", 12, Enum.TextXAlignment.Center)
-        UI.CreateSwitch(MainPage, "Show Uhhhhhh User Outline", _UhhEnabled).Changed:Connect(function(val)
-                _UhhEnabled = val
-                SaveData.UhhDetector = val
-                if not val then
-                        for plr, h in _UhhHighlights do
-                                h:Destroy()
-                                _UhhHighlights[plr] = nil
-                        end
-                        _UhhStatusLabel.Text = "Outline OFF"
-                end
-        end)
-        UI.CreateDropdown(MainPage, "Outline Color", _UhhColorNames, _UhhColorIdx).Changed:Connect(function(val)
-                _UhhColorIdx = val
-                SaveData.UhhDetectorColor = val
-        end)
-
-        task.spawn(function()
-                while true do
-                        task.wait(0.5)
-                        local voidY = workspace.FallenPartsDestroyHeight - 50
-                        local active = {}
-                        local found = 0
-                        for _, plr in Players:GetPlayers() do
-                                if plr == Player then continue end
-                                active[plr] = true
-                                local char = plr.Character
-                                local hrp = char and char:FindFirstChild("HumanoidRootPart")
-                                local hrpY = hrp and hrp.Position.Y
-                                local isUhh = hrpY and hrpY < voidY
-                                if isUhh then found += 1 end
-                                if _UhhEnabled and isUhh then
-                                        if not _UhhHighlights[plr] or not _UhhHighlights[plr].Parent then
-                                                local h = Instance.new("Highlight")
-                                                h.FillTransparency = 1
-                                                h.OutlineTransparency = 0
-                                                h.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-                                                h.Adornee = char
-                                                h.Parent = char
-                                                _UhhHighlights[plr] = h
-                                        else
-                                                _UhhHighlights[plr].Adornee = char
-                                        end
-                                else
-                                        if _UhhHighlights[plr] then
-                                                _UhhHighlights[plr]:Destroy()
-                                                _UhhHighlights[plr] = nil
-                                        end
-                                end
-                        end
-                        for plr, h in _UhhHighlights do
-                                if not active[plr] then
-                                        h:Destroy()
-                                        _UhhHighlights[plr] = nil
-                                end
-                        end
-                        if _UhhEnabled then
-                                _UhhStatusLabel.Text = found > 0
-                                        and `Detected {found} Uhhhhhh user(s)`
-                                        or `voidY={math.floor(voidY)} | scanning {#Players:GetPlayers()-1} player(s)`
-                        end
-                end
-        end)
-
-        task.spawn(function()
-                while true do
-                        RunService.Heartbeat:Wait()
-                        local color
-                        if _UhhColorIdx == 10 then
-                                color = Color3.fromHSV((os.clock() * 0.2) % 1, 1, 1)
-                        else
-                                color = _UhhColors[_UhhColorIdx] or Color3.new(1, 1, 1)
-                        end
-                        for _, h in _UhhHighlights do
-                                if h and h.Parent then
-                                        h.OutlineColor = color
-                                end
-                        end
-                end
-        end)
-end
-
-UI.CreateSeparator(MainPage)
-
 UISound.MovesetMusic = Util.Instance("Sound", UIMainFrame)
 UISound.MovesetMusic.Looped = true
 UISound.MovesetMusic.PlaybackRegionsEnabled = false
@@ -4246,14 +4140,10 @@ Reanimate.CreateCharacter = function(InitCFrame)
                 end
                 if LastJump ~= CJump then
                         if CJump then
-                                if RCHumanoid:GetState() == Enum.HumanoidStateType.Freefall and RCHumanoid.JumpPower > 0 then
-                                        -- always allow jump in freefall: needed for void-mode reanimation where
-                                        -- the RC root is permanently below the map and never reaches Landed state
-                                        if Reanimate.InfiniteJump or RCRootPart.Position.Y < -50 then
-                                                RCRootPart.Velocity = Vector3.new(
-                                                        RCRootPart.Velocity.X, RCHumanoid.JumpPower, RCRootPart.Velocity.Z
-                                                )
-                                        end
+                                if Reanimate.InfiniteJump and RCHumanoid:GetState() == Enum.HumanoidStateType.Freefall and RCHumanoid.JumpPower > 0 then
+                                        RCRootPart.Velocity = Vector3.new(
+                                                RCRootPart.Velocity.X, RCHumanoid.JumpPower, RCRootPart.Velocity.Z
+                                        )
                                 end
                         end
                 end
@@ -4961,32 +4851,10 @@ function LimbReanimator.Start()
                                         rootcf = CFrame.new(RCRootPart.Position + Vector3.new(0, -16, 0))
                                 end
                                 if LimbReanimator.Mode == 3 then
-                                        local _m3target = RCRootPart.CFrame
                                         local _m3now = os.clock()
-                                        local _m3elapsed = math.min(_m3now - _mode3lasttime, 0.05)
+                                        _m3jdt = math.min(_m3now - _mode3lasttime, 0.05)
                                         _mode3lasttime = _m3now
-                                        _m3jdt = _m3elapsed
-                                        if _mode3smoothcf == nil then
-                                                _mode3smoothcf = _m3target
-                                        else
-                                                local dist = (_mode3smoothcf.Position - _m3target.Position).Magnitude
-                                                if dist > 40 then
-                                                        _mode3smoothcf = _m3target
-                                                else
-                                                        local sp = _mode3smoothcf.Position
-                                                        local tp = _m3target.Position
-                                                        local xzA = 1 - math.exp(-15 * _m3elapsed)
-                                                        local yA  = 1 - math.exp(-30 * _m3elapsed)
-                                                        local rA  = 1 - math.exp(-20 * _m3elapsed)
-                                                        local newPos = Vector3.new(
-                                                                sp.X + (tp.X - sp.X) * xzA,
-                                                                sp.Y + (tp.Y - sp.Y) * yA,
-                                                                sp.Z + (tp.Z - sp.Z) * xzA
-                                                        )
-                                                        _mode3smoothcf = CFrame.new(newPos) * (_mode3smoothcf:Lerp(_m3target, rA)).Rotation
-                                                end
-                                        end
-                                        rootcf = _mode3smoothcf
+                                        rootcf = RCRootPart.CFrame
                                 end
                                 if LimbReanimator.Mode == 4 then
                                         rootcf = RCTorso.CFrame
