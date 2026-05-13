@@ -3105,15 +3105,11 @@ do
 
         local function _UhhTagCharacter(character)
                 if not character then return end
-                local root = character:FindFirstChild("HumanoidRootPart")
-                if root then
-                        root:SetAttribute("_Uhhhhhh_Running", true)
-                else
-                        task.spawn(function()
-                                local r = character:WaitForChild("HumanoidRootPart", 10)
-                                if r then r:SetAttribute("_Uhhhhhh_Running", true) end
-                        end)
-                end
+                if character:FindFirstChild("_UhhhhhhBeacon") then return end
+                local beacon = Instance.new("BoolValue")
+                beacon.Name = "_UhhhhhhBeacon"
+                beacon.Value = true
+                beacon.Parent = character
         end
         _UhhTagCharacter(Player.Character)
         Player.CharacterAdded:Connect(_UhhTagCharacter)
@@ -3126,8 +3122,7 @@ do
                                 if plr == Player then continue end
                                 active[plr] = true
                                 local char = plr.Character
-                                local root = char and char:FindFirstChild("HumanoidRootPart")
-                                local isUhh = root and root:GetAttribute("_Uhhhhhh_Running")
+                                local isUhh = char and char:FindFirstChild("_UhhhhhhBeacon")
                                 if _UhhEnabled and isUhh then
                                         if not _UhhHighlights[plr] or not _UhhHighlights[plr].Parent then
                                                 local h = Util.Instance("Highlight")
