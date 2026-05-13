@@ -3066,6 +3066,114 @@ UI.CreateSwitch(MainPage, "Mute Sounds", SaveData.MuteUISound).Changed:Connect(f
 end)
 UI.CreateSeparator(MainPage)
 
+do
+        SaveData.UhhDetector = not not SaveData.UhhDetector
+        SaveData.UhhDetectorColor = SaveData.UhhDetectorColor or 10
+
+        local _UhhEnabled = SaveData.UhhDetector
+        local _UhhColorIdx = SaveData.UhhDetectorColor
+        local _UhhColorNames = {"Red","Orange","Yellow","Green","Cyan","Blue","Purple","Pink","White","Rainbow"}
+        local _UhhColors = {
+                Color3.new(1, 0, 0),
+                Color3.new(1, 0.5, 0),
+                Color3.new(1, 1, 0),
+                Color3.new(0, 1, 0),
+                Color3.new(0, 1, 1),
+                Color3.new(0.4, 0.6, 1),
+                Color3.new(0.6, 0, 1),
+                Color3.new(1, 0, 0.8),
+                Color3.new(1, 1, 1),
+                nil,
+        }
+        local _UhhHighlights = {}
+
+        UI.CreateText(MainPage, "Uhhhhhh User Detection", 15, Enum.TextXAlignment.Center)
+        UI.CreateSwitch(MainPage, "Show Uhhhhhh User Outline", _UhhEnabled).Changed:Connect(function(val)
+                _UhhEnabled = val
+                SaveData.UhhDetector = val
+                if not val then
+                        for plr, h in _UhhHighlights do
+                                h:Destroy()
+                                _UhhHighlights[plr] = nil
+                        end
+                end
+        end)
+        UI.CreateDropdown(MainPage, "Outline Color", _UhhColorNames, _UhhColorIdx).Changed:Connect(function(val)
+                _UhhColorIdx = val
+                SaveData.UhhDetectorColor = val
+        end)
+
+        local function _UhhTagCharacter(character)
+                if not character then return end
+                local root = character:FindFirstChild("HumanoidRootPart")
+                if root then
+                        root:SetAttribute("_Uhhhhhh_Running", true)
+                else
+                        task.spawn(function()
+                                local r = character:WaitForChild("HumanoidRootPart", 10)
+                                if r then r:SetAttribute("_Uhhhhhh_Running", true) end
+                        end)
+                end
+        end
+        _UhhTagCharacter(Player.Character)
+        Player.CharacterAdded:Connect(_UhhTagCharacter)
+
+        task.spawn(function()
+                while true do
+                        task.wait(0.5)
+                        local active = {}
+                        for _, plr in Players:GetPlayers() do
+                                if plr == Player then continue end
+                                active[plr] = true
+                                local char = plr.Character
+                                local root = char and char:FindFirstChild("HumanoidRootPart")
+                                local isUhh = root and root:GetAttribute("_Uhhhhhh_Running")
+                                if _UhhEnabled and isUhh then
+                                        if not _UhhHighlights[plr] or not _UhhHighlights[plr].Parent then
+                                                local h = Util.Instance("Highlight")
+                                                h.FillTransparency = 1
+                                                h.OutlineTransparency = 0
+                                                h.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+                                                h.Adornee = char
+                                                h.Parent = SCREENGUI
+                                                _UhhHighlights[plr] = h
+                                        else
+                                                _UhhHighlights[plr].Adornee = char
+                                        end
+                                else
+                                        if _UhhHighlights[plr] then
+                                                _UhhHighlights[plr]:Destroy()
+                                                _UhhHighlights[plr] = nil
+                                        end
+                                end
+                        end
+                        for plr, h in _UhhHighlights do
+                                if not active[plr] then
+                                        h:Destroy()
+                                        _UhhHighlights[plr] = nil
+                                end
+                        end
+                end
+        end)
+
+        task.spawn(function()
+                while true do
+                        RunService.Heartbeat:Wait()
+                        local color
+                        if _UhhColorIdx == 10 then
+                                color = Color3.fromHSV((os.clock() * 0.2) % 1, 1, 1)
+                        else
+                                color = _UhhColors[_UhhColorIdx] or Color3.new(1, 1, 1)
+                        end
+                        for _, h in _UhhHighlights do
+                                h.OutlineColor = color
+                        end
+                end
+        end)
+end
+
+UI.CreateSeparator(MainPage)
+
 UISound.MovesetMusic = Util.Instance("Sound", UIMainFrame)
 UISound.MovesetMusic.Looped = true
 UISound.MovesetMusic.PlaybackRegionsEnabled = false
