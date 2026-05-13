@@ -3067,7 +3067,7 @@ end)
 UI.CreateSeparator(MainPage)
 
 do
-        SaveData.UhhDetector = not not SaveData.UhhDetector
+        if SaveData.UhhDetector == nil then SaveData.UhhDetector = true end
         SaveData.UhhDetectorColor = SaveData.UhhDetectorColor or 10
 
         local _UhhEnabled = SaveData.UhhDetector
@@ -3088,6 +3088,7 @@ do
         local _UhhHighlights = {}
 
         UI.CreateText(MainPage, "Uhhhhhh User Detection", 15, Enum.TextXAlignment.Center)
+        local _UhhStatusLabel = UI.CreateText(MainPage, "Scanning... (0 found)", 12, Enum.TextXAlignment.Center)
         UI.CreateSwitch(MainPage, "Show Uhhhhhh User Outline", _UhhEnabled).Changed:Connect(function(val)
                 _UhhEnabled = val
                 SaveData.UhhDetector = val
@@ -3096,6 +3097,7 @@ do
                                 h:Destroy()
                                 _UhhHighlights[plr] = nil
                         end
+                        _UhhStatusLabel.Text = "Outline OFF"
                 end
         end)
         UI.CreateDropdown(MainPage, "Outline Color", _UhhColorNames, _UhhColorIdx).Changed:Connect(function(val)
@@ -3108,15 +3110,18 @@ do
                         task.wait(0.5)
                         local voidY = workspace.FallenPartsDestroyHeight - 50
                         local active = {}
+                        local found = 0
                         for _, plr in Players:GetPlayers() do
                                 if plr == Player then continue end
                                 active[plr] = true
                                 local char = plr.Character
                                 local hrp = char and char:FindFirstChild("HumanoidRootPart")
-                                local isUhh = hrp and hrp.Position.Y < voidY
+                                local hrpY = hrp and hrp.Position.Y
+                                local isUhh = hrpY and hrpY < voidY
+                                if isUhh then found += 1 end
                                 if _UhhEnabled and isUhh then
                                         if not _UhhHighlights[plr] or not _UhhHighlights[plr].Parent then
-                                                local h = Util.Instance("Highlight")
+                                                local h = Instance.new("Highlight")
                                                 h.FillTransparency = 1
                                                 h.OutlineTransparency = 0
                                                 h.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
@@ -3139,6 +3144,11 @@ do
                                         _UhhHighlights[plr] = nil
                                 end
                         end
+                        if _UhhEnabled then
+                                _UhhStatusLabel.Text = found > 0
+                                        and `Detected {found} Uhhhhhh user(s)`
+                                        or `voidY={math.floor(voidY)} | scanning {#Players:GetPlayers()-1} player(s)`
+                        end
                 end
         end)
 
@@ -3152,7 +3162,9 @@ do
                                 color = _UhhColors[_UhhColorIdx] or Color3.new(1, 1, 1)
                         end
                         for _, h in _UhhHighlights do
-                                h.OutlineColor = color
+                                if h and h.Parent then
+                                        h.OutlineColor = color
+                                end
                         end
                 end
         end)
