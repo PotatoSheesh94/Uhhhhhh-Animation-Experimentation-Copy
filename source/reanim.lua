@@ -3103,44 +3103,18 @@ do
                 SaveData.UhhDetectorColor = val
         end)
 
-        local _UhhBeacon = nil
-        local function _UhhTagCharacter(character)
-                if not character then return end
-                if _UhhBeacon and _UhhBeacon.Parent then return end
-                local beacon = Instance.new("Part")
-                beacon.Name = "_UhhhhhhBeacon_" .. Player.Name
-                beacon.Size = Vector3.new(0.1, 0.1, 0.1)
-                beacon.Transparency = 1
-                beacon.CanCollide = false
-                beacon.CanQuery = false
-                beacon.CanTouch = false
-                beacon.Anchored = true
-                beacon.CFrame = CFrame.new(0, -10000, 0)
-                beacon.Parent = workspace
-                _UhhBeacon = beacon
-        end
-        _UhhTagCharacter(Player.Character)
-        Player.CharacterAdded:Connect(_UhhTagCharacter)
-
         task.spawn(function()
                 while true do
                         task.wait(0.5)
-                        local uhhPlayers = {}
-                        for _, v in workspace:GetChildren() do
-                                if v:IsA("BasePart") and v.Name:sub(1, 16) == "_UhhhhhhBeacon_" then
-                                        local pname = v.Name:sub(17)
-                                        local plr = Players:FindFirstChild(pname)
-                                        if plr and plr ~= Player then
-                                                uhhPlayers[plr] = true
-                                        end
-                                end
-                        end
+                        local voidY = workspace.FallenPartsDestroyHeight - 50
                         local active = {}
                         for _, plr in Players:GetPlayers() do
                                 if plr == Player then continue end
                                 active[plr] = true
                                 local char = plr.Character
-                                if _UhhEnabled and uhhPlayers[plr] and char then
+                                local hrp = char and char:FindFirstChild("HumanoidRootPart")
+                                local isUhh = hrp and hrp.Position.Y < voidY
+                                if _UhhEnabled and isUhh then
                                         if not _UhhHighlights[plr] or not _UhhHighlights[plr].Parent then
                                                 local h = Util.Instance("Highlight")
                                                 h.FillTransparency = 1
