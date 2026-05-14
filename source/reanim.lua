@@ -4482,453 +4482,453 @@ LimbReanimator.UseNaNFling = SaveData.Reanimator.LimbUseNaNFling
 LimbReanimator.FlingTargets = {}
 LimbReanimator._TempNotFling = {}
 function LimbReanimator.ShowHitboxes()
-        Util.UINotify("Just a useless option")
-        pcall(function()
-                Util.ShowPartHitbox(Player.Character.HumanoidRootPart)
-        end)
+	Util.UINotify("Just a useless option")
+	pcall(function()
+		Util.ShowPartHitbox(Player.Character.HumanoidRootPart)
+	end)
 end
 function LimbReanimator.Fling(target, duration)
-        if not LimbReanimator.FlingEnabled then return end
-        if not target then return false end
-        for _,v in LimbReanimator.FlingTargets do
-                if v.Target == target then
-                        return false
-                end
-        end
-        if target == Reanimate.Character then return false end
-        if target == Player.Character then return false end
-        if typeof(target) == "Instance" then
-                if LimbReanimator._TempNotFling[target] then return end
-                LimbReanimator._TempNotFling[target] = true
-                task.delay(1, function()
-                        LimbReanimator._TempNotFling[target] = nil
-                end)
-        end
-        table.insert(LimbReanimator.FlingTargets, {
-                Target = target,
-                Duration = duration
-        })
-        if typeof(target) == "Instance" then
-                if target:IsA("Model") then
-                        local h = Util.Instance("Highlight")
-                        h.Adornee = target
-                        h.FillColor = Color3.new(1, 0, 0)
-                        h.OutlineColor = Color3.new(1, 0, 0)
-                        h.FillTransparency = 0.5
-                        h.OutlineTransparency = 0
-                        h.Parent = target
-                        TweenService:Create(h, TweenInfo.new(5), {
-                                FillTransparency = 1,
-                                OutlineTransparency = 1
-                        }):Play()
-                        game.Debris:AddItem(h, 5)
-                end
-        end
-        return true
+	if not LimbReanimator.FlingEnabled then return end
+	if not target then return false end
+	for _,v in LimbReanimator.FlingTargets do
+		if v.Target == target then
+			return false
+		end
+	end
+	if target == Reanimate.Character then return false end
+	if target == Player.Character then return false end
+	if typeof(target) == "Instance" then
+		if LimbReanimator._TempNotFling[target] then return end
+		LimbReanimator._TempNotFling[target] = true
+		task.delay(1, function()
+			LimbReanimator._TempNotFling[target] = nil
+		end)
+	end
+	table.insert(LimbReanimator.FlingTargets, {
+		Target = target,
+		Duration = duration
+	})
+	if typeof(target) == "Instance" then
+		if target:IsA("Model") then
+			local h = Util.Instance("Highlight")
+			h.Adornee = target
+			h.FillColor = Color3.new(1, 0, 0)
+			h.OutlineColor = Color3.new(1, 0, 0)
+			h.FillTransparency = 0.5
+			h.OutlineTransparency = 0
+			h.Parent = target
+			TweenService:Create(h, TweenInfo.new(5), {
+				FillTransparency = 1,
+				OutlineTransparency = 1
+			}):Play()
+			game.Debris:AddItem(h, 5)
+		end
+	end
+	return true
 end
 function LimbReanimator.SetRootPartMode(mode)
-        assert(typeof(mode) == "number")
-        LimbReanimator.Mode = mode
+	assert(typeof(mode) == "number")
+	LimbReanimator.Mode = mode
 end
 function LimbReanimator.Config(parent)
-        UI.CreateText(parent, "as mentioned in the README, this only works for SOME games,\nbecause 'modern' games create the Animator automatically which breaks limb reanimation", 10, Enum.TextXAlignment.Center)
-        local dmode = UI.CreateDropdown(parent, "RootPart Mode", {"RootPart in very void", "RootPart in void", "Keep RootPart Streamed", "CurrentAngle Style", "RootPart is Torso"}, LimbReanimator.Mode + 1)
-        local dvel = UI.CreateDropdown(parent, "RootPart Velocity", {"No Velocity", "Follow Character", "Fling-like"}, LimbReanimator.Velocity + 1)
-        local dinit = UI.CreateDropdown(parent, "Init Mode", {"Reset Character", "CDSB + Reset", "CDSB + SSE + Kill"}, LimbReanimator.InitMode + 1)
-        dmode.Changed:Connect(function(val)
-                LimbReanimator.Mode = val - 1
-                SaveData.Reanimator.LimbMode = val - 1
-        end)
-        dvel.Changed:Connect(function(val)
-                LimbReanimator.Velocity = val - 1
-                SaveData.Reanimator.LimbVelocity = val - 1
-        end)
-        dinit.Changed:Connect(function(val)
-                LimbReanimator.InitMode = val - 1
-                SaveData.Reanimator.LimbInitMode = val - 1
-        end)
-        UI.CreateSwitch(parent, "Show me how I look!", LimbReanimator.ReplicateFPS10).Changed:Connect(function(val)
-                LimbReanimator.ReplicateFPS10 = val
-                SaveData.Reanimator.LimbReplicateFPS10 = val
-        end)
-        UI.CreateSwitch(parent, "Target Fling Enabled", LimbReanimator.FlingEnabled).Changed:Connect(function(val)
-                LimbReanimator.FlingEnabled = val
-                SaveData.Reanimator.LimbRoleplay = not val
-        end)
-        UI.CreateText(parent, "vvv touch player = they lose ownership vvv", 10, Enum.TextXAlignment.Center)
-        UI.CreateSwitch(parent, "Use NaN State Fling", LimbReanimator.UseNaNFling).Changed:Connect(function(val)
-                LimbReanimator.UseNaNFling = val
-                SaveData.Reanimator.LimbUseNaNFling = val
-        end)
-        Util.LinkDestroyI2C(dmode, RunService.Heartbeat:Connect(function()
-                dmode.Value = LimbReanimator.Mode + 1
-                dvel.Value = LimbReanimator.Velocity + 1
-                dinit.Value = LimbReanimator.InitMode + 1
-        end))
+	UI.CreateText(parent, "as mentioned in the README, this only works for SOME games,\nbecause 'modern' games create the Animator automatically which breaks limb reanimation", 10, Enum.TextXAlignment.Center)
+	local dmode = UI.CreateDropdown(parent, "RootPart Mode", {"RootPart in very void", "RootPart in void", "Keep RootPart Streamed", "CurrentAngle Style", "RootPart is Torso"}, LimbReanimator.Mode + 1)
+	local dvel = UI.CreateDropdown(parent, "RootPart Velocity", {"No Velocity", "Follow Character", "Fling-like"}, LimbReanimator.Velocity + 1)
+	local dinit = UI.CreateDropdown(parent, "Init Mode", {"Reset Character", "CDSB + Reset", "CDSB + SSE + Kill"}, LimbReanimator.InitMode + 1)
+	dmode.Changed:Connect(function(val)
+		LimbReanimator.Mode = val - 1
+		SaveData.Reanimator.LimbMode = val - 1
+	end)
+	dvel.Changed:Connect(function(val)
+		LimbReanimator.Velocity = val - 1
+		SaveData.Reanimator.LimbVelocity = val - 1
+	end)
+	dinit.Changed:Connect(function(val)
+		LimbReanimator.InitMode = val - 1
+		SaveData.Reanimator.LimbInitMode = val - 1
+	end)
+	UI.CreateSwitch(parent, "Show me how I look!", LimbReanimator.ReplicateFPS10).Changed:Connect(function(val)
+		LimbReanimator.ReplicateFPS10 = val
+		SaveData.Reanimator.LimbReplicateFPS10 = val
+	end)
+	UI.CreateSwitch(parent, "Target Fling Enabled", LimbReanimator.FlingEnabled).Changed:Connect(function(val)
+		LimbReanimator.FlingEnabled = val
+		SaveData.Reanimator.LimbRoleplay = not val
+	end)
+	UI.CreateText(parent, "vvv touch player = they lose ownership vvv", 10, Enum.TextXAlignment.Center)
+	UI.CreateSwitch(parent, "Use NaN State Fling", LimbReanimator.UseNaNFling).Changed:Connect(function(val)
+		LimbReanimator.UseNaNFling = val
+		SaveData.Reanimator.LimbUseNaNFling = val
+	end)
+	Util.LinkDestroyI2C(dmode, RunService.Heartbeat:Connect(function()
+		dmode.Value = LimbReanimator.Mode + 1
+		dvel.Value = LimbReanimator.Velocity + 1
+		dinit.Value = LimbReanimator.InitMode + 1
+	end))
 end
 function LimbReanimator.Start()
-        local LimbNames = {"Head", "Torso", "Left Arm", "Right Arm", "Left Leg", "Right Leg"}
-        local rootposition = Vector3.new(
-                math.random(-65536, 65536),
-                math.random(-70000, -60000),
-                math.random(-65536, 65536)
-        )
-        local rootposition2 = Vector3.new(
-                math.random(-2048, 2048),
-                math.random(-500, -100) + FallenPartsDestroyHeight,
-                math.random(-2048, 2048)
-        )
-        local InitCFrame = nil
-        if Player.Character then
-                local h = Player.Character:FindFirstChildOfClass("Humanoid")
-                if h and h.RootPart then
-                        local r = h.RootPart
-                        InitCFrame = r.CFrame
-                        if h:GetState() ~= Enum.HumanoidStateType.Dead then
-                                h:SetStateEnabled(Enum.HumanoidStateType.Dead, true)
-                                h:ChangeState(Enum.HumanoidStateType.Dead)
-                        end
-                end
-        end
+	local LimbNames = {"Head", "Torso", "Left Arm", "Right Arm", "Left Leg", "Right Leg"}
+	local rootposition = Vector3.new(
+		math.random(-65536, 65536),
+		math.random(-70000, -60000),
+		math.random(-65536, 65536)
+	)
+	local rootposition2 = Vector3.new(
+		math.random(-2048, 2048),
+		math.random(-500, -100) + FallenPartsDestroyHeight,
+		math.random(-2048, 2048)
+	)
+	local InitCFrame = nil
+	if Player.Character then
+		local h = Player.Character:FindFirstChildOfClass("Humanoid")
+		if h and h.RootPart then
+			local r = h.RootPart
+			InitCFrame = r.CFrame
+			if h:GetState() ~= Enum.HumanoidStateType.Dead then
+				h:SetStateEnabled(Enum.HumanoidStateType.Dead, true)
+				h:ChangeState(Enum.HumanoidStateType.Dead)
+			end
+		end
+	end
 
-        local LimbMapping = loadstring(readfile("UhhhhhhReanim/BuiltinModules/d_limbmap.lua"))()
+	local LimbMapping = loadstring(readfile("UhhhhhhReanim/BuiltinModules/d_limbmap.lua"))()
 
-        local FakeTools = {}
-        local function CreateFakeTool()
-                local FakeTool = Instance.new("Tool")
-                FakeTool.Name = "faketool"
-                local FakeToolHandle = Instance.new("Part")
-                FakeToolHandle.Name = "Handle"
-                FakeToolHandle.Transparency = 1
-                FakeToolHandle.Color = Color3.new(0, 0, 1)
-                FakeToolHandle.CanCollide = false
-                FakeToolHandle.Massless = true
-                FakeToolHandle.Parent = FakeTool
-                FakeTool.Parent = Reanimate.Character
-                local RightGrip = Instance.new("Weld")
-                RightGrip.Name = "RightGrip"
-                RightGrip.Parent = FakeToolHandle
-                RightGrip.Part0 = Reanimate.Character and Reanimate.Character:FindFirstChild("Right Arm")
-                RightGrip.Part1 = FakeToolHandle
-                RightGrip.C0 = RIGHTGRIP_C0
-                Util.LinkDestroyI2C(FakeTool, FakeTool:GetPropertyChangedSignal("Grip"):Connect(function()
-                        RightGrip.C1 = FakeTool.Grip
-                end))
-                RightGrip.C1 = FakeTool.Grip
-                return FakeTool
-        end
+	local FakeTools = {}
+	local function CreateFakeTool()
+		local FakeTool = Instance.new("Tool")
+		FakeTool.Name = "faketool"
+		local FakeToolHandle = Instance.new("Part")
+		FakeToolHandle.Name = "Handle"
+		FakeToolHandle.Transparency = 1
+		FakeToolHandle.Color = Color3.new(0, 0, 1)
+		FakeToolHandle.CanCollide = false
+		FakeToolHandle.Massless = true
+		FakeToolHandle.Parent = FakeTool
+		FakeTool.Parent = Reanimate.Character
+		local RightGrip = Instance.new("Weld")
+		RightGrip.Name = "RightGrip"
+		RightGrip.Parent = FakeToolHandle
+		RightGrip.Part0 = Reanimate.Character and Reanimate.Character:FindFirstChild("Right Arm")
+		RightGrip.Part1 = FakeToolHandle
+		RightGrip.C0 = RIGHTGRIP_C0
+		Util.LinkDestroyI2C(FakeTool, FakeTool:GetPropertyChangedSignal("Grip"):Connect(function()
+			RightGrip.C1 = FakeTool.Grip
+		end))
+		RightGrip.C1 = FakeTool.Grip
+		return FakeTool
+	end
 
-        local BaseParts = {}
-        local UnknownMotor6Ds = {}
-        local CharOnDesc = function(v)
-                if v:IsA("BasePart") then
-                        if not table.find(BaseParts, v) then
-                                table.insert(BaseParts, v)
-                                v.CanCollide = false
-                                v:GetPropertyChangedSignal("CanCollide"):Connect(function()
-                                        if v.CanCollide then v.CanCollide = false end
-                                end)
-                        end
-                elseif v:IsA("Motor6D") then
-                        repeat task.wait() until (not v:IsDescendantOf(workspace)) or (v.Part0 and v.Part1)
-                        if not v:IsDescendantOf(workspace) then return end
-                        local p0, p1 = v.Part0, v.Part1
-                        if p0 and p1 then
-                                p0, p1 = p0.Name, p1.Name
-                                for _,map in LimbMapping do
-                                        if map.Part0 == p0 and map.Part1 == p1 then
-                                                map.Reference = v
-                                                return
-                                        end
-                                end
-                        end
-                        table.insert(UnknownMotor6Ds, v)
-                elseif v:IsA("Animator") then
-                        task.defer(v.Destroy, v)
-                elseif v:IsA("LocalScript") and v.Parent == Player.Character then
-                        v.Enabled = false
-                        v:GetPropertyChangedSignal("Enabled"):Connect(function()
-                                if v.Enabled then v.Enabled = false end
-                        end)
-                        v:GetPropertyChangedSignal("Disabled"):Connect(function()
-                                if not v.Disabled then v.Disabled = true end
-                        end)
-                elseif v:IsA("Tool") and v.Parent == Player.Character then
-                        if not FakeTools[v] then
-                                FakeTools[v] = true
-                                local fake = CreateFakeTool()
-                                fake.Grip = v.Grip
-                                local h = v:FindFirstChild("Handle")
-                                if h ~= nil then
-                                        fake.Handle.Size = h.Size
-                                end
-                                Util.LinkDestroyI2C(fake, RunService.PreSimulation:Connect(function()
-                                        if v.Parent == Player.Character then
-                                                fake.Grip = v.Grip
-                                                local h = v:FindFirstChild("Handle")
-                                                if h ~= nil then
-                                                        fake.Handle.Size = h.Size
-                                                end
-                                        else
-                                                fake:Destroy()
-                                                FakeTools[v] = nil
-                                        end
-                                end))
-                                Util.LinkDestroyI2C(fake, v.ChildAdded:Connect(function(v)
-                                        if v.ClassName == "StringValue" and v.Name == "toolanim" then
-                                                local w = Instance.new("StringValue")
-                                                w.Name = "toolanim"
-                                                w.Value = v.Value
-                                                w.Parent = fake
-                                                Debris:AddItem(v, 1)
-                                                Debris:AddItem(w, 1)
-                                        end
-                                end))
-                                fake.Handle.Touched:Connect(function(t)
-                                        local h = v:FindFirstChild("Handle")
-                                        if h and t and h:IsDescendantOf(workspace) and t:IsDescendantOf(workspace) then
-                                                h.CanTouch = true
-                                                pcall(firetouchinterest, h, t, 0)
-                                        end
-                                end)
-                                fake.Handle.TouchEnded:Connect(function(t)
-                                        local h = v:FindFirstChild("Handle")
-                                        if h and t and h:IsDescendantOf(workspace) and t:IsDescendantOf(workspace) then
-                                                h.CanTouch = true
-                                                pcall(firetouchinterest, h, t, 1)
-                                        end
-                                end)
-                        end
-                end
-        end
-        local lastspawn = 0
-        local CharConn = Player.CharacterAdded:Connect(function(character)
-                local camcfr = Camera.CFrame
-                RunService.PreRender:Once(function()
-                        RunService.PreAnimation:Wait()
-                        Camera.CFrame = camcfr
-                end)
-                lastspawn = os.clock()
-                table.clear(BaseParts)
-                table.clear(UnknownMotor6Ds)
-                for _,map in LimbMapping do
-                        map.Reference = nil
-                end
-                character.DescendantAdded:Connect(CharOnDesc)
-                for _,v in character:GetDescendants() do
-                        task.spawn(CharOnDesc, v)
-                end
-                local humanoid = character:WaitForChild("Humanoid", 5)
-                local stupid = humanoid:FindFirstChildWhichIsA("Animator")
-                if stupid then
-                        stupid:Destroy()
-                end
-                if not Reanimate.UseLoadAnimationHook then
-                        stupid = character:FindFirstChild("Animate")
-                        while not stupid do
-                                character.ChildAdded:Wait()
-                                stupid = character:FindFirstChild("Animate")
-                        end
-                        stupid:Destroy()
-                end
-        end)
-        Player.CharacterAdded:Wait()
-        Reanimate.CreateCharacter(InitCFrame)
+	local BaseParts = {}
+	local UnknownMotor6Ds = {}
+	local CharOnDesc = function(v)
+		if v:IsA("BasePart") then
+			if not table.find(BaseParts, v) then
+				table.insert(BaseParts, v)
+				v.CanCollide = false
+				v:GetPropertyChangedSignal("CanCollide"):Connect(function()
+					if v.CanCollide then v.CanCollide = false end
+				end)
+			end
+		elseif v:IsA("Motor6D") then
+			repeat task.wait() until (not v:IsDescendantOf(workspace)) or (v.Part0 and v.Part1)
+			if not v:IsDescendantOf(workspace) then return end
+			local p0, p1 = v.Part0, v.Part1
+			if p0 and p1 then
+				p0, p1 = p0.Name, p1.Name
+				for _,map in LimbMapping do
+					if map.Part0 == p0 and map.Part1 == p1 then
+						map.Reference = v
+						return
+					end
+				end
+			end
+			table.insert(UnknownMotor6Ds, v)
+		elseif v:IsA("Animator") then
+			task.defer(v.Destroy, v)
+		elseif v:IsA("LocalScript") and v.Parent == Player.Character then
+			v.Enabled = false
+			v:GetPropertyChangedSignal("Enabled"):Connect(function()
+				if v.Enabled then v.Enabled = false end
+			end)
+			v:GetPropertyChangedSignal("Disabled"):Connect(function()
+				if not v.Disabled then v.Disabled = true end
+			end)
+		elseif v:IsA("Tool") and v.Parent == Player.Character then
+			if not FakeTools[v] then
+				FakeTools[v] = true
+				local fake = CreateFakeTool()
+				fake.Grip = v.Grip
+				local h = v:FindFirstChild("Handle")
+				if h ~= nil then
+					fake.Handle.Size = h.Size
+				end
+				Util.LinkDestroyI2C(fake, RunService.PreSimulation:Connect(function()
+					if v.Parent == Player.Character then
+						fake.Grip = v.Grip
+						local h = v:FindFirstChild("Handle")
+						if h ~= nil then
+							fake.Handle.Size = h.Size
+						end
+					else
+						fake:Destroy()
+						FakeTools[v] = nil
+					end
+				end))
+				Util.LinkDestroyI2C(fake, v.ChildAdded:Connect(function(v)
+					if v.ClassName == "StringValue" and v.Name == "toolanim" then
+						local w = Instance.new("StringValue")
+						w.Name = "toolanim"
+						w.Value = v.Value
+						w.Parent = fake
+						Debris:AddItem(v, 1)
+						Debris:AddItem(w, 1)
+					end
+				end))
+				fake.Handle.Touched:Connect(function(t)
+					local h = v:FindFirstChild("Handle")
+					if h and t and h:IsDescendantOf(workspace) and t:IsDescendantOf(workspace) then
+						h.CanTouch = true
+						pcall(firetouchinterest, h, t, 0)
+					end
+				end)
+				fake.Handle.TouchEnded:Connect(function(t)
+					local h = v:FindFirstChild("Handle")
+					if h and t and h:IsDescendantOf(workspace) and t:IsDescendantOf(workspace) then
+						h.CanTouch = true
+						pcall(firetouchinterest, h, t, 1)
+					end
+				end)
+			end
+		end
+	end
+	local lastspawn = 0
+	local CharConn = Player.CharacterAdded:Connect(function(character)
+		local camcfr = Camera.CFrame
+		RunService.PreRender:Once(function()
+			RunService.PreAnimation:Wait()
+			Camera.CFrame = camcfr
+		end)
+		lastspawn = os.clock()
+		table.clear(BaseParts)
+		table.clear(UnknownMotor6Ds)
+		for _,map in LimbMapping do
+			map.Reference = nil
+		end
+		character.DescendantAdded:Connect(CharOnDesc)
+		for _,v in character:GetDescendants() do
+			task.spawn(CharOnDesc, v)
+		end
+		local humanoid = character:WaitForChild("Humanoid", 5)
+		local stupid = humanoid:FindFirstChildWhichIsA("Animator")
+		if stupid then
+			stupid:Destroy()
+		end
+		if not Reanimate.UseLoadAnimationHook then
+			stupid = character:FindFirstChild("Animate")
+			while not stupid do
+				character.ChildAdded:Wait()
+				stupid = character:FindFirstChild("Animate")
+			end
+			stupid:Destroy()
+		end
+	end)
+	Player.CharacterAdded:Wait()
+	Reanimate.CreateCharacter(InitCFrame)
 
-        local lastrep = 0
-        local function UpdateTransforms(ReanimCharacter, RootPart, rootcf, rootvel, flingtarget, flingcf)
-                if not RootPart:IsGrounded() then
-                        if flingtarget then
-                                if LimbReanimator.UseNaNFling then
-                                        RootPart.CFrame = CFrame.new(flingcf.Position + Vector3.new(0, 0, math.random(0, 1) * 0.005)) * CFrame.Angles(0, os.clock() * 15, 0)
-                                        RootPart.Velocity, RootPart.RotVelocity = Vector3.zero, Vector3.zero
-                                else
-                                        RootPart.CFrame = flingcf + Vector3.new(0, 0, math.random(0, 1) * 0.005)
-                                        RootPart.Velocity, RootPart.RotVelocity = Vector3.new(0, -16384, 0), Vector3.one * 16384
-                                end
-                                pcall(sethiddenproperty, RootPart, "PhysicsRepRootPart", Reanimate.UsePhysicsRepRootPart and Util.PredictionFlingPart(flingtarget.Target) or nil)
-                        else
-                                RootPart.CFrame = rootcf + Vector3.new(0, 0, math.random(0, 1) * 0.005)
-                                RootPart.Velocity, RootPart.RotVelocity = rootvel, Vector3.zero
-                                pcall(sethiddenproperty, RootPart, "PhysicsRepRootPart", nil)
-                        end
-                end
-                local dorep = true
-                if LimbReanimator.ReplicateFPS10 then
-                        dorep = false
-                        local b = os.clock()
-                        local a = b - lastrep
-                        if a >= 1 / 10 then
-                                dorep = true
-                                a %= 1 / 10
-                                lastrep = b - a
-                        end
-                end
-                for _,v in UnknownMotor6Ds do
-                        Util.SetMotor6DTransform(v, CFrame.identity)
-                end
-                for _,map in LimbMapping do
-                        local v = map.Reference
-                        if v then
-                                if flingtarget then
-                                        Util.SetMotor6DTransform(v, CFrame.identity)
-                                else
-                                        local cf = CFrame.identity
-                                        local p0, p1 = ReanimCharacter:FindFirstChild(map.RPart0), ReanimCharacter:FindFirstChild(map.RPart1)
-                                        if map.RPart0 == "ROOT" then
-                                                p0 = RootPart
-                                        end
-                                        if p0 and p1 then
-                                                if map.Type == 1 then
-                                                        cf = p0.CFrame:ToObjectSpace(p1.CFrame)
-                                                end
-                                                if map.Type == 2 then
-                                                        local offset = map.Offset or CFrame.identity
-                                                        local c0, c1 = CFrame.new(map.C0), CFrame.new(map.C1)
-                                                        local transform = offset * (p0.CFrame * c0):ToObjectSpace(p1.CFrame * c1) * offset:Inverse()
-                                                        cf = v.C0 * transform * v.C1:Inverse()
-                                                end
-                                        end
-                                        if dorep or not map.CFrame then
-                                                map.CFrame = cf
-                                        end
-                                        Util.SetMotor6DOffset(v, map.CFrame)
-                                end
-                        end
-                end
-        end
+	local lastrep = 0
+	local function UpdateTransforms(ReanimCharacter, RootPart, rootcf, rootvel, flingtarget, flingcf)
+		if not RootPart:IsGrounded() then
+			if flingtarget then
+				if LimbReanimator.UseNaNFling then
+					RootPart.CFrame = CFrame.new(flingcf.Position + Vector3.new(0, 0, math.random(0, 1) * 0.005)) * CFrame.Angles(0, os.clock() * 15, 0)
+					RootPart.Velocity, RootPart.RotVelocity = Vector3.zero, Vector3.zero
+				else
+					RootPart.CFrame = flingcf + Vector3.new(0, 0, math.random(0, 1) * 0.005)
+					RootPart.Velocity, RootPart.RotVelocity = Vector3.new(0, -16384, 0), Vector3.one * 16384
+				end
+				pcall(sethiddenproperty, RootPart, "PhysicsRepRootPart", Reanimate.UsePhysicsRepRootPart and Util.PredictionFlingPart(flingtarget.Target) or nil)
+			else
+				RootPart.CFrame = rootcf + Vector3.new(0, 0, math.random(0, 1) * 0.005)
+				RootPart.Velocity, RootPart.RotVelocity = rootvel, Vector3.zero
+				pcall(sethiddenproperty, RootPart, "PhysicsRepRootPart", nil)
+			end
+		end
+		local dorep = true
+		if LimbReanimator.ReplicateFPS10 then
+			dorep = false
+			local b = os.clock()
+			local a = b - lastrep
+			if a >= 1 / 10 then
+				dorep = true
+				a %= 1 / 10
+				lastrep = b - a
+			end
+		end
+		for _,v in UnknownMotor6Ds do
+			Util.SetMotor6DTransform(v, CFrame.identity)
+		end
+		for _,map in LimbMapping do
+			local v = map.Reference
+			if v then
+				if flingtarget then
+					Util.SetMotor6DTransform(v, CFrame.identity)
+				else
+					local cf = CFrame.identity
+					local p0, p1 = ReanimCharacter:FindFirstChild(map.RPart0), ReanimCharacter:FindFirstChild(map.RPart1)
+					if map.RPart0 == "ROOT" then
+						p0 = RootPart
+					end
+					if p0 and p1 then
+						if map.Type == 1 then
+							cf = p0.CFrame:ToObjectSpace(p1.CFrame)
+						end
+						if map.Type == 2 then
+							local offset = map.Offset or CFrame.identity
+							local c0, c1 = CFrame.new(map.C0), CFrame.new(map.C1)
+							local transform = offset * (p0.CFrame * c0):ToObjectSpace(p1.CFrame * c1) * offset:Inverse()
+							cf = v.C0 * transform * v.C1:Inverse()
+						end
+					end
+					if dorep or not map.CFrame then
+						map.CFrame = cf
+					end
+					Util.SetMotor6DOffset(v, map.CFrame)
+				end
+			end
+		end
+	end
 
-        Reanimate.Starting = false
-        while not Reanimate.Stopping do
-                RunService.PreSimulation:Wait()
-                workspace.FallenPartsDestroyHeight = 0/0
-                local ReanimOkay = false
-                local Character, Humanoid, RootPart = Player.Character, nil, nil
-                if Character then
-                        Humanoid = Character:FindFirstChildOfClass("Humanoid")
-                        if Humanoid then
-                                Humanoid.AutoRotate = false
-                                if Humanoid.WalkSpeed < 1 then
-                                        Humanoid.WalkSpeed = 16
-                                end
-                                if Humanoid.JumpPower < 1 then
-                                        Humanoid.JumpPower = 50
-                                end
-                                RootPart = Humanoid.RootPart
-                                if RootPart and Humanoid:GetState() ~= Enum.HumanoidStateType.Dead then
-                                        Humanoid:ChangeState(Enum.HumanoidStateType.Freefall)
-                                        ReanimOkay = LimbReanimator.FlingTargets[1] == nil
-                                end
-                        end
-                end
-                local rootcf = CFrame.new(rootposition)
-                local rootvel = Vector3.zero
-                local ltm = Reanimate.LocalTransparencyModifier
-                local ReanimCharacter = Reanimate.Character
-                if ReanimCharacter then
-                        local RCHumanoid = ReanimCharacter:FindFirstChildOfClass("Humanoid")
-                        local RCRootPart = ReanimCharacter:FindFirstChild("HumanoidRootPart")
-                        local RCTorso = ReanimCharacter:FindFirstChild("Torso")
-                        if RCRootPart and RCTorso then
-                                if LimbReanimator.Mode == 1 then
-                                        rootcf = CFrame.new(rootposition2)
-                                end
-                                if LimbReanimator.Mode == 2 or workspace.StreamingEnabled then
-                                        rootcf = CFrame.new(RCRootPart.Position + Vector3.new(0, -16, 0))
-                                end
-                                if LimbReanimator.Mode == 3 then
-                                        rootcf = RCRootPart.CFrame
-                                end
-                                if LimbReanimator.Mode == 4 then
-                                        rootcf = RCTorso.CFrame
-                                end
-                                if LimbReanimator.Velocity == 1 then
-                                        rootvel = RCRootPart.Velocity
-                                elseif LimbReanimator.Velocity == 2 then
-                                        rootvel = Vector3.new(0, 16384, 0)
-                                end
-                                if Camera then
-                                        Camera.CameraSubject = RCHumanoid
-                                end
-                        end
-                        for _,v in BaseParts do
-                                v.CanCollide = false
-                                v.Velocity = Vector3.zero
-                                v.RotVelocity = Vector3.zero
-                                if not v:FindFirstAncestorWhichIsA("Tool") then
-                                        local lltm = ltm
-                                        if Reanimate.FirstPersonBody then
-                                                lltm = 0
-                                                if v.Name == "Head" then
-                                                        lltm = ltm
-                                                else
-                                                        local lol = v:FindFirstChild("AccessoryWeld")
-                                                        if lol and lol:IsA("Weld") and lol.Part1 and lol.Part1.Name == "Head" then
-                                                                lltm = ltm
-                                                        end
-                                                end
-                                        end
-                                        v.LocalTransparencyModifier = lltm
-                                end
-                        end
-                        for _,v in ReanimCharacter:GetChildren() do
-                                if v:IsA("BasePart") then
-                                        if table.find(LimbNames, v.Name) then
-                                                v.Transparency = ReanimOkay and 1 or Reanimate.PlaceholderTransparency
-                                        end
-                                end
-                        end
-                        if Character and Humanoid and RootPart then
-                                RunService.Heartbeat:Wait()
-                                local t = os.clock()
-                                local flingtarget = LimbReanimator.FlingTargets[1]
-                                if flingtarget then
-                                        if flingtarget.Time then
-                                                if t > flingtarget.Time then
-                                                        table.remove(LimbReanimator.FlingTargets, 1)
-                                                        flingtarget = nil
-                                                end
-                                        else
-                                                flingtarget.Time = t + (flingtarget.Duration or (Reanimate.UsePhysicsRepRootPart and (LimbReanimator.UseNaNFling and 1 or 0.5) or 2))
-                                        end
-                                end
-                                local flingcf, flinged = CFrame.identity, true
-                                if flingtarget then
-                                        flingcf, flinged = Util.PredictionFling(flingtarget.Target)
-                                        if flinged then
-                                                table.remove(LimbReanimator.FlingTargets, 1)
-                                                flingtarget = nil
-                                        end
-                                end
-                                UpdateTransforms(ReanimCharacter, RootPart, rootcf, rootvel, flingtarget, flingcf)
-                                if LimbReanimator.UseNaNFling then
-                                        if os.clock() - lastspawn > 0.1 then
-                                                pcall(sethiddenproperty, Humanoid, "MoveDirectionInternal", Vector3.new(0/0, 0/0, 0/0))
-                                        else
-                                                pcall(sethiddenproperty, Humanoid, "MoveDirectionInternal", Vector3.zero)
-                                        end
-                                        pcall(sethiddenproperty, Humanoid, "NetworkHumanoidState", Enum.HumanoidStateType.Freefall)
-                                else
-                                        pcall(sethiddenproperty, Humanoid, "NetworkHumanoidState", Enum.HumanoidStateType[({"Running", "PlatformStanding", "Jumping", "Ragdoll", "Seated", "Physics"})[math.random(1, 6)]])
-                                end
-                                RunService.PreRender:Wait()
-                                if Reanimate:ShouldRotationType() then
-                                        Reanimate:CameraLockCharacter()
-                                end
-                                UpdateTransforms(ReanimCharacter, RootPart, rootcf, rootvel, flingtarget, flingcf)
-                        end
-                end
-        end
-        CharConn:Disconnect()
-        if Player.Character then
-                local h = Player.Character:FindFirstChild("Humanoid")
-                if h then
-                        h:SetStateEnabled(Enum.HumanoidStateType.Dead, true)
-                        h:ChangeState(Enum.HumanoidStateType.Dead)
-                end
-        end
-        Reanimate.Stopping = false
-        Reanimate.DestroyCharacter()
+	Reanimate.Starting = false
+	while not Reanimate.Stopping do
+		RunService.PreSimulation:Wait()
+		workspace.FallenPartsDestroyHeight = 0/0
+		local ReanimOkay = false
+		local Character, Humanoid, RootPart = Player.Character, nil, nil
+		if Character then
+			Humanoid = Character:FindFirstChildOfClass("Humanoid")
+			if Humanoid then
+				Humanoid.AutoRotate = false
+				if Humanoid.WalkSpeed < 1 then
+					Humanoid.WalkSpeed = 16
+				end
+				if Humanoid.JumpPower < 1 then
+					Humanoid.JumpPower = 50
+				end
+				RootPart = Humanoid.RootPart
+				if RootPart and Humanoid:GetState() ~= Enum.HumanoidStateType.Dead then
+					Humanoid:ChangeState(Enum.HumanoidStateType.Freefall)
+					ReanimOkay = LimbReanimator.FlingTargets[1] == nil
+				end
+			end
+		end
+		local rootcf = CFrame.new(rootposition)
+		local rootvel = Vector3.zero
+		local ltm = Reanimate.LocalTransparencyModifier
+		local ReanimCharacter = Reanimate.Character
+		if ReanimCharacter then
+			local RCHumanoid = ReanimCharacter:FindFirstChildOfClass("Humanoid")
+			local RCRootPart = ReanimCharacter:FindFirstChild("HumanoidRootPart")
+			local RCTorso = ReanimCharacter:FindFirstChild("Torso")
+			if RCRootPart and RCTorso then
+				if LimbReanimator.Mode == 1 then
+					rootcf = CFrame.new(rootposition2)
+				end
+				if LimbReanimator.Mode == 2 or workspace.StreamingEnabled then
+					rootcf = CFrame.new(RCRootPart.Position + Vector3.new(0, -16, 0))
+				end
+				if LimbReanimator.Mode == 3 then
+					rootcf = RCRootPart.CFrame
+				end
+				if LimbReanimator.Mode == 4 then
+					rootcf = RCTorso.CFrame
+				end
+				if LimbReanimator.Velocity == 1 then
+					rootvel = RCRootPart.Velocity
+				elseif LimbReanimator.Velocity == 2 then
+					rootvel = Vector3.new(0, 16384, 0)
+				end
+				if Camera then
+					Camera.CameraSubject = RCHumanoid
+				end
+			end
+			for _,v in BaseParts do
+				v.CanCollide = false
+				v.Velocity = Vector3.zero
+				v.RotVelocity = Vector3.zero
+				if not v:FindFirstAncestorWhichIsA("Tool") then
+					local lltm = ltm
+					if Reanimate.FirstPersonBody then
+						lltm = 0
+						if v.Name == "Head" then
+							lltm = ltm
+						else
+							local lol = v:FindFirstChild("AccessoryWeld")
+							if lol and lol:IsA("Weld") and lol.Part1 and lol.Part1.Name == "Head" then
+								lltm = ltm
+							end
+						end
+					end
+					v.LocalTransparencyModifier = lltm
+				end
+			end
+			for _,v in ReanimCharacter:GetChildren() do
+				if v:IsA("BasePart") then
+					if table.find(LimbNames, v.Name) then
+						v.Transparency = ReanimOkay and 1 or Reanimate.PlaceholderTransparency
+					end
+				end
+			end
+			if Character and Humanoid and RootPart then
+				RunService.Heartbeat:Wait()
+				local t = os.clock()
+				local flingtarget = LimbReanimator.FlingTargets[1]
+				if flingtarget then
+					if flingtarget.Time then
+						if t > flingtarget.Time then
+							table.remove(LimbReanimator.FlingTargets, 1)
+							flingtarget = nil
+						end
+					else
+						flingtarget.Time = t + (flingtarget.Duration or (Reanimate.UsePhysicsRepRootPart and (LimbReanimator.UseNaNFling and 1 or 0.5) or 2))
+					end
+				end
+				local flingcf, flinged = CFrame.identity, true
+				if flingtarget then
+					flingcf, flinged = Util.PredictionFling(flingtarget.Target)
+					if flinged then
+						table.remove(LimbReanimator.FlingTargets, 1)
+						flingtarget = nil
+					end
+				end
+				UpdateTransforms(ReanimCharacter, RootPart, rootcf, rootvel, flingtarget, flingcf)
+				if LimbReanimator.UseNaNFling then
+					if os.clock() - lastspawn > 0.1 then
+						pcall(sethiddenproperty, Humanoid, "MoveDirectionInternal", Vector3.new(0/0, 0/0, 0/0))
+					else
+						pcall(sethiddenproperty, Humanoid, "MoveDirectionInternal", Vector3.zero)
+					end
+					pcall(sethiddenproperty, Humanoid, "NetworkHumanoidState", Enum.HumanoidStateType.Freefall)
+				else
+					pcall(sethiddenproperty, Humanoid, "NetworkHumanoidState", Enum.HumanoidStateType[({"Running", "PlatformStanding", "Jumping", "Ragdoll", "Seated", "Physics"})[math.random(1, 6)]])
+				end
+				RunService.PreRender:Wait()
+				if Reanimate:ShouldRotationType() then
+					Reanimate:CameraLockCharacter()
+				end
+				UpdateTransforms(ReanimCharacter, RootPart, rootcf, rootvel, flingtarget, flingcf)
+			end
+		end
+	end
+	CharConn:Disconnect()
+	if Player.Character then
+		local h = Player.Character:FindFirstChild("Humanoid")
+		if h then
+			h:SetStateEnabled(Enum.HumanoidStateType.Dead, true)
+			h:ChangeState(Enum.HumanoidStateType.Dead)
+		end
+	end
+	Reanimate.Stopping = false
+	Reanimate.DestroyCharacter()
 end
 
 local HatReanimator = {}
@@ -4981,2096 +4981,2096 @@ HatReanimator.RebuildRequired = true
 HatReanimator.HatMapSummary = "(no hat map yet, please * Reanimate * to build)"
 HatReanimator.HatCFrameOverride = {}
 HatReanimator.Status = {
-        Permadeath = "(no status)",
-        HatCollide = "(no status)",
-        RespawnFling = "(no status)",
+	Permadeath = "(no status)",
+	HatCollide = "(no status)",
+	RespawnFling = "(no status)",
 }
 function HatReanimator.ShowHitboxes()
-        if Player.Character then
-                for _,v in Player.Character:GetChildren() do
-                        if v:IsA("Accessory") then
-                                local handle = v:FindFirstChild("Handle")
-                                if handle and handle:IsA("BasePart") then
-                                        if handle:GetAttribute("_Uhhhhhh_HasCollide") then
-                                                Util.ShowPartHitbox(handle)
-                                        end
-                                end
-                        end
-                end
-        end
+	if Player.Character then
+		for _,v in Player.Character:GetChildren() do
+			if v:IsA("Accessory") then
+				local handle = v:FindFirstChild("Handle")
+				if handle and handle:IsA("BasePart") then
+					if handle:GetAttribute("_Uhhhhhh_HasCollide") then
+						Util.ShowPartHitbox(handle)
+					end
+				end
+			end
+		end
+	end
 end
 HatReanimator.FlingTargets = {}
 HatReanimator._TempNotFling = {}
 function HatReanimator.Fling(target, duration)
-        if HatReanimator.FlingMethod == -1 then return end
-        if not target then return false end
-        for _,v in HatReanimator.FlingTargets do
-                if v.Target == target then
-                        return false
-                end
-        end
-        if target == Reanimate.Character then return false end
-        if target == Player.Character then return false end
-        if typeof(target) == "Instance" then
-                if HatReanimator._TempNotFling[target] then return end
-                HatReanimator._TempNotFling[target] = true
-                task.delay(1, function()
-                        HatReanimator._TempNotFling[target] = nil
-                end)
-        end
-        table.insert(HatReanimator.FlingTargets, {
-                Target = target,
-                Duration = duration
-        })
-        if typeof(target) == "Instance" then
-                if target:IsA("Model") then
-                        local h = Util.Instance("Highlight")
-                        h.Adornee = target
-                        h.FillColor = Color3.new(1, 0, 0)
-                        h.OutlineColor = Color3.new(1, 0, 0)
-                        h.FillTransparency = 0.5
-                        h.OutlineTransparency = 0
-                        h.Parent = target
-                        TweenService:Create(h, TweenInfo.new(5), {
-                                FillTransparency = 1,
-                                OutlineTransparency = 1
-                        }):Play()
-                        game.Debris:AddItem(h, 5)
-                end
-        end
-        return true
+	if HatReanimator.FlingMethod == -1 then return end
+	if not target then return false end
+	for _,v in HatReanimator.FlingTargets do
+		if v.Target == target then
+			return false
+		end
+	end
+	if target == Reanimate.Character then return false end
+	if target == Player.Character then return false end
+	if typeof(target) == "Instance" then
+		if HatReanimator._TempNotFling[target] then return end
+		HatReanimator._TempNotFling[target] = true
+		task.delay(1, function()
+			HatReanimator._TempNotFling[target] = nil
+		end)
+	end
+	table.insert(HatReanimator.FlingTargets, {
+		Target = target,
+		Duration = duration
+	})
+	if typeof(target) == "Instance" then
+		if target:IsA("Model") then
+			local h = Util.Instance("Highlight")
+			h.Adornee = target
+			h.FillColor = Color3.new(1, 0, 0)
+			h.OutlineColor = Color3.new(1, 0, 0)
+			h.FillTransparency = 0.5
+			h.OutlineTransparency = 0
+			h.Parent = target
+			TweenService:Create(h, TweenInfo.new(5), {
+				FillTransparency = 1,
+				OutlineTransparency = 1
+			}):Play()
+			game.Debris:AddItem(h, 5)
+		end
+	end
+	return true
 end
 HatReanimator.DontFireCharAddOnThisChar = nil
 function HatReanimator.Config(parent)
-        UI.CreateText(parent, "permadeath is patched, enable this switch if you want to", 10, Enum.TextXAlignment.Center)
-        UI.CreateSwitch(parent, "Permadeath", HatReanimator.Permadeath).Changed:Connect(function(val)
-                HatReanimator.Permadeath = val
-                SaveData.Reanimator.HatsPatchmahub = not val
-        end)
-        UI.CreateDropdown(parent, "respawntp", {
-                "The Void",
-                "Behind ReanimCharacter",
-                "Randomtp near",
-                "At spawn",
-        }, HatReanimator.RespawnPosition + 1).Changed:Connect(function(val)
-                HatReanimator.RespawnPosition = val - 1
-                SaveData.Reanimator.RespawnPosition = val - 1
-        end)
-        UI.CreateSwitch(parent, "Hat Collide", HatReanimator.HatCollide).Changed:Connect(function(val)
-                HatReanimator.HatCollide = val
-                SaveData.Reanimator.HatsCollide = val
-        end)
-        UI.CreateText(parent, "if ur hats get voided when u try to hat collide\nvvv try changing this vvv", 10, Enum.TextXAlignment.Center)
-        UI.CreateDropdown(parent, "Torso Offset", {
-                "1 - ShownApe's method (???)",
-                "2 - STEVE's method V1 (specific)",
-                "3 - 2 but for back accessories",
-                "4 - 2 but for shoulder accessories",
-                "5 - 2 but for waist accessories",
-                "6 - STEVE's method V2 (kinda stable)",
-                "7 - 6 but further from void (gl getting hatdrop)",
-                "8 - STEVE's method V3 (most stable)",
-                "9 - experimental do not use",
-        }, HatReanimator.HatCollideMethod + 1).Changed:Connect(function(val)
-                HatReanimator.HatCollideMethod = val - 1
-                SaveData.Reanimator.HatsCollideMethod = val - 1
-        end)
-        UI.CreateSwitch(parent, "Ensure All Hats", HatReanimator.IWantAllHats).Changed:Connect(function(val)
-                HatReanimator.IWantAllHats = val
-                SaveData.Reanimator.IWantAllHats = val
-        end)
-        UI.CreateDropdown(parent, "Ensure Hat Collide", {
-                "Off",
-                "Atleast one",
-                "Atleast #hats - 2",
-                "Atleast #hats - 1",
-                "ALL",
-        }, HatReanimator.IWantHatCollide + 1).Changed:Connect(function(val)
-                HatReanimator.IWantHatCollide = val - 1
-                SaveData.Reanimator.IWantHatCollide = val - 1
-        end)
-        UI.CreateText(parent, "vvv dont use these two options with target fling... vvv", 10, Enum.TextXAlignment.Center)
-        UI.CreateSwitch(parent, "Hat Fling", HatReanimator.HatFling).Changed:Connect(function(val)
-                HatReanimator.HatFling = val
-                SaveData.Reanimator.HatsFling = val
-        end)
-        UI.CreateText(parent, "^^^ ...unless you want to walkfling or... ^^^", 10, Enum.TextXAlignment.Center)
-        UI.CreateSwitch(parent, "Hat Spin Fling", HatReanimator.HatSpin).Changed:Connect(function(val)
-                HatReanimator.HatSpin = val
-                SaveData.Reanimator.HatsSpin = val
-        end)
-        UI.CreateText(parent, "^^^ ...unless you want to look glitchy ^^^", 10, Enum.TextXAlignment.Center)
-        UI.CreateText(parent, "vvv dont use tool fling with physics glue btw vvv", 10, Enum.TextXAlignment.Center)
-        UI.CreateDropdown(parent, "Target Fling Method", {
-                "Disabled (RP)",
-                "Classic Respawn",
-                "Biggest Hat",
-                "All Hats",
-                "Use Tool Handle",
-        }, HatReanimator.FlingMethod + 2).Changed:Connect(function(val)
-                HatReanimator.FlingMethod = val - 2
-                SaveData.Reanimator.HatsFlingMethod = val - 2
-        end)
-        UI.CreateSwitch(parent, "Tool Holding", HatReanimator.ToolHolding).Changed:Connect(function(val)
-                HatReanimator.ToolHolding = val
-                SaveData.Reanimator.NoToolHolding = val
-        end)
-        UI.CreateDropdown(parent, "toolanim Method", {
-                "Disabled",
-                "Sword",
-        }, HatReanimator.ToolAnimMethod + 1).Changed:Connect(function(val)
-                HatReanimator.ToolAnimMethod = val - 1
-                SaveData.Reanimator.HatsToolAnim = val - 1
-        end)
-        UI.CreateSeparator(parent)
-        local HatMapSummaryText = UI.CreateText(parent, HatReanimator.HatMapSummary, 12, Enum.TextXAlignment.Left)
-        local HatReanimStatusText = UI.CreateText(parent, "", 12, Enum.TextXAlignment.Left)
-        Util.LinkDestroyI2C(HatMapSummaryText, RunService.RenderStepped:Connect(function()
-                HatMapSummaryText.Text = HatReanimator.HatMapSummary
-                local str = ""
-                for name, stat in HatReanimator.Status do
-                        str ..= name .. ": " .. stat .. "\n"
-                end
-                HatReanimStatusText.Text = str:sub(1, -2)
-        end))
-        UI.CreateButton(parent, "Rebuild Hat Map", 20).Activated:Connect(function()
-                HatReanimator.RebuildRequired = true
-        end)
-        UI.CreateText(parent, "^^^ if ur rig built wrong or u switched to a new rig ^^^\nthis button is for you", 10, Enum.TextXAlignment.Center)
-        UI.CreateButton(parent, "Respawn", 20).Activated:Connect(function()
-                --HatReanimator.Status.Permadeath = "Fired CDSB Signal!"
-        end)
+	UI.CreateText(parent, "permadeath is patched, enable this switch if you want to", 10, Enum.TextXAlignment.Center)
+	UI.CreateSwitch(parent, "Permadeath", HatReanimator.Permadeath).Changed:Connect(function(val)
+		HatReanimator.Permadeath = val
+		SaveData.Reanimator.HatsPatchmahub = not val
+	end)
+	UI.CreateDropdown(parent, "respawntp", {
+		"The Void",
+		"Behind ReanimCharacter",
+		"Randomtp near",
+		"At spawn",
+	}, HatReanimator.RespawnPosition + 1).Changed:Connect(function(val)
+		HatReanimator.RespawnPosition = val - 1
+		SaveData.Reanimator.RespawnPosition = val - 1
+	end)
+	UI.CreateSwitch(parent, "Hat Collide", HatReanimator.HatCollide).Changed:Connect(function(val)
+		HatReanimator.HatCollide = val
+		SaveData.Reanimator.HatsCollide = val
+	end)
+	UI.CreateText(parent, "if ur hats get voided when u try to hat collide\nvvv try changing this vvv", 10, Enum.TextXAlignment.Center)
+	UI.CreateDropdown(parent, "Torso Offset", {
+		"1 - ShownApe's method (???)",
+		"2 - STEVE's method V1 (specific)",
+		"3 - 2 but for back accessories",
+		"4 - 2 but for shoulder accessories",
+		"5 - 2 but for waist accessories",
+		"6 - STEVE's method V2 (kinda stable)",
+		"7 - 6 but further from void (gl getting hatdrop)",
+		"8 - STEVE's method V3 (most stable)",
+		"9 - experimental do not use",
+	}, HatReanimator.HatCollideMethod + 1).Changed:Connect(function(val)
+		HatReanimator.HatCollideMethod = val - 1
+		SaveData.Reanimator.HatsCollideMethod = val - 1
+	end)
+	UI.CreateSwitch(parent, "Ensure All Hats", HatReanimator.IWantAllHats).Changed:Connect(function(val)
+		HatReanimator.IWantAllHats = val
+		SaveData.Reanimator.IWantAllHats = val
+	end)
+	UI.CreateDropdown(parent, "Ensure Hat Collide", {
+		"Off",
+		"Atleast one",
+		"Atleast #hats - 2",
+		"Atleast #hats - 1",
+		"ALL",
+	}, HatReanimator.IWantHatCollide + 1).Changed:Connect(function(val)
+		HatReanimator.IWantHatCollide = val - 1
+		SaveData.Reanimator.IWantHatCollide = val - 1
+	end)
+	UI.CreateText(parent, "vvv dont use these two options with target fling... vvv", 10, Enum.TextXAlignment.Center)
+	UI.CreateSwitch(parent, "Hat Fling", HatReanimator.HatFling).Changed:Connect(function(val)
+		HatReanimator.HatFling = val
+		SaveData.Reanimator.HatsFling = val
+	end)
+	UI.CreateText(parent, "^^^ ...unless you want to walkfling or... ^^^", 10, Enum.TextXAlignment.Center)
+	UI.CreateSwitch(parent, "Hat Spin Fling", HatReanimator.HatSpin).Changed:Connect(function(val)
+		HatReanimator.HatSpin = val
+		SaveData.Reanimator.HatsSpin = val
+	end)
+	UI.CreateText(parent, "^^^ ...unless you want to look glitchy ^^^", 10, Enum.TextXAlignment.Center)
+	UI.CreateText(parent, "vvv dont use tool fling with physics glue btw vvv", 10, Enum.TextXAlignment.Center)
+	UI.CreateDropdown(parent, "Target Fling Method", {
+		"Disabled (RP)",
+		"Classic Respawn",
+		"Biggest Hat",
+		"All Hats",
+		"Use Tool Handle",
+	}, HatReanimator.FlingMethod + 2).Changed:Connect(function(val)
+		HatReanimator.FlingMethod = val - 2
+		SaveData.Reanimator.HatsFlingMethod = val - 2
+	end)
+	UI.CreateSwitch(parent, "Tool Holding", HatReanimator.ToolHolding).Changed:Connect(function(val)
+		HatReanimator.ToolHolding = val
+		SaveData.Reanimator.NoToolHolding = val
+	end)
+	UI.CreateDropdown(parent, "toolanim Method", {
+		"Disabled",
+		"Sword",
+	}, HatReanimator.ToolAnimMethod + 1).Changed:Connect(function(val)
+		HatReanimator.ToolAnimMethod = val - 1
+		SaveData.Reanimator.HatsToolAnim = val - 1
+	end)
+	UI.CreateSeparator(parent)
+	local HatMapSummaryText = UI.CreateText(parent, HatReanimator.HatMapSummary, 12, Enum.TextXAlignment.Left)
+	local HatReanimStatusText = UI.CreateText(parent, "", 12, Enum.TextXAlignment.Left)
+	Util.LinkDestroyI2C(HatMapSummaryText, RunService.RenderStepped:Connect(function()
+		HatMapSummaryText.Text = HatReanimator.HatMapSummary
+		local str = ""
+		for name, stat in HatReanimator.Status do
+			str ..= name .. ": " .. stat .. "\n"
+		end
+		HatReanimStatusText.Text = str:sub(1, -2)
+	end))
+	UI.CreateButton(parent, "Rebuild Hat Map", 20).Activated:Connect(function()
+		HatReanimator.RebuildRequired = true
+	end)
+	UI.CreateText(parent, "^^^ if ur rig built wrong or u switched to a new rig ^^^\nthis button is for you", 10, Enum.TextXAlignment.Center)
+	UI.CreateButton(parent, "Respawn", 20).Activated:Connect(function()
+		--HatReanimator.Status.Permadeath = "Fired CDSB Signal!"
+	end)
 end
 HatReanimator.GetHatMap = function() end
 HatReanimator.GetHatCFrameMeshAndTexture = function() end
 HatReanimator.GetAttachmentCFrame = function() end
 function HatReanimator.Start()
-        local LimbNames = {"Head", "Torso", "Left Arm", "Right Arm", "Left Leg", "Right Leg"}
+	local LimbNames = {"Head", "Torso", "Left Arm", "Right Arm", "Left Leg", "Right Leg"}
 
-        local Attachments = {
-                RightShoulderAttachment = {"Right Arm", CFrame.new(0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1)},
-                RightGripAttachment = {"Right Arm", CFrame.new(0, -1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1)},
-                LeftFootAttachment = {"Left Leg", CFrame.new(0, -1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1)},
-                LeftShoulderAttachment = {"Left Arm", CFrame.new(0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1)},
-                LeftGripAttachment = {"Left Arm", CFrame.new(0, -1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1)},
-                RootAttachment = {"HumanoidRootPart", CFrame.new(0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1)},
-                RightFootAttachment = {"Right Leg", CFrame.new(0, -1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1)},
-                NeckAttachment = {"Torso", CFrame.new(0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1)},
-                BodyFrontAttachment = {"Torso", CFrame.new(0, 0, -0.5, 1, 0, 0, 0, 1, 0, 0, 0, 1)},
-                BodyBackAttachment = {"Torso", CFrame.new(0, 0, 0.5, 1, 0, 0, 0, 1, 0, 0, 0, 1)},
-                LeftCollarAttachment = {"Torso", CFrame.new(-1, 1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1)},
-                RightCollarAttachment = {"Torso", CFrame.new(1, 1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1)},
-                WaistFrontAttachment = {"Torso", CFrame.new(0, -1, -0.5, 1, 0, 0, 0, 1, 0, 0, 0, 1)},
-                WaistCenterAttachment = {"Torso", CFrame.new(0, -1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1)},
-                WaistBackAttachment = {"Torso", CFrame.new(0, -1, 0.5, 1, 0, 0, 0, 1, 0, 0, 0, 1)},
-                HairAttachment = {"Head", CFrame.new(0, 0.6, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1)},
-                HatAttachment = {"Head", CFrame.new(0, 0.6, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1)},
-                FaceFrontAttachment = {"Head", CFrame.new(0, 0, -0.6, 1, 0, 0, 0, 1, 0, 0, 0, 1)},
-                FaceCenterAttachment = {"Head", CFrame.new(0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1)},
-        }
+	local Attachments = {
+		RightShoulderAttachment = {"Right Arm", CFrame.new(0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1)},
+		RightGripAttachment = {"Right Arm", CFrame.new(0, -1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1)},
+		LeftFootAttachment = {"Left Leg", CFrame.new(0, -1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1)},
+		LeftShoulderAttachment = {"Left Arm", CFrame.new(0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1)},
+		LeftGripAttachment = {"Left Arm", CFrame.new(0, -1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1)},
+		RootAttachment = {"HumanoidRootPart", CFrame.new(0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1)},
+		RightFootAttachment = {"Right Leg", CFrame.new(0, -1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1)},
+		NeckAttachment = {"Torso", CFrame.new(0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1)},
+		BodyFrontAttachment = {"Torso", CFrame.new(0, 0, -0.5, 1, 0, 0, 0, 1, 0, 0, 0, 1)},
+		BodyBackAttachment = {"Torso", CFrame.new(0, 0, 0.5, 1, 0, 0, 0, 1, 0, 0, 0, 1)},
+		LeftCollarAttachment = {"Torso", CFrame.new(-1, 1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1)},
+		RightCollarAttachment = {"Torso", CFrame.new(1, 1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1)},
+		WaistFrontAttachment = {"Torso", CFrame.new(0, -1, -0.5, 1, 0, 0, 0, 1, 0, 0, 0, 1)},
+		WaistCenterAttachment = {"Torso", CFrame.new(0, -1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1)},
+		WaistBackAttachment = {"Torso", CFrame.new(0, -1, 0.5, 1, 0, 0, 0, 1, 0, 0, 0, 1)},
+		HairAttachment = {"Head", CFrame.new(0, 0.6, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1)},
+		HatAttachment = {"Head", CFrame.new(0, 0.6, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1)},
+		FaceFrontAttachment = {"Head", CFrame.new(0, 0, -0.6, 1, 0, 0, 0, 1, 0, 0, 0, 1)},
+		FaceCenterAttachment = {"Head", CFrame.new(0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1)},
+	}
 
-        local HatMeshDatabase, HatNameDatabase, HatKnownAccessoriesDatabase = loadstring(readfile("UhhhhhhReanim/BuiltinModules/d_hatsmap.lua"))()
+	local HatMeshDatabase, HatNameDatabase, HatKnownAccessoriesDatabase = loadstring(readfile("UhhhhhhReanim/BuiltinModules/d_hatsmap.lua"))()
 
-        local function GetTools()
-                local tools = {}
-                local character, backpack = Player.Character, Player:FindFirstChildOfClass("Backpack")
-                if character then
-                        for _,v in character:GetChildren() do
-                                if v:IsA("Tool") then
-                                        table.insert(tools, v)
-                                end
-                        end
-                end
-                if backpack then
-                        for _,v in backpack:GetChildren() do
-                                if v:IsA("Tool") then
-                                        table.insert(tools, v)
-                                end
-                        end
-                end
-                return tools
-        end
-        local function GetHatMeshAndTexture(hat)
-                local handle = hat:FindFirstChild("Handle")
-                if handle then
-                        local mesh, tex = nil, nil
-                        if handle:IsA("MeshPart") then
-                                return handle.MeshId, handle.TextureID
-                        elseif handle:IsA("BasePart") then
-                                local sm = handle:FindFirstChildOfClass("SpecialMesh")
-                                if sm then
-                                        return sm.MeshId, sm.TextureId
-                                end
-                        end
-                end
-                return nil, nil
-        end
-        local function AssetIdMatch(a, b)
-                a = a or ""
-                b = b or ""
-                if #b == 0 then return true end
-                if #a == 0 then return false end
-                if a:sub(1, 11) == "rbxasset://" then
-                        a = a:match("rbxasset://(.+)")
-                elseif a:sub(1, 13) == "rbxassetid://" then
-                        a = a:match("rbxassetid://(%d+)")
-                elseif a:sub(1, 4) == "http" then
-                        a = a:match("id=(%d+)")
-                end
-                return a == b
-        end
-        local function ClassifyHat(hat)
-                local handle = hat:FindFirstChild("Handle")
-                local mesh, tex = GetHatMeshAndTexture(hat)
-                if handle and handle:IsA("BasePart") and mesh and tex then
-                        local mapdata = {
-                                Name = hat.Name,
-                                MeshId = mesh, TextureId = tex,
-                                C0 = CFrame.identity,
-                                C1 = CFrame.identity,
-                                Scale = 1,
-                                Limb = "HumanoidRootPart",
-                                Group = "RIG",
-                                Attachments = nil,
-                        }
-                        local originalsize = handle:FindFirstChild("OriginalSize")
-                        if originalsize and originalsize:IsA("Vector3Value") then
-                                originalsize = originalsize.Value
-                                local m1 = math.max(handle.Size.X, handle.Size.Y, handle.Size.Z)
-                                local m2 = math.max(originalsize.X, originalsize.Y, originalsize.Z)
-                                if m2 > 0 then
-                                        mapdata.Scale = m1 / m2
-                                end
-                        else
-                                originalsize = handle.Size
-                        end
-                        -- dont map explicitly overriden hats
-                        for _,data in HatReanimator.HatCFrameOverride do
-                                if data.MeshId and data.TextureId then
-                                        if AssetIdMatch(mesh, data.MeshId) and AssetIdMatch(tex, data.TextureId) then
-                                                return mapdata, "Unknown", 4
-                                        end
-                                end
-                        end
-                        for _,data in HatKnownAccessoriesDatabase do
-                                if AssetIdMatch(mesh, data.MeshId) and AssetIdMatch(tex, data.TextureId) then
-                                        mapdata.C0 = data.C0
-                                        mapdata.C1 = data.C1
-                                        mapdata.Limb = data.Limb
-                                        mapdata.Group = data.Group
-                                        mapdata.Attachments = data.Attachments
-                                        return mapdata, "Accessories", 0
-                                end
-                        end
-                        for _,data in HatNameDatabase do
-                                if hat.Name:lower() == data.Match:lower() then
-                                        mapdata.C1 = data.Offset
-                                        mapdata.Attachments = data.Attachments
-                                        return mapdata, data.For, 1
-                                end
-                        end
-                        for _,data in HatMeshDatabase do
-                                if AssetIdMatch(mesh, data.MeshId) and AssetIdMatch(tex, data.TextureId) then
-                                        mapdata.C1 = data.Offset
-                                        mapdata.Attachments = data.Attachments
-                                        return mapdata, data.For, 2
-                                end
-                        end
-                        local assumption = originalsize
-                        local m = math.min(assumption.X, assumption.Y, assumption.Z)
-                        if m >= 0.25 then
-                                assumption = Vector3.new(
-                                        math.round(assumption.X / m),
-                                        math.round(assumption.Y / m),
-                                        math.round(assumption.Z / m)
-                                )
-                        else
-                                assumption = Vector3.zero
-                        end
-                        if assumption == Vector3.new(2, 2, 1) then
-                                mapdata.C1 = CFrame.identity
-                                return mapdata, "Torso", 3
-                        elseif assumption == Vector3.new(2, 1, 2) then
-                                mapdata.C1 = CFrame.Angles(1.57, 0, 0)
-                                return mapdata, "Torso", 3
-                        elseif assumption == Vector3.new(1, 2, 2) then
-                                mapdata.C1 = CFrame.Angles(0, 1.57, 0)
-                                return mapdata, "Torso", 3
-                        elseif assumption == Vector3.new(1, 2, 1) then
-                                mapdata.C1 = CFrame.identity
-                                return mapdata, "ArmLeg", 3
-                        elseif assumption == Vector3.new(1, 1, 2) then
-                                mapdata.C1 = CFrame.Angles(1.57, 0, 0)
-                                return mapdata, "ArmLeg", 3
-                        elseif assumption == Vector3.new(2, 1, 1) then
-                                mapdata.C1 = CFrame.Angles(0, 0, 1.57)
-                                return mapdata, "ArmLeg", 3
-                        elseif handle:FindFirstChild("HatAttachment") and assumption == Vector3.new(1, 1, 1) and m < 1.2 then
-                                mapdata.C1 = CFrame.Angles(1.57, 0, 0)
-                                return mapdata, "Block", 3
-                        end
-                        return mapdata, "Unknown", 4
-                end
-                return nil
-        end
+	local function GetTools()
+		local tools = {}
+		local character, backpack = Player.Character, Player:FindFirstChildOfClass("Backpack")
+		if character then
+			for _,v in character:GetChildren() do
+				if v:IsA("Tool") then
+					table.insert(tools, v)
+				end
+			end
+		end
+		if backpack then
+			for _,v in backpack:GetChildren() do
+				if v:IsA("Tool") then
+					table.insert(tools, v)
+				end
+			end
+		end
+		return tools
+	end
+	local function GetHatMeshAndTexture(hat)
+		local handle = hat:FindFirstChild("Handle")
+		if handle then
+			local mesh, tex = nil, nil
+			if handle:IsA("MeshPart") then
+				return handle.MeshId, handle.TextureID
+			elseif handle:IsA("BasePart") then
+				local sm = handle:FindFirstChildOfClass("SpecialMesh")
+				if sm then
+					return sm.MeshId, sm.TextureId
+				end
+			end
+		end
+		return nil, nil
+	end
+	local function AssetIdMatch(a, b)
+		a = a or ""
+		b = b or ""
+		if #b == 0 then return true end
+		if #a == 0 then return false end
+		if a:sub(1, 11) == "rbxasset://" then
+			a = a:match("rbxasset://(.+)")
+		elseif a:sub(1, 13) == "rbxassetid://" then
+			a = a:match("rbxassetid://(%d+)")
+		elseif a:sub(1, 4) == "http" then
+			a = a:match("id=(%d+)")
+		end
+		return a == b
+	end
+	local function ClassifyHat(hat)
+		local handle = hat:FindFirstChild("Handle")
+		local mesh, tex = GetHatMeshAndTexture(hat)
+		if handle and handle:IsA("BasePart") and mesh and tex then
+			local mapdata = {
+				Name = hat.Name,
+				MeshId = mesh, TextureId = tex,
+				C0 = CFrame.identity,
+				C1 = CFrame.identity,
+				Scale = 1,
+				Limb = "HumanoidRootPart",
+				Group = "RIG",
+				Attachments = nil,
+			}
+			local originalsize = handle:FindFirstChild("OriginalSize")
+			if originalsize and originalsize:IsA("Vector3Value") then
+				originalsize = originalsize.Value
+				local m1 = math.max(handle.Size.X, handle.Size.Y, handle.Size.Z)
+				local m2 = math.max(originalsize.X, originalsize.Y, originalsize.Z)
+				if m2 > 0 then
+					mapdata.Scale = m1 / m2
+				end
+			else
+				originalsize = handle.Size
+			end
+			-- dont map explicitly overriden hats
+			for _,data in HatReanimator.HatCFrameOverride do
+				if data.MeshId and data.TextureId then
+					if AssetIdMatch(mesh, data.MeshId) and AssetIdMatch(tex, data.TextureId) then
+						return mapdata, "Unknown", 4
+					end
+				end
+			end
+			for _,data in HatKnownAccessoriesDatabase do
+				if AssetIdMatch(mesh, data.MeshId) and AssetIdMatch(tex, data.TextureId) then
+					mapdata.C0 = data.C0
+					mapdata.C1 = data.C1
+					mapdata.Limb = data.Limb
+					mapdata.Group = data.Group
+					mapdata.Attachments = data.Attachments
+					return mapdata, "Accessories", 0
+				end
+			end
+			for _,data in HatNameDatabase do
+				if hat.Name:lower() == data.Match:lower() then
+					mapdata.C1 = data.Offset
+					mapdata.Attachments = data.Attachments
+					return mapdata, data.For, 1
+				end
+			end
+			for _,data in HatMeshDatabase do
+				if AssetIdMatch(mesh, data.MeshId) and AssetIdMatch(tex, data.TextureId) then
+					mapdata.C1 = data.Offset
+					mapdata.Attachments = data.Attachments
+					return mapdata, data.For, 2
+				end
+			end
+			local assumption = originalsize
+			local m = math.min(assumption.X, assumption.Y, assumption.Z)
+			if m >= 0.25 then
+				assumption = Vector3.new(
+					math.round(assumption.X / m),
+					math.round(assumption.Y / m),
+					math.round(assumption.Z / m)
+				)
+			else
+				assumption = Vector3.zero
+			end
+			if assumption == Vector3.new(2, 2, 1) then
+				mapdata.C1 = CFrame.identity
+				return mapdata, "Torso", 3
+			elseif assumption == Vector3.new(2, 1, 2) then
+				mapdata.C1 = CFrame.Angles(1.57, 0, 0)
+				return mapdata, "Torso", 3
+			elseif assumption == Vector3.new(1, 2, 2) then
+				mapdata.C1 = CFrame.Angles(0, 1.57, 0)
+				return mapdata, "Torso", 3
+			elseif assumption == Vector3.new(1, 2, 1) then
+				mapdata.C1 = CFrame.identity
+				return mapdata, "ArmLeg", 3
+			elseif assumption == Vector3.new(1, 1, 2) then
+				mapdata.C1 = CFrame.Angles(1.57, 0, 0)
+				return mapdata, "ArmLeg", 3
+			elseif assumption == Vector3.new(2, 1, 1) then
+				mapdata.C1 = CFrame.Angles(0, 0, 1.57)
+				return mapdata, "ArmLeg", 3
+			elseif handle:FindFirstChild("HatAttachment") and assumption == Vector3.new(1, 1, 1) and m < 1.2 then
+				mapdata.C1 = CFrame.Angles(1.57, 0, 0)
+				return mapdata, "Block", 3
+			end
+			return mapdata, "Unknown", 4
+		end
+		return nil
+	end
 
-        local BaseParts = {}
-        local CharTools = {}
-        local CharHats = {}
+	local BaseParts = {}
+	local CharTools = {}
+	local CharHats = {}
 
-        local HatRefs = {}
-        local Hat2HatRefs = {}
-        local function ResetHatRefs()
-                table.clear(Hat2HatRefs)
-                for _,ref in HatRefs do
-                        ref.Hat = nil
-                        ref.Han = nil
-                end
-        end
-        local function CreatePlaceholder(hat)
-                local h = hat:FindFirstChild("Handle")
-                if h and h:IsA("BasePart") then
-                        local p = h:Clone()
-                        p:BreakJoints()
-                        p.Anchored = true
-                        p.CanCollide = false
-                        p.CanTouch = false
-                        p.CanQuery = false
-                        p.Transparency = 0.75
-                        p.Name = "(C) Uhhhhhh V" .. UhhhhhhVersion .. " :: HAT PLACEHOLDER"
-                        for _,v in p:GetDescendants() do
-                                if v:IsA("LuaSourceContainer") then
-                                        v:Destroy()
-                                        continue
-                                end
-                                local exist = pcall(function()
-                                        return v.LocalTransparencyModifier
-                                end)
-                                if exist then
-                                        p:GetPropertyChangedSignal("Transparency"):Connect(function()
-                                                v.LocalTransparencyModifier = p.Transparency
-                                        end)
-                                end
-                        end
-                        if h:GetAttribute("AttachHead") then
-                                p:SetAttribute("AttachHead", true)
-                        end
-                        p.Parent = workspace
-                        return p
-                end
-        end
-        local function RefHatToHatRefs(hat)
-                local handle = hat:FindFirstChild("Handle")
-                local mesh, tex = GetHatMeshAndTexture(hat)
-                if handle and mesh and tex then
-                        for _,ref in HatRefs do
-                                if not ref.Hat then
-                                        if ref.Name == hat.Name and ref.MeshId == mesh and ref.TextureId == tex then
-                                                ref.Hat = hat
-                                                ref.Han = handle
-                                                if ref.Map.Limb == "Head" then
-                                                        handle:SetAttribute("AttachHead", true)
-                                                end
-                                                Hat2HatRefs[hat] = ref
-                                                if not ref.PH then
-                                                        ref.PH = CreatePlaceholder(hat)
-                                                end
-                                                return
-                                        end
-                                end
-                        end
-                        HatReanimator.RebuildRequired = true
-                end
-        end
+	local HatRefs = {}
+	local Hat2HatRefs = {}
+	local function ResetHatRefs()
+		table.clear(Hat2HatRefs)
+		for _,ref in HatRefs do
+			ref.Hat = nil
+			ref.Han = nil
+		end
+	end
+	local function CreatePlaceholder(hat)
+		local h = hat:FindFirstChild("Handle")
+		if h and h:IsA("BasePart") then
+			local p = h:Clone()
+			p:BreakJoints()
+			p.Anchored = true
+			p.CanCollide = false
+			p.CanTouch = false
+			p.CanQuery = false
+			p.Transparency = 0.75
+			p.Name = "(C) Uhhhhhh V" .. UhhhhhhVersion .. " :: HAT PLACEHOLDER"
+			for _,v in p:GetDescendants() do
+				if v:IsA("LuaSourceContainer") then
+					v:Destroy()
+					continue
+				end
+				local exist = pcall(function()
+					return v.LocalTransparencyModifier
+				end)
+				if exist then
+					p:GetPropertyChangedSignal("Transparency"):Connect(function()
+						v.LocalTransparencyModifier = p.Transparency
+					end)
+				end
+			end
+			if h:GetAttribute("AttachHead") then
+				p:SetAttribute("AttachHead", true)
+			end
+			p.Parent = workspace
+			return p
+		end
+	end
+	local function RefHatToHatRefs(hat)
+		local handle = hat:FindFirstChild("Handle")
+		local mesh, tex = GetHatMeshAndTexture(hat)
+		if handle and mesh and tex then
+			for _,ref in HatRefs do
+				if not ref.Hat then
+					if ref.Name == hat.Name and ref.MeshId == mesh and ref.TextureId == tex then
+						ref.Hat = hat
+						ref.Han = handle
+						if ref.Map.Limb == "Head" then
+							handle:SetAttribute("AttachHead", true)
+						end
+						Hat2HatRefs[hat] = ref
+						if not ref.PH then
+							ref.PH = CreatePlaceholder(hat)
+						end
+						return
+					end
+				end
+			end
+			HatReanimator.RebuildRequired = true
+		end
+	end
 
-        local HatMap = {}
-        local HatMapCopy = {}
-        local function RefreshHatMap(Character)
-                local summary = ""
-                summary ..= "[Hat Map Summary]\n"
-                summary ..= "Total hats found: " .. #CharHats .. "\n"
-                local hatfors = {
-                        Head = {},
-                        Torso = {},
-                        LeftArm = {},
-                        RightArm = {},
-                        LeftLeg = {},
-                        RightLeg = {},
-                        ArmLeg = {},
-                        Block = {},
-                        Accessories = {},
-                        Unknown = {},
-                }
-                for _,hat in CharHats do
-                        local mapdata, usefor, level = ClassifyHat(hat)
-                        if mapdata and hatfors[usefor] then
-                                table.insert(hatfors[usefor], {hat, mapdata, level})
-                        end
-                end
-                summary ..= "Classified "
-                for name,arr in hatfors do
-                        table.sort(arr, function(a, b)
-                                return a[3] < b[3]
-                        end)
-                        summary ..= #arr .. " " .. name .. ", "
-                end
-                summary = summary:sub(1, -3) .. ".\n"
-                summary ..= "Rig Building:\n"
-                local hatrig = {
-                        Head = nil,
-                        Torso = nil,
-                        LeftArm = nil,
-                        RightArm = nil,
-                        LeftLeg = nil,
-                        RightLeg = nil,
-                }
-                if #hatfors.Head > 0 then
-                        summary ..= "  1 Head as Head (perfect match)\n"
-                        hatrig.Head = table.remove(hatfors.Head, 1)
-                end
-                if #hatfors.Torso > 0 then
-                        summary ..= "  1 Torso as Torso (perfect match)\n"
-                        hatrig.Torso = table.remove(hatfors.Torso, 1)
-                end
-                if #hatfors.LeftArm > 0 then
-                        summary ..= "  1 LeftArm as LeftArm (perfect match)\n"
-                        hatrig.LeftArm = table.remove(hatfors.LeftArm, 1)
-                end
-                if #hatfors.RightArm > 0 then
-                        summary ..= "  1 RightArm as RightArm (perfect match)\n"
-                        hatrig.RightArm = table.remove(hatfors.RightArm, 1)
-                end
-                if #hatfors.LeftLeg > 0 then
-                        summary ..= "  1 LeftLeg as LeftLeg (perfect match)\n"
-                        hatrig.LeftLeg = table.remove(hatfors.LeftLeg, 1)
-                end
-                if #hatfors.RightLeg > 0 then
-                        summary ..= "  1 RightLeg as RightLeg (perfect match)\n"
-                        hatrig.RightLeg = table.remove(hatfors.RightLeg, 1)
-                end
-                local limbstobuild = {}
-                if not hatrig.LeftArm then
-                        if #hatfors.RightArm > 0 then
-                                hatrig.LeftArm = table.remove(hatfors.RightArm, 1)
-                                summary ..= "  1 RightArm as LeftArm (hat reused)\n"
-                        elseif #hatfors.LeftLeg > 0 then
-                                hatrig.LeftArm = table.remove(hatfors.LeftLeg, 1)
-                                summary ..= "  1 LeftLeg as LeftArm (hat reused)\n"
-                        elseif #hatfors.RightLeg > 0 then
-                                hatrig.LeftArm = table.remove(hatfors.RightLeg, 1)
-                                summary ..= "  1 RightLeg as LeftArm (hat reused)\n"
-                        elseif #hatfors.ArmLeg > 0 then
-                                hatrig.LeftArm = table.remove(hatfors.ArmLeg, 1)
-                                summary ..= "  1 ArmLeg as LeftArm (purpose match)\n"
-                        else
-                                table.insert(limbstobuild, "Left Arm")
-                        end
-                end
-                if not hatrig.RightArm then
-                        if #hatfors.LeftArm > 0 then
-                                hatrig.RightArm = table.remove(hatfors.LeftArm, 1)
-                                summary ..= "  1 LeftArm as RightArm (hat reused)\n"
-                        elseif #hatfors.RightLeg > 0 then
-                                hatrig.RightArm = table.remove(hatfors.RightLeg, 1)
-                                summary ..= "  1 RightLeg as RightArm (hat reused)\n"
-                        elseif #hatfors.LeftLeg > 0 then
-                                hatrig.RightArm = table.remove(hatfors.LeftLeg, 1)
-                                summary ..= "  1 LeftLeg as RightArm (hat reused)\n"
-                        elseif #hatfors.ArmLeg > 0 then
-                                hatrig.RightArm = table.remove(hatfors.ArmLeg, 1)
-                                summary ..= "  1 ArmLeg as RightArm (purpose match)\n"
-                        else
-                                table.insert(limbstobuild, "Right Arm")
-                        end
-                end
-                if not hatrig.LeftLeg then
-                        if #hatfors.RightLeg > 0 then
-                                hatrig.LeftLeg = table.remove(hatfors.RightLeg, 1)
-                                summary ..= "  1 RightLeg as LeftLeg (hat reused)\n"
-                        elseif #hatfors.LeftArm > 0 then
-                                hatrig.LeftLeg = table.remove(hatfors.LeftArm, 1)
-                                summary ..= "  1 LeftArm as LeftLeg (hat reused)\n"
-                        elseif #hatfors.RightArm > 0 then
-                                hatrig.LeftLeg = table.remove(hatfors.RightArm, 1)
-                                summary ..= "  1 LeftLeg as LeftLeg (hat reused)\n"
-                        elseif #hatfors.ArmLeg > 0 then
-                                hatrig.LeftLeg = table.remove(hatfors.ArmLeg, 1)
-                                summary ..= "  1 ArmLeg as LeftLeg (purpose match)\n"
-                        else
-                                table.insert(limbstobuild, "Left Leg")
-                        end
-                end
-                if not hatrig.RightLeg then
-                        if #hatfors.LeftLeg > 0 then
-                                hatrig.RightLeg = table.remove(hatfors.LeftLeg, 1)
-                                summary ..= "  1 LeftLeg as RightLeg (hat reused)\n"
-                        elseif #hatfors.RightArm > 0 then
-                                hatrig.RightLeg = table.remove(hatfors.RightArm, 1)
-                                summary ..= "  1 RightArm as RightLeg (hat reused)\n"
-                        elseif #hatfors.LeftArm > 0 then
-                                hatrig.RightLeg = table.remove(hatfors.LeftArm, 1)
-                                summary ..= "  1 LeftArm as RightLeg (hat reused)\n"
-                        elseif #hatfors.ArmLeg > 0 then
-                                hatrig.RightLeg = table.remove(hatfors.ArmLeg, 1)
-                                summary ..= "  1 ArmLeg as RightLeg (purpose match)\n"
-                        else
-                                table.insert(limbstobuild, "Right Leg")
-                        end
-                end
-                for _,v in HatRefs do if v.PH then v.PH:Destroy() end end
-                table.clear(Hat2HatRefs)
-                table.clear(HatRefs)
-                HatMap = {}
-                local function addhat(limb, data)
-                        if data and data[2] then
-                                data = data[2]
-                                if limb then
-                                        data.Limb = limb
-                                end
-                                local index = #HatMap
-                                data.Index = index
-                                table.insert(HatMap, data)
-                                table.insert(HatRefs, {
-                                        Name = data.Name,
-                                        MeshId = data.MeshId, TextureId = data.TextureId,
-                                        Map = data,
-                                        Index = index,
-                                        PH = nil,
-                                        Hat = nil,
-                                })
-                        end
-                end
-                addhat("Head", hatrig.Head)
-                addhat("Torso", hatrig.Torso)
-                addhat("Left Arm", hatrig.LeftArm)
-                addhat("Right Arm", hatrig.RightArm)
-                addhat("Left Leg", hatrig.LeftLeg)
-                addhat("Right Leg", hatrig.RightLeg)
-                if #limbstobuild > 0 and #hatfors.Block > 0 then
-                        local blocks = {}
-                        local i = 0
-                        while i < #limbstobuild * 2 and #hatfors.Block > 0 do
-                                local name = limbstobuild[(i % #limbstobuild) + 1]
-                                if not blocks[name] then
-                                        blocks[name] = {}
-                                end
-                                table.insert(blocks[name], table.remove(hatfors.Block, 1))
-                                i += 1
-                        end
-                        for name,v in blocks do
-                                if #v == 2 then
-                                        local a, b = v[1], v[2]
-                                        a[2].C0 = CFrame.new(0, -0.5, 0)
-                                        b[2].C0 = CFrame.new(0, 0.5, 0)
-                                        addhat(name, a)
-                                        addhat(name, b)
-                                        summary ..= "  2 Block as " .. name:gsub(" ", "") .. " (block build)\n"
-                                elseif #v == 1 then
-                                        addhat(name, v[1])
-                                        summary ..= "  1 Block as " .. name:gsub(" ", "") .. " (block build)\n"
-                                end
-                        end
-                end
-                summary ..= "  " .. #hatfors.Accessories .. " known accessories\n"
-                for _,acc in hatfors.Accessories do
-                        addhat(nil, acc)
-                end
-                table.clear(hatfors.Accessories)
-                local unused = 0
-                local function AttmentGet(name)
-                        for _,data in ipairs(HatMap) do
-                                if data.Attachments and data.Attachments[name] then
-                                        return {data.Limb, data.C0 * data.C1:Inverse() * data.Attachments[name]}
-                                end
-                        end
-                        return Attachments[name]
-                end
-                for _,v in hatfors do
-                        for _,w in v do
-                                local hat = w[1]
-                                local map = w[2]
-                                local limb, c0 = unpack(AttmentGet("HatAttachment"))
-                                local c1 = hat.AttachmentPoint
-                                local handle = hat:FindFirstChild("Handle")
-                                if handle then
-                                        for _,x in handle:GetChildren() do
-                                                if x:IsA("Attachment") then
-                                                        local att = AttmentGet(x.Name)
-                                                        if att then
-                                                                limb, c0, c1 = att[1], att[2], x.CFrame
-                                                                break
-                                                        end
-                                                end
-                                        end
-                                end
-                                map.C0 = c0
-                                map.C1 = c1
-                                map.Limb = limb
-                                addhat(limb, w)
-                                unused += 1
-                        end
-                end
-                summary ..= "...which leaves " .. unused .. " unused."
-                HatMap.Built = os.clock()
-                HatMapCopy = Util.DeepcopyTable(HatMap)
-                for _,v in CharHats do
-                        RefHatToHatRefs(v)
-                end
-                HatReanimator.HatMapSummary = summary
-                HatReanimator.RebuildRequired = false
-        end
-        local function GetHatMappedOverride(hatmapped)
-                local ReanimCharacter = Reanimate.Character
-                if not ReanimCharacter then return end
-                local scale = ReanimCharacter:GetScale()
-                local hatscale = hatmapped.Scale
-                -- cframe override
-                for _,data in HatReanimator.HatCFrameOverride do
-                        if not data.Disable then
-                                -- accessory group
-                                if data.Group and hatmapped.Group == data.Group then
-                                        if data.Limb then
-                                                return {
-                                                        C0 = data.C0 or data.Offset or CFrame.identity,
-                                                        C1 = hatmapped.C1 * (data.C1 or CFrame.identity),
-                                                        Limb = data.Limb, RepRootPart = data.RepRootPart,
-                                                        Scale = hatscale,
-                                                }
-                                        else
-                                                return {
-                                                        C0 = data.C0 or data.CFrame or CFrame.identity,
-                                                        C1 = hatmapped.C1 * (data.C1 or CFrame.identity),
-                                                        RepRootPart = data.RepRootPart,
-                                                        Scale = hatscale,
-                                                }
-                                        end
-                                end
-                                -- exact asset id
-                                if data.MeshId or data.TextureId or data.Name then
-                                        local oke = true
-                                        if data.MeshId then
-                                                oke = oke and AssetIdMatch(hatmapped.MeshId, data.MeshId)
-                                        end
-                                        if data.TextureId then
-                                                oke = oke and AssetIdMatch(hatmapped.TextureId, data.TextureId)
-                                        end
-                                        if data.Name then
-                                                oke = oke and hatmapped.Name == data.Name
-                                        end
-                                        if oke then
-                                                return {
-                                                        C0 = data.C0, C1 = data.C1,
-                                                        Offset = data.Offset or data.CFrame,
-                                                        Limb = data.Limb, RepRootPart = data.RepRootPart,
-                                                        Scale = hatscale,
-                                                }
-                                        end
-                                end
-                                if data.Index and hatmapped.Index == data.Index then
-                                        return {
-                                                C0 = data.C0 or data.CFrame or CFrame.identity,
-                                                C1 = hatmapped.C1 * (data.C1 or CFrame.identity),
-                                                RepRootPart = data.RepRootPart,
-                                                Scale = hatscale,
-                                        }
-                                end
-                        end
-                end
-                return hatmapped
-        end
-        local function GetHatMappedMeshAndTexture(mesh, tex, name)
-                local ReanimCharacter = Reanimate.Character
-                if not ReanimCharacter then return end
-                local hatmapped = nil
-                -- find hat mapping
-                for _,data in ipairs(HatMap) do
-                        if (name and data.Name == name or not name) and data.MeshId == mesh and data.TextureId == tex then
-                                hatmapped = data
-                                break
-                        end
-                end
-                if not hatmapped then return end
-                return GetHatMappedOverride(hatmapped)
-        end
-        local function GetHatMappedCFrame(hatmapped)
-                local ReanimCharacter = Reanimate.Character
-                if not ReanimCharacter then return end
-                local scale = ReanimCharacter:GetScale()
-                if hatmapped then
-                        local hatscale = hatmapped.Scale
-                        -- limb attached
-                        if hatmapped.Limb then
-                                local limb = ReanimCharacter:FindFirstChild(hatmapped.Limb)
-                                if limb and limb:IsA("BasePart") then
-                                        -- weld-like
-                                        if hatmapped.C0 and hatmapped.C1 then
-                                                return limb.CFrame * Util.ScaleCFrame(hatmapped.C0, scale) * Util.ScaleCFrame(hatmapped.C1, hatscale):Inverse(), limb.Velocity
-                                        end
-                                        -- legacy
-                                        if hatmapped.Offset then
-                                                return limb.CFrame * hatmapped.Offset, limb.Velocity
-                                        end
-                                end
-                        else
-                                -- world coords
-                                if hatmapped.C0 and hatmapped.C1 then
-                                        return hatmapped.C0 * Util.ScaleCFrame(hatmapped.C1, hatscale):Inverse(), Vector3.zero
-                                end
-                        end
-                end
-                return
-        end
-        local function GetHatCFrameMeshAndTexture(mesh, tex, name)
-                return GetHatMappedCFrame(GetHatMappedMeshAndTexture(mesh, tex, name))
-        end
-        local function GetHatMapped(hat)
-                local handle = hat:FindFirstChild("Handle")
-                if not handle or not handle:IsA("BasePart") then return end
-                local mesh, tex = GetHatMeshAndTexture(hat)
-                return GetHatMappedMeshAndTexture(mesh, tex, hat.Name)
-        end
-        local function GetHatCFrame(hat)
-                local handle = hat:FindFirstChild("Handle")
-                if not handle or not handle:IsA("BasePart") then return end
-                local mesh, tex = GetHatMeshAndTexture(hat)
-                return GetHatCFrameMeshAndTexture(mesh, tex, hat.Name)
-        end
-        local function GetAttachmentCFrame(name)
-                local ReanimCharacter = Reanimate.Character
-                if not ReanimCharacter then return end
-                local scale = ReanimCharacter:GetScale()
-                local hatmapped = nil
-                -- find hat mapping
-                for _,data in ipairs(HatMap) do
-                        if data.Attachments and data.Attachments[name] then
-                                hatmapped = data
-                                break
-                        end
-                end
-                if hatmapped then
-                        local cf = GetHatCFrameMeshAndTexture(hatmapped.MeshId, hatmapped.TextureId)
-                        local att = hatmapped.Attachments[name]
-                        return cf * Util.ScaleCFrame(att, hatmapped.Scale)
-                end
-                if Attachments[name] then
-                        local limb = ReanimCharacter:FindFirstChild(Attachments[name][1])
-                        if limb then
-                                return limb.CFrame * Util.ScaleCFrame(Attachments[name][2], scale)
-                        end
-                end
-                return
-        end
-        HatReanimator.GetHatMap = function() return HatMapCopy end
-        HatReanimator.GetHatCFrameMeshAndTexture = GetHatCFrameMeshAndTexture
-        HatReanimator.GetAttachmentCFrame = GetAttachmentCFrame
+	local HatMap = {}
+	local HatMapCopy = {}
+	local function RefreshHatMap(Character)
+		local summary = ""
+		summary ..= "[Hat Map Summary]\n"
+		summary ..= "Total hats found: " .. #CharHats .. "\n"
+		local hatfors = {
+			Head = {},
+			Torso = {},
+			LeftArm = {},
+			RightArm = {},
+			LeftLeg = {},
+			RightLeg = {},
+			ArmLeg = {},
+			Block = {},
+			Accessories = {},
+			Unknown = {},
+		}
+		for _,hat in CharHats do
+			local mapdata, usefor, level = ClassifyHat(hat)
+			if mapdata and hatfors[usefor] then
+				table.insert(hatfors[usefor], {hat, mapdata, level})
+			end
+		end
+		summary ..= "Classified "
+		for name,arr in hatfors do
+			table.sort(arr, function(a, b)
+				return a[3] < b[3]
+			end)
+			summary ..= #arr .. " " .. name .. ", "
+		end
+		summary = summary:sub(1, -3) .. ".\n"
+		summary ..= "Rig Building:\n"
+		local hatrig = {
+			Head = nil,
+			Torso = nil,
+			LeftArm = nil,
+			RightArm = nil,
+			LeftLeg = nil,
+			RightLeg = nil,
+		}
+		if #hatfors.Head > 0 then
+			summary ..= "  1 Head as Head (perfect match)\n"
+			hatrig.Head = table.remove(hatfors.Head, 1)
+		end
+		if #hatfors.Torso > 0 then
+			summary ..= "  1 Torso as Torso (perfect match)\n"
+			hatrig.Torso = table.remove(hatfors.Torso, 1)
+		end
+		if #hatfors.LeftArm > 0 then
+			summary ..= "  1 LeftArm as LeftArm (perfect match)\n"
+			hatrig.LeftArm = table.remove(hatfors.LeftArm, 1)
+		end
+		if #hatfors.RightArm > 0 then
+			summary ..= "  1 RightArm as RightArm (perfect match)\n"
+			hatrig.RightArm = table.remove(hatfors.RightArm, 1)
+		end
+		if #hatfors.LeftLeg > 0 then
+			summary ..= "  1 LeftLeg as LeftLeg (perfect match)\n"
+			hatrig.LeftLeg = table.remove(hatfors.LeftLeg, 1)
+		end
+		if #hatfors.RightLeg > 0 then
+			summary ..= "  1 RightLeg as RightLeg (perfect match)\n"
+			hatrig.RightLeg = table.remove(hatfors.RightLeg, 1)
+		end
+		local limbstobuild = {}
+		if not hatrig.LeftArm then
+			if #hatfors.RightArm > 0 then
+				hatrig.LeftArm = table.remove(hatfors.RightArm, 1)
+				summary ..= "  1 RightArm as LeftArm (hat reused)\n"
+			elseif #hatfors.LeftLeg > 0 then
+				hatrig.LeftArm = table.remove(hatfors.LeftLeg, 1)
+				summary ..= "  1 LeftLeg as LeftArm (hat reused)\n"
+			elseif #hatfors.RightLeg > 0 then
+				hatrig.LeftArm = table.remove(hatfors.RightLeg, 1)
+				summary ..= "  1 RightLeg as LeftArm (hat reused)\n"
+			elseif #hatfors.ArmLeg > 0 then
+				hatrig.LeftArm = table.remove(hatfors.ArmLeg, 1)
+				summary ..= "  1 ArmLeg as LeftArm (purpose match)\n"
+			else
+				table.insert(limbstobuild, "Left Arm")
+			end
+		end
+		if not hatrig.RightArm then
+			if #hatfors.LeftArm > 0 then
+				hatrig.RightArm = table.remove(hatfors.LeftArm, 1)
+				summary ..= "  1 LeftArm as RightArm (hat reused)\n"
+			elseif #hatfors.RightLeg > 0 then
+				hatrig.RightArm = table.remove(hatfors.RightLeg, 1)
+				summary ..= "  1 RightLeg as RightArm (hat reused)\n"
+			elseif #hatfors.LeftLeg > 0 then
+				hatrig.RightArm = table.remove(hatfors.LeftLeg, 1)
+				summary ..= "  1 LeftLeg as RightArm (hat reused)\n"
+			elseif #hatfors.ArmLeg > 0 then
+				hatrig.RightArm = table.remove(hatfors.ArmLeg, 1)
+				summary ..= "  1 ArmLeg as RightArm (purpose match)\n"
+			else
+				table.insert(limbstobuild, "Right Arm")
+			end
+		end
+		if not hatrig.LeftLeg then
+			if #hatfors.RightLeg > 0 then
+				hatrig.LeftLeg = table.remove(hatfors.RightLeg, 1)
+				summary ..= "  1 RightLeg as LeftLeg (hat reused)\n"
+			elseif #hatfors.LeftArm > 0 then
+				hatrig.LeftLeg = table.remove(hatfors.LeftArm, 1)
+				summary ..= "  1 LeftArm as LeftLeg (hat reused)\n"
+			elseif #hatfors.RightArm > 0 then
+				hatrig.LeftLeg = table.remove(hatfors.RightArm, 1)
+				summary ..= "  1 LeftLeg as LeftLeg (hat reused)\n"
+			elseif #hatfors.ArmLeg > 0 then
+				hatrig.LeftLeg = table.remove(hatfors.ArmLeg, 1)
+				summary ..= "  1 ArmLeg as LeftLeg (purpose match)\n"
+			else
+				table.insert(limbstobuild, "Left Leg")
+			end
+		end
+		if not hatrig.RightLeg then
+			if #hatfors.LeftLeg > 0 then
+				hatrig.RightLeg = table.remove(hatfors.LeftLeg, 1)
+				summary ..= "  1 LeftLeg as RightLeg (hat reused)\n"
+			elseif #hatfors.RightArm > 0 then
+				hatrig.RightLeg = table.remove(hatfors.RightArm, 1)
+				summary ..= "  1 RightArm as RightLeg (hat reused)\n"
+			elseif #hatfors.LeftArm > 0 then
+				hatrig.RightLeg = table.remove(hatfors.LeftArm, 1)
+				summary ..= "  1 LeftArm as RightLeg (hat reused)\n"
+			elseif #hatfors.ArmLeg > 0 then
+				hatrig.RightLeg = table.remove(hatfors.ArmLeg, 1)
+				summary ..= "  1 ArmLeg as RightLeg (purpose match)\n"
+			else
+				table.insert(limbstobuild, "Right Leg")
+			end
+		end
+		for _,v in HatRefs do if v.PH then v.PH:Destroy() end end
+		table.clear(Hat2HatRefs)
+		table.clear(HatRefs)
+		HatMap = {}
+		local function addhat(limb, data)
+			if data and data[2] then
+				data = data[2]
+				if limb then
+					data.Limb = limb
+				end
+				local index = #HatMap
+				data.Index = index
+				table.insert(HatMap, data)
+				table.insert(HatRefs, {
+					Name = data.Name,
+					MeshId = data.MeshId, TextureId = data.TextureId,
+					Map = data,
+					Index = index,
+					PH = nil,
+					Hat = nil,
+				})
+			end
+		end
+		addhat("Head", hatrig.Head)
+		addhat("Torso", hatrig.Torso)
+		addhat("Left Arm", hatrig.LeftArm)
+		addhat("Right Arm", hatrig.RightArm)
+		addhat("Left Leg", hatrig.LeftLeg)
+		addhat("Right Leg", hatrig.RightLeg)
+		if #limbstobuild > 0 and #hatfors.Block > 0 then
+			local blocks = {}
+			local i = 0
+			while i < #limbstobuild * 2 and #hatfors.Block > 0 do
+				local name = limbstobuild[(i % #limbstobuild) + 1]
+				if not blocks[name] then
+					blocks[name] = {}
+				end
+				table.insert(blocks[name], table.remove(hatfors.Block, 1))
+				i += 1
+			end
+			for name,v in blocks do
+				if #v == 2 then
+					local a, b = v[1], v[2]
+					a[2].C0 = CFrame.new(0, -0.5, 0)
+					b[2].C0 = CFrame.new(0, 0.5, 0)
+					addhat(name, a)
+					addhat(name, b)
+					summary ..= "  2 Block as " .. name:gsub(" ", "") .. " (block build)\n"
+				elseif #v == 1 then
+					addhat(name, v[1])
+					summary ..= "  1 Block as " .. name:gsub(" ", "") .. " (block build)\n"
+				end
+			end
+		end
+		summary ..= "  " .. #hatfors.Accessories .. " known accessories\n"
+		for _,acc in hatfors.Accessories do
+			addhat(nil, acc)
+		end
+		table.clear(hatfors.Accessories)
+		local unused = 0
+		local function AttmentGet(name)
+			for _,data in ipairs(HatMap) do
+				if data.Attachments and data.Attachments[name] then
+					return {data.Limb, data.C0 * data.C1:Inverse() * data.Attachments[name]}
+				end
+			end
+			return Attachments[name]
+		end
+		for _,v in hatfors do
+			for _,w in v do
+				local hat = w[1]
+				local map = w[2]
+				local limb, c0 = unpack(AttmentGet("HatAttachment"))
+				local c1 = hat.AttachmentPoint
+				local handle = hat:FindFirstChild("Handle")
+				if handle then
+					for _,x in handle:GetChildren() do
+						if x:IsA("Attachment") then
+							local att = AttmentGet(x.Name)
+							if att then
+								limb, c0, c1 = att[1], att[2], x.CFrame
+								break
+							end
+						end
+					end
+				end
+				map.C0 = c0
+				map.C1 = c1
+				map.Limb = limb
+				addhat(limb, w)
+				unused += 1
+			end
+		end
+		summary ..= "...which leaves " .. unused .. " unused."
+		HatMap.Built = os.clock()
+		HatMapCopy = Util.DeepcopyTable(HatMap)
+		for _,v in CharHats do
+			RefHatToHatRefs(v)
+		end
+		HatReanimator.HatMapSummary = summary
+		HatReanimator.RebuildRequired = false
+	end
+	local function GetHatMappedOverride(hatmapped)
+		local ReanimCharacter = Reanimate.Character
+		if not ReanimCharacter then return end
+		local scale = ReanimCharacter:GetScale()
+		local hatscale = hatmapped.Scale
+		-- cframe override
+		for _,data in HatReanimator.HatCFrameOverride do
+			if not data.Disable then
+				-- accessory group
+				if data.Group and hatmapped.Group == data.Group then
+					if data.Limb then
+						return {
+							C0 = data.C0 or data.Offset or CFrame.identity,
+							C1 = hatmapped.C1 * (data.C1 or CFrame.identity),
+							Limb = data.Limb, RepRootPart = data.RepRootPart,
+							Scale = hatscale,
+						}
+					else
+						return {
+							C0 = data.C0 or data.CFrame or CFrame.identity,
+							C1 = hatmapped.C1 * (data.C1 or CFrame.identity),
+							RepRootPart = data.RepRootPart,
+							Scale = hatscale,
+						}
+					end
+				end
+				-- exact asset id
+				if data.MeshId or data.TextureId or data.Name then
+					local oke = true
+					if data.MeshId then
+						oke = oke and AssetIdMatch(hatmapped.MeshId, data.MeshId)
+					end
+					if data.TextureId then
+						oke = oke and AssetIdMatch(hatmapped.TextureId, data.TextureId)
+					end
+					if data.Name then
+						oke = oke and hatmapped.Name == data.Name
+					end
+					if oke then
+						return {
+							C0 = data.C0, C1 = data.C1,
+							Offset = data.Offset or data.CFrame,
+							Limb = data.Limb, RepRootPart = data.RepRootPart,
+							Scale = hatscale,
+						}
+					end
+				end
+				if data.Index and hatmapped.Index == data.Index then
+					return {
+						C0 = data.C0 or data.CFrame or CFrame.identity,
+						C1 = hatmapped.C1 * (data.C1 or CFrame.identity),
+						RepRootPart = data.RepRootPart,
+						Scale = hatscale,
+					}
+				end
+			end
+		end
+		return hatmapped
+	end
+	local function GetHatMappedMeshAndTexture(mesh, tex, name)
+		local ReanimCharacter = Reanimate.Character
+		if not ReanimCharacter then return end
+		local hatmapped = nil
+		-- find hat mapping
+		for _,data in ipairs(HatMap) do
+			if (name and data.Name == name or not name) and data.MeshId == mesh and data.TextureId == tex then
+				hatmapped = data
+				break
+			end
+		end
+		if not hatmapped then return end
+		return GetHatMappedOverride(hatmapped)
+	end
+	local function GetHatMappedCFrame(hatmapped)
+		local ReanimCharacter = Reanimate.Character
+		if not ReanimCharacter then return end
+		local scale = ReanimCharacter:GetScale()
+		if hatmapped then
+			local hatscale = hatmapped.Scale
+			-- limb attached
+			if hatmapped.Limb then
+				local limb = ReanimCharacter:FindFirstChild(hatmapped.Limb)
+				if limb and limb:IsA("BasePart") then
+					-- weld-like
+					if hatmapped.C0 and hatmapped.C1 then
+						return limb.CFrame * Util.ScaleCFrame(hatmapped.C0, scale) * Util.ScaleCFrame(hatmapped.C1, hatscale):Inverse(), limb.Velocity
+					end
+					-- legacy
+					if hatmapped.Offset then
+						return limb.CFrame * hatmapped.Offset, limb.Velocity
+					end
+				end
+			else
+				-- world coords
+				if hatmapped.C0 and hatmapped.C1 then
+					return hatmapped.C0 * Util.ScaleCFrame(hatmapped.C1, hatscale):Inverse(), Vector3.zero
+				end
+			end
+		end
+		return
+	end
+	local function GetHatCFrameMeshAndTexture(mesh, tex, name)
+		return GetHatMappedCFrame(GetHatMappedMeshAndTexture(mesh, tex, name))
+	end
+	local function GetHatMapped(hat)
+		local handle = hat:FindFirstChild("Handle")
+		if not handle or not handle:IsA("BasePart") then return end
+		local mesh, tex = GetHatMeshAndTexture(hat)
+		return GetHatMappedMeshAndTexture(mesh, tex, hat.Name)
+	end
+	local function GetHatCFrame(hat)
+		local handle = hat:FindFirstChild("Handle")
+		if not handle or not handle:IsA("BasePart") then return end
+		local mesh, tex = GetHatMeshAndTexture(hat)
+		return GetHatCFrameMeshAndTexture(mesh, tex, hat.Name)
+	end
+	local function GetAttachmentCFrame(name)
+		local ReanimCharacter = Reanimate.Character
+		if not ReanimCharacter then return end
+		local scale = ReanimCharacter:GetScale()
+		local hatmapped = nil
+		-- find hat mapping
+		for _,data in ipairs(HatMap) do
+			if data.Attachments and data.Attachments[name] then
+				hatmapped = data
+				break
+			end
+		end
+		if hatmapped then
+			local cf = GetHatCFrameMeshAndTexture(hatmapped.MeshId, hatmapped.TextureId)
+			local att = hatmapped.Attachments[name]
+			return cf * Util.ScaleCFrame(att, hatmapped.Scale)
+		end
+		if Attachments[name] then
+			local limb = ReanimCharacter:FindFirstChild(Attachments[name][1])
+			if limb then
+				return limb.CFrame * Util.ScaleCFrame(Attachments[name][2], scale)
+			end
+		end
+		return
+	end
+	HatReanimator.GetHatMap = function() return HatMapCopy end
+	HatReanimator.GetHatCFrameMeshAndTexture = GetHatCFrameMeshAndTexture
+	HatReanimator.GetAttachmentCFrame = GetAttachmentCFrame
 
-        local InitCFrame = nil
-        local CurrentCharacter = nil
+	local InitCFrame = nil
+	local CurrentCharacter = nil
 
-        HatReanimator.RebuildRequired = true
-        HatReanimator.HatMapSummary = "(no hat map yet...)"
-        table.clear(HatReanimator.FlingTargets)
-        
-        local lastsimradchange = 0
-        local function SetSimulationRadius()
-                local function setsimrad(plr, radius)
-                        pcall(function()
-                                plr.SimulationRadius = radius
-                        end)
-                        pcall(sethiddenproperty, plr, "SimulationRadius", radius)
-                end
-                settings().Physics.AllowSleep = false
-                settings().Physics.ThrottleAdjustTime = 0/0
-                for _,plr in Players:GetPlayers() do
-                        local a, b = pcall(compareinstances, plr, Player)
-                        if a and not b then
-                                setsimrad(plr, 0)
-                        end
-                end
-                local r = #Players:GetPlayers() * 1000
-                setsimrad(Player, r)
-                if os.clock() > lastsimradchange then
-                        lastsimradchange = os.clock() + 1
-                        pcall(replicatesignal, Player.SimulationRadiusChanged, r)
-                end
-                --[[pcall(setsimulationradius, r, r)
-                pcall(function()
-                        -- faster than findfirstchild + if then end
-                        sethiddenproperty(Player.Character.Humanoid, "InternalBodyScale", Vector3.new(9e9, 9e9, 9e9))
-                        sethiddenproperty(Player.Character.Humanoid, "InternalHeadScale", 9e9)
-                end)]]
-        end
-        local function IsNetworkOwner(part)
-                if isnetworkowner and false then
-                        local s, d = pcall(isnetworkowner, part)
-                        if s then
-                                return d
-                        else
-                                return part.ReceiveAge == 0
-                        end
-                end
-                return part.ReceiveAge == 0
-        end
-        
-        local BackendAccoutrementState = {
-                None = 0,
-                HasHandle = 1,
-                InWorkspace = 2,
-                InCharacter = 3,
-                Equipped = 4,
-        }
-        local function SetAccoutrementState(hat, state)
-                sethiddenproperty(hat, "BackendAccoutrementState", state)
-        end
+	HatReanimator.RebuildRequired = true
+	HatReanimator.HatMapSummary = "(no hat map yet...)"
+	table.clear(HatReanimator.FlingTargets)
+	
+	local lastsimradchange = 0
+	local function SetSimulationRadius()
+		local function setsimrad(plr, radius)
+			pcall(function()
+				plr.SimulationRadius = radius
+			end)
+			pcall(sethiddenproperty, plr, "SimulationRadius", radius)
+		end
+		settings().Physics.AllowSleep = false
+		settings().Physics.ThrottleAdjustTime = 0/0
+		for _,plr in Players:GetPlayers() do
+			local a, b = pcall(compareinstances, plr, Player)
+			if a and not b then
+				setsimrad(plr, 0)
+			end
+		end
+		local r = #Players:GetPlayers() * 1000
+		setsimrad(Player, r)
+		if os.clock() > lastsimradchange then
+			lastsimradchange = os.clock() + 1
+			pcall(replicatesignal, Player.SimulationRadiusChanged, r)
+		end
+		--[[pcall(setsimulationradius, r, r)
+		pcall(function()
+			-- faster than findfirstchild + if then end
+			sethiddenproperty(Player.Character.Humanoid, "InternalBodyScale", Vector3.new(9e9, 9e9, 9e9))
+			sethiddenproperty(Player.Character.Humanoid, "InternalHeadScale", 9e9)
+		end)]]
+	end
+	local function IsNetworkOwner(part)
+		if isnetworkowner and false then
+			local s, d = pcall(isnetworkowner, part)
+			if s then
+				return d
+			else
+				return part.ReceiveAge == 0
+			end
+		end
+		return part.ReceiveAge == 0
+	end
+	
+	local BackendAccoutrementState = {
+		None = 0,
+		HasHandle = 1,
+		InWorkspace = 2,
+		InCharacter = 3,
+		Equipped = 4,
+	}
+	local function SetAccoutrementState(hat, state)
+		sethiddenproperty(hat, "BackendAccoutrementState", state)
+	end
 
-        local IsRespawning = false
-        local function Respawn()
-                if IsRespawning then return end
-                IsRespawning = true
-        end
+	local IsRespawning = false
+	local function Respawn()
+		if IsRespawning then return end
+		IsRespawning = true
+	end
 
-        -- Credits to MyWorld for helping with netless
-        local function SetUACFrameNetless(handle, dt, newcf, tvel, fling, spin)
-                if dt <= 0 then return false end
-                if not (handle:IsA("BasePart") and handle:IsDescendantOf(workspace)) then return false end
-                local timing = os.clock()
-                local idlerv = Vector3.new(
-                        math.sin(timing * 14), math.sin(timing * 15 + 1.0472), math.sin(timing * 16 + 2.0944)
-                )
-                local idleoff = idlerv * 0.001
-                local ylimit = FallenPartsDestroyHeight + 5
-                if newcf.Y < ylimit then
-                        newcf += Vector3.new(0, ylimit - newcf.Y, 0)
-                end
-                local speedlimit = 16384
-                if fling then
-                        speedlimit = math.huge
-                end
-                local netless = Reanimate.NetlessVelocity + (math.sin(timing * 0.5) + 1) / 2
-                local aligned = true
-                local lastcf = handle:GetAttribute("_Uhhhhhh_LastPosition")
-                local claimtime = handle:GetAttribute("_Uhhhhhh_ClaimTime")
-                if typeof(lastcf) ~= "CFrame" then lastcf = handle.CFrame end
-                if not handle:IsGrounded() and IsNetworkOwner(handle) then
-                        local newpos = newcf.Position
-                        local lastpos = lastcf.Position
-                        local vel = (newpos - lastpos) / dt
-                        if vel.Magnitude < 0.12 then
-                                newcf += idleoff
-                        elseif vel.Magnitude > speedlimit then
-                                vel = vel.Unit * speedlimit
-                                newpos = lastpos + vel * dt
-                                newcf = newcf.Rotation + newpos
-                                aligned = false
-                        end
-                        local rvel = lastcf:ToObjectSpace(newcf)
-                        local a, b = rvel:ToAxisAngle()
-                        rvel = (a * b) / dt
-                        lastcf = newcf
-                        if claimtime then
-                                if timing - claimtime < 5.67 then
-                                        handle.Massless = false
-                                        handle.CustomPhysicalProperties = nil
-                                else
-                                        handle.Massless = true
-                                        handle.CustomPhysicalProperties = PhysicalProperties.new(0.01, 0, 0, 0, 0)
-                                end
-                                if timing - claimtime < 0.51 then
-                                        handle.AssemblyLinearVelocity = Vector3.new(0, netless, 0)
-                                else
-                                        if fling then
-                                                handle.AssemblyLinearVelocity = Vector3.new(16384, 16384, 16384)
-                                        else
-                                                -- so Patchma's netless doesn't need the velocity of the hat, just where its attached to.
-                                                if Reanimate.UsePatchmaLikeNetless then
-                                                        vel = tvel
-                                                        vel *= Vector3.new(1, 0, 1)
-                                                        if vel.Magnitude > netless then
-                                                                vel = vel.Unit * netless
-                                                        end
-                                                        handle.AssemblyLinearVelocity = Vector3.new(vel.X * 10, netless, vel.Z * 10)
-                                                else
-                                                        vel += tvel
-                                                        vel *= Vector3.new(1, 0, 1)
-                                                        if vel.Magnitude > netless then
-                                                                vel = vel.Unit * netless
-                                                        end
-                                                        handle.AssemblyLinearVelocity = Vector3.new(vel.X, math.max(vel.Y, netless), vel.Z)
-                                                end
-                                        end
-                                end
-                        else
-                                claimtime = timing
-                                handle.AssemblyLinearVelocity = Vector3.new(0, netless * 2, 0)
-                        end
-                        handle.CFrame = newcf
-                        if spin then
-                                handle.AssemblyAngularVelocity = Vector3.new(16384, 16384, 16384)
-                        else
-                                if Reanimate.UseAngularVelocity then
-                                        handle.AssemblyAngularVelocity = rvel + idleoff
-                                else
-                                        handle.AssemblyAngularVelocity = idleoff
-                                end
-                        end
-                else
-                        claimtime = nil
-                        lastcf = handle.CFrame
-                        aligned = false
-                end
-                handle:SetAttribute("_Uhhhhhh_LastPosition", lastcf)
-                handle:SetAttribute("_Uhhhhhh_ClaimTime", claimtime)
-                return aligned
-        end
+	-- Credits to MyWorld for helping with netless
+	local function SetUACFrameNetless(handle, dt, newcf, tvel, fling, spin)
+		if dt <= 0 then return false end
+		if not (handle:IsA("BasePart") and handle:IsDescendantOf(workspace)) then return false end
+		local timing = os.clock()
+		local idlerv = Vector3.new(
+			math.sin(timing * 14), math.sin(timing * 15 + 1.0472), math.sin(timing * 16 + 2.0944)
+		)
+		local idleoff = idlerv * 0.001
+		local ylimit = FallenPartsDestroyHeight + 5
+		if newcf.Y < ylimit then
+			newcf += Vector3.new(0, ylimit - newcf.Y, 0)
+		end
+		local speedlimit = 16384
+		if fling then
+			speedlimit = math.huge
+		end
+		local netless = Reanimate.NetlessVelocity + (math.sin(timing * 0.5) + 1) / 2
+		local aligned = true
+		local lastcf = handle:GetAttribute("_Uhhhhhh_LastPosition")
+		local claimtime = handle:GetAttribute("_Uhhhhhh_ClaimTime")
+		if typeof(lastcf) ~= "CFrame" then lastcf = handle.CFrame end
+		if not handle:IsGrounded() and IsNetworkOwner(handle) then
+			local newpos = newcf.Position
+			local lastpos = lastcf.Position
+			local vel = (newpos - lastpos) / dt
+			if vel.Magnitude < 0.12 then
+				newcf += idleoff
+			elseif vel.Magnitude > speedlimit then
+				vel = vel.Unit * speedlimit
+				newpos = lastpos + vel * dt
+				newcf = newcf.Rotation + newpos
+				aligned = false
+			end
+			local rvel = lastcf:ToObjectSpace(newcf)
+			local a, b = rvel:ToAxisAngle()
+			rvel = (a * b) / dt
+			lastcf = newcf
+			if claimtime then
+				if timing - claimtime < 5.67 then
+					handle.Massless = false
+					handle.CustomPhysicalProperties = nil
+				else
+					handle.Massless = true
+					handle.CustomPhysicalProperties = PhysicalProperties.new(0.01, 0, 0, 0, 0)
+				end
+				if timing - claimtime < 0.51 then
+					handle.AssemblyLinearVelocity = Vector3.new(0, netless, 0)
+				else
+					if fling then
+						handle.AssemblyLinearVelocity = Vector3.new(16384, 16384, 16384)
+					else
+						-- so Patchma's netless doesn't need the velocity of the hat, just where its attached to.
+						if Reanimate.UsePatchmaLikeNetless then
+							vel = tvel
+							vel *= Vector3.new(1, 0, 1)
+							if vel.Magnitude > netless then
+								vel = vel.Unit * netless
+							end
+							handle.AssemblyLinearVelocity = Vector3.new(vel.X * 10, netless, vel.Z * 10)
+						else
+							vel += tvel
+							vel *= Vector3.new(1, 0, 1)
+							if vel.Magnitude > netless then
+								vel = vel.Unit * netless
+							end
+							handle.AssemblyLinearVelocity = Vector3.new(vel.X, math.max(vel.Y, netless), vel.Z)
+						end
+					end
+				end
+			else
+				claimtime = timing
+				handle.AssemblyLinearVelocity = Vector3.new(0, netless * 2, 0)
+			end
+			handle.CFrame = newcf
+			if spin then
+				handle.AssemblyAngularVelocity = Vector3.new(16384, 16384, 16384)
+			else
+				if Reanimate.UseAngularVelocity then
+					handle.AssemblyAngularVelocity = rvel + idleoff
+				else
+					handle.AssemblyAngularVelocity = idleoff
+				end
+			end
+		else
+			claimtime = nil
+			lastcf = handle.CFrame
+			aligned = false
+		end
+		handle:SetAttribute("_Uhhhhhh_LastPosition", lastcf)
+		handle:SetAttribute("_Uhhhhhh_ClaimTime", claimtime)
+		return aligned
+	end
 
-        local CharOnDesc = function(v)
-                if v:IsA("BasePart") and not (v:FindFirstAncestorWhichIsA("Tool") or v:FindFirstAncestorWhichIsA("Accessory")) then
-                        if not table.find(BaseParts, v) then
-                                table.insert(BaseParts, v)
-                        end
-                elseif v:IsA("Animator") then
-                        task.defer(function()
-                                v:Destroy()
-                        end)
-                elseif v:IsA("LocalScript") and v.Parent == Player.Character then
-                        v.Enabled = false
-                        v:GetPropertyChangedSignal("Enabled"):Connect(function()
-                                if v.Enabled then v.Enabled = false end
-                        end)
-                        v:GetPropertyChangedSignal("Disabled"):Connect(function()
-                                if not v.Disabled then v.Disabled = true end
-                        end)
-                elseif v:IsA("Accessory") and v.Parent == Player.Character then
-                        local handle = v:WaitForChild("Handle", 10)
-                        if handle then
-                                if not table.find(CharHats, v) then
-                                        table.insert(CharHats, v)
-                                        local conn = nil
-                                        conn = v.AncestryChanged:Connect(function()
-                                                if v.Parent ~= Player.Character then
-                                                        local i = table.find(CharHats, v)
-                                                        if i then table.remove(CharHats, i) end
-                                                end
-                                        end)
-                                end
-                        end
-                elseif v:IsA("Tool") and v.Parent == Player.Character then
-                        if not table.find(CharTools, v) then
-                                table.insert(CharTools, v)
-                                local conn = nil
-                                conn = v.AncestryChanged:Connect(function()
-                                        if v.Parent ~= Player.Character then
-                                                local i = table.find(CharTools, v)
-                                                if i then table.remove(CharTools, i) end
-                                        end
-                                end)
-                        end
-                end
-        end
-        local currentping = 0
-        local function _counthats(hats)
-                local collidable = 0
-                local exists = 0
-                for _,hat in hats do
-                        local handle = hat:FindFirstChild("Handle")
-                        if handle and handle:IsA("BasePart") then
-                                exists += 1
-                                if handle.CanCollide then
-                                        collidable += 1
-                                        handle:SetAttribute("_Uhhhhhh_HasCollide", true)
-                                end
-                                handle.CanCollide = false
-                        end
-                end
-                HatReanimator.Status.HatCollide = exists .. " hats, " .. collidable .. " has collide."
-                return collidable
-        end
-        local function calculatepartdestroytime(height, velocity, gravity)
-                return (velocity + math.sqrt(velocity * velocity + 2 * gravity * height)) / gravity
-        end
-        local HatCollideMethods = {}
-        HatCollideMethods[-2] = {
-                NoAnim = true,
-                HRPTP = function(dt, character, Humanoid, RootPosition, RootPart, readystate)
-                        RootPart.CFrame = CFrame.new(RootPosition + Vector3.new(0, 141, 0))
-                        RootPart.AssemblyLinearVelocity, RootPart.AssemblyAngularVelocity = Vector3.zero, Vector3.zero
-                end,
-                State1 = function(character, Humanoid, hats)
-                        HatReanimator.Status.HatCollide = "RCDless Mode, applying reweld to head method"
-                        for _,v in hats do
-                                SetAccoutrementState(v, BackendAccoutrementState.None)
-                                local att = v:FindFirstChildOfClass("Attachment")
-                                if att then
-                                        att:Destroy()
-                                end
-                        end
-                end,
-                State2 = function(character, hats)
-                        local torso = character:FindFirstChild("Torso")
-                        if torso then torso:Destroy() end
-                        local root = character:FindFirstChild("HumanoidRootPart")
-                        if root then root:Destroy() end
-                        for _,v in character:GetChildren() do
-                                if v:IsA("BasePart") and v.Name ~= "Head" then
-                                        v:Destroy()
-                                end
-                        end
-                        local head = character:FindFirstChild("Head")
-                        if head then head:Destroy() end
-                        task.wait(0.5)
-                        return _counthats(hats)
-                end,
-        }
-        HatCollideMethods[-1] = {
-                NoAnim = true,
-                Wait1 = 0.25,
-                Wait2 = 0,
-                HRPTP = function(dt, character, Humanoid, RootPosition, RootPart, readystate)
-                        RootPart.CFrame = CFrame.new(RootPosition) * CFrame.Angles(math.pi / 2, 0, 0)
-                        RootPart.AssemblyLinearVelocity, RootPart.AssemblyAngularVelocity = Vector3.zero, Vector3.zero
-                end,
-                State1 = function() end,
-                State2 = function() return 0 end,
-        }
-        local shownapehatdrop_lock = {}
-        HatCollideMethods[0] = {
-                NoAnim = false,
-                HRPTP = function(dt, character, Humanoid, RootPosition, RootPart, readystate)
-                        if Humanoid.RigType == Enum.HumanoidRigType.R15 then
-                                RootPart.CFrame = CFrame.new(RootPosition + Vector3.new(0, -0.25, 0)) * CFrame.Angles(math.rad(20), 0, 0)
-                        else
-                                RootPart.CFrame = CFrame.new(RootPosition + Vector3.new(0, -0.25, 0))
-                        end
-                        RootPart.AssemblyLinearVelocity, RootPart.AssemblyAngularVelocity = Vector3.new(0, 25, 0), Vector3.zero
-                end,
-                State1 = function(character, Humanoid, hats)
-                        local anim = Instance.new("Animation")
-                        anim.AnimationId = "rbxassetid://180436148"
-                        if Humanoid.RigType == Enum.HumanoidRigType.R15 then
-                                anim.AnimationId = "rbxassetid://507767968"
-                        end
-                        local track = Humanoid:LoadAnimation(anim)
-                        track.Priority = 5
-                        track:Play(0)
-                        track:AdjustSpeed(1)
-                        track:AdjustWeight(1)
-                        track.TimePosition = 0.1
-                        table.clear(shownapehatdrop_lock)
-                        for _,v in hats do
-                                table.insert(shownapehatdrop_lock, v.Changed:Connect(function(p)
-                                        if p == "BackendAccoutrementState" then
-                                                SetAccoutrementState(v, BackendAccoutrementState.None)
-                                        end
-                                end))
-                                SetAccoutrementState(v, BackendAccoutrementState.InCharacter)
-                        end
-                        HatReanimator.Status.HatCollide = #hats .. " hats states ERADICATED!"
-                end,
-                State2 = function(character, hats)
-                        local torso = character:FindFirstChild("Torso")
-                        if torso then
-                                torso.AncestryChanged:Wait()
-                        end
-                        HatReanimator.Status.HatCollide = "Torso removed, state unlocked."
-                        for _,v in shownapehatdrop_lock do
-                                v:Disconnect()
-                        end
-                        for _,v in hats do
-                                SetAccoutrementState(v, BackendAccoutrementState.Equipped)
-                        end
-                        torso = character:FindFirstChild("Head")
-                        if torso then
-                                torso.AncestryChanged:Wait()
-                        end
-                        task.wait(0.5)
-                        return _counthats(hats)
-                end,
-        }
-        local function hatcol_hrptpstab(torsooffset)
-                return function(dt, character, Humanoid, RootPosition, RootPart, readystate)
-                        local rootcf = CFrame.new(RootPosition + Vector3.new(8, -8, 0)) * CFrame.Angles(math.pi * 0.5, 0, 0)
-                        if readystate > 0 then
-                                RootPart.CFrame = rootcf
-                                RootPart.AssemblyLinearVelocity, RootPart.AssemblyAngularVelocity = Vector3.new(0, 26, 0), Vector3.zero
-                        else
-                                RootPart.CFrame = rootcf + Vector3.new(0, 141, 0) -- CFrame.new(RootPosition + Vector3.new(8, 141, 0))
-                                RootPart.AssemblyLinearVelocity, RootPart.AssemblyAngularVelocity = Vector3.new(0, 26, 0), Vector3.zero
-                        end
-                        if Humanoid.RigType == Enum.HumanoidRigType.R15 then
-                                for _,v in character:GetDescendants() do
-                                        if v:IsA("Motor6D") then
-                                                if v.Name == "Root" then
-                                                        Util.SetMotor6DOffset(v, rootcf:ToObjectSpace(CFrame.new(RootPosition + Vector3.new(0, 0.75, 0)) * CFrame.Angles(math.pi * 0.5, 0, 0) * torsooffset))
-                                                elseif v.Name == "Neck" then
-                                                        Util.SetMotor6DOffset(v, torsooffset.Rotation:Inverse() * CFrame.new(math.random() * 0.05, 1.5, -10))
-                                                elseif v.Name:FindFirstChild("Shoulder") or v.Name:FindFirstChild("Hip") then
-                                                        Util.SetMotor6DOffset(v, torsooffset.Rotation:Inverse() * CFrame.new(v.C0.X - v.C1.X, v.C0.Y - v.C1.Y, -0.5 + math.random() * 0.05))
-                                                else
-                                                        Util.SetMotor6DTransform(v, CFrame.identity)
-                                                end
-                                        end
-                                end
-                        else
-                                local i = 1
-                                for _,v in character:GetDescendants() do
-                                        if v:IsA("Motor6D") then
-                                                if v.Name == "RootJoint" then
-                                                        Util.SetMotor6DOffset(v, rootcf:ToObjectSpace(CFrame.new(RootPosition + Vector3.new(0, -0.25, 0)) * CFrame.Angles(math.pi * 0.5, 0, 0) * torsooffset))
-                                                elseif v.Name == "Neck" then
-                                                        Util.SetMotor6DOffset(v, torsooffset.Rotation:Inverse() * CFrame.new(math.random() * 0.05, 1.5, -20))
-                                                else
-                                                        Util.SetMotor6DOffset(v, torsooffset.Rotation:Inverse() * CFrame.new(i * -3, math.random() * 0.05, -3))
-                                                        i += 1
-                                                end
-                                        end
-                                end
-                        end
-                end
-        end
-        HatCollideMethods[1] = {
-                NoAnim = true,
-                HRPTP = hatcol_hrptpstab(CFrame.new(0, 0, 0)),
-                State1 = function(character, Humanoid, hats)
-                        for _,v in hats do
-                                SetAccoutrementState(v, BackendAccoutrementState.InWorkspace)
-                                SetAccoutrementState(v, BackendAccoutrementState.None)
-                        end
-                        HatReanimator.Status.HatCollide = #hats .. " hats states ERADICATED!"
-                end,
-                State2 = function(character, hats)
-                        local torso = character:FindFirstChild("Torso")
-                        if torso then
-                                torso.AncestryChanged:Wait()
-                        end
-                        HatReanimator.Status.HatCollide = "Torso removed, state unlocked."
-                        for _,v in hats do
-                                SetAccoutrementState(v, BackendAccoutrementState.Equipped)
-                        end
-                        torso = character:FindFirstChild("Head")
-                        if torso then
-                                torso.AncestryChanged:Wait()
-                        end
-                        task.wait(0.5)
-                        return _counthats(hats)
-                end,
-        }
-        HatCollideMethods[2] = {
-                NoAnim = true,
-                HRPTP = hatcol_hrptpstab(CFrame.new(0, 0, 0) * CFrame.Angles(math.pi, 0, 0)),
-                State1 = HatCollideMethods[1].State1,
-                State2 = HatCollideMethods[1].State2,
-        }
-        HatCollideMethods[3] = {
-                NoAnim = true,
-                HRPTP = hatcol_hrptpstab(CFrame.new(0, 0, 0) * CFrame.Angles(math.pi * -0.5, 0, 0)),
-                State1 = HatCollideMethods[1].State1,
-                State2 = HatCollideMethods[1].State2,
-        }
-        HatCollideMethods[4] = {
-                NoAnim = true,
-                HRPTP = hatcol_hrptpstab(CFrame.new(0, 0, 0) * CFrame.Angles(math.pi * 0.5, 0, 0)),
-                State1 = HatCollideMethods[1].State1,
-                State2 = HatCollideMethods[1].State2,
-        }
-        HatCollideMethods[5] = {
-                NoAnim = true,
-                HRPTP = hatcol_hrptpstab(CFrame.new(0, 0, -8)),
-                State1 = HatCollideMethods[1].State1,
-                State2 = HatCollideMethods[1].State2,
-        }
-        HatCollideMethods[6] = {
-                NoAnim = true,
-                HRPTP = hatcol_hrptpstab(CFrame.new(0, 0, -60)),
-                State1 = HatCollideMethods[1].State1,
-                State2 = HatCollideMethods[1].State2,
-        }
-        HatCollideMethods[7] = {
-                ColLimb = true,
-                NoAnim = true,
-                Wait1 = 0.1,
-                Wait2 = 0.15,
-                HRPTP = function(dt, character, Humanoid, RootPosition, RootPart, readystate)
-                        local rootcf = CFrame.new(RootPosition + Vector3.new(0, -4, 0))
-                        RootPart.CFrame = rootcf
-                        RootPart.AssemblyLinearVelocity, RootPart.AssemblyAngularVelocity = Vector3.new(0, 26, 0), Vector3.zero
-                        if Humanoid.RigType == Enum.HumanoidRigType.R15 then
-                                -- TODO
-                        else
-                                -- put the limbs in freefall, make sure they dont touch
-                                local headheight = 3
-                                for _,v in character:GetDescendants() do
-                                        if v:IsA("Motor6D") then
-                                                if v.Name == "RootJoint" then
-                                                        Util.SetMotor6DOffset(v, CFrame.new(0, 6, 0))
-                                                elseif v.Name == "Neck" then
-                                                        Util.SetMotor6DOffset(v, CFrame.new(0, headheight, -2))
-                                                elseif v.Name == "Right Shoulder" then
-                                                        Util.SetMotor6DOffset(v, CFrame.new((v.C0.X - v.C1.X) * 2, headheight + 0.5, -2))
-                                                elseif v.Name == "Left Shoulder" then
-                                                        Util.SetMotor6DOffset(v, CFrame.new((v.C0.X - v.C1.X) * 2, 0, -2))
-                                                elseif v.Name:find("Hip") then
-                                                        Util.SetMotor6DOffset(v, CFrame.new((v.C0.X - v.C1.X) * 2, -2, -2))
-                                                else
-                                                        Util.SetMotor6DTransform(v, CFrame.identity)
-                                                end
-                                        end
-                                end
-                        end
-                end,
-                State1 = function(character, Humanoid, hats)
-                        HatReanimator.Status.HatCollide = "Hat states set."
-                        local head = character:FindFirstChild("Head")
-                        for _,v in hats do
-                                local handle = v:FindFirstChild("Handle")
-                                if handle then
-                                        local weld = handle:FindFirstChild("AccessoryWeld")
-                                        if weld then
-                                                if weld.Part0 == handle and weld.Part1 ~= head then
-                                                        continue
-                                                end
-                                                if weld.Part1 == handle and weld.Part0 ~= head then
-                                                        continue
-                                                end
-                                        end
-                                end
-                                SetAccoutrementState(v, BackendAccoutrementState.InWorkspace)
-                        end
-                end,
-                State2 = function(character, hats)
-                        local ping = Player:GetNetworkPing()
-                        -- 3 of the most important instances (rootpart is destroyed after a frame anyway)
-                        local torso = character:FindFirstChild("Torso")
-                        local head = character:FindFirstChild("Head")
-                        local rightarm = character:FindFirstChild("Right Arm") -- this will also reevaluate collisions upon removal (cuz tool)
-                        if torso then
-                                task.wait(calculatepartdestroytime(2, 26, workspace.Gravity) - 0.1)
-                        end
-                        HatReanimator.Status.HatCollide = "Torso removed, I speculate."
-                        for _,v in hats do
-                                SetAccoutrementState(v, BackendAccoutrementState.InWorkspace)
-                        end
-                        if torso and torso.Parent then
-                                torso.AncestryChanged:Wait()
-                        end
-                        if head and head.Parent then
-                                head.AncestryChanged:Wait()
-                        end
-                        task.wait(1.5)
-                        return _counthats(hats)
-                end,
-        }
-        HatCollideMethods[8] = { -- VERY EXPERIMENTAL, do NOT use.
-                NoAnim = true,
-                Wait1 = 0.1,
-                Wait2 = 0.15,
-                HRPTP = function(dt, character, Humanoid, RootPosition, RootPart, readystate)
-                        local rootcf = CFrame.new(RootPosition + Vector3.new(0, -4, 0)) * CFrame.Angles(math.pi * 0.5, 0, 0)
-                        RootPart.CFrame = rootcf
-                        RootPart.AssemblyLinearVelocity, RootPart.AssemblyAngularVelocity = Vector3.new(0, 0, 30), Vector3.zero
-                        if Humanoid.RigType == Enum.HumanoidRigType.R15 then
-                                for _,v in character:GetDescendants() do
-                                        if v:IsA("Motor6D") then
-                                                if v.Name == "Root" then
-                                                        Util.SetMotor6DTransform(v, CFrame.new(0, -30, 0))
-                                                elseif v.Name == "Neck" then
-                                                        Util.SetMotor6DOffset(v, CFrame.new(0, 67, 0))
-                                                else
-                                                        Util.SetMotor6DTransform(v, CFrame.identity)
-                                                end
-                                        end
-                                end
-                        else
-                                local i = 1
-                                for _,v in character:GetDescendants() do
-                                        if v:IsA("Motor6D") then
-                                                if v.Name == "RootJoint" then
-                                                        Util.SetMotor6DOffset(v, CFrame.new(0, 0, -20))
-                                                elseif v.Name == "Neck" then
-                                                        Util.SetMotor6DOffset(v, CFrame.new(0, 0, -1))
-                                                elseif v.Name == "Right Shoulder" then
-                                                        Util.SetMotor6DOffset(v, CFrame.new(0, 0, -20))
-                                                else
-                                                        Util.SetMotor6DOffset(v, CFrame.new(i * -3, 0, 10))
-                                                        i += 1
-                                                end
-                                        end
-                                end
-                        end
-                end,
-                State1 = function(character, Humanoid, hats)
-                        HatReanimator.Status.HatCollide = "Hat states set."
-                        local head = character:FindFirstChild("Head")
-                        for _,v in hats do
-                                local handle = v:FindFirstChild("Handle")
-                                if handle then
-                                        local weld = handle:FindFirstChild("AccessoryWeld")
-                                        if weld then
-                                                if weld.Part1 ~= head then
-                                                        continue
-                                                end
-                                        end
-                                end
-                                SetAccoutrementState(v, BackendAccoutrementState.InCharacter)
-                        end
-                end,
-                State2 = function(character, hats)
-                        local hum = character:FindFirstChild("Humanoid")
-                        local head = character:FindFirstChild("Right Arm")
-                        HatReanimator.Status.HatCollide = "We shall remain 1 part."
-                        task.wait(0.41)
-                        for _,v in hats do
-                                SetAccoutrementState(v, BackendAccoutrementState.InWorkspace)
-                                SetAccoutrementState(v, BackendAccoutrementState.InCharacter)
-                        end
-                        task.wait(0.19)
-                        if head and head:IsDescendantOf(workspace) then
-                                head.AncestryChanged:Wait()
-                        end
-                        for _,v in hats do
-                                SetAccoutrementState(v, BackendAccoutrementState.Equipped)
-                        end
-                        task.wait(1.5)
-                        return _counthats(hats)
-                end,
-        }
-        local NumHats = 0
-        local function OnCharacter(character)
-                if HatReanimator.DontFireCharAddOnThisChar == character then return end
-                currentping = Player:GetNetworkPing()
-                local toolnames = {}
-                for _,v in CharTools do table.insert(toolnames, v.Name) end
-                table.clear(BaseParts)
-                table.clear(CharHats)
-                table.clear(CharTools)
-                ResetHatRefs()
-                character.DescendantAdded:Connect(CharOnDesc)
-                for _,v in character:GetDescendants() do
-                        CharOnDesc(v)
-                end
-                HatReanimator.Status.ReanimState = "Respawned."
-                HatReanimator.Status.Permadeath = "Respawn detected."
-                HatReanimator.Status.HatCollide = "Respawn detected."
-                HatReanimator.Status.RespawnFling = "Respawn detected."
-                local hatcols = HatReanimator.HatCollide
-                local perma = HatReanimator.Permadeath
-                HatReanimator.HasPermadeath, HatReanimator.HasHatCollide = perma, hatcols
-                local hatcolmeth = HatReanimator.HatCollideMethod
-                if not replicatesignal then perma = false end
-                if not hatcols then hatcolmeth = -1 end
-                if hatcols and RejectCharacterDeletionsDisabled then
-                        hatcolmeth = -2
-                end
-                local selhatcol = HatCollideMethods[hatcolmeth]
-                CurrentCharacter = nil
-                local Humanoid = character:WaitForChild("Humanoid", 10)
-                if not Humanoid then return end
-                if not Reanimate.UseLoadAnimationHook then
-                        local stupid = character:FindFirstChild("Animate")
-                        if stupid then
-                                stupid:Destroy()
-                        end
-                        character.ChildAdded:Connect(function(v)
-                                if v:IsA("LocalScript") then
-                                        v.Disabled = true
-                                        task.defer(function()
-                                                v:Destroy()
-                                        end)
-                                end
-                        end)
-                end
-                if selhatcol.NoAnim then
-                        local stupid = Humanoid:FindFirstChild("Animator")
-                        if stupid then
-                                stupid:Destroy()
-                        end
-                end
-                if selhatcol.ColLimb then
-                        Humanoid.EvaluateStateMachine = false
-                        Humanoid:ChangeState(Enum.HumanoidStateType.Swimming)
-                end
-                local RootPart = character:WaitForChild("HumanoidRootPart", 10)
-                if not RootPart then return end
-                local RootPosition = Vector3.new(RootPart.Position.X, FallenPartsDestroyHeight, RootPart.Position.Z)
-                local ReanimCharacter = Reanimate.Character
-                if ReanimCharacter then
-                        local root = ReanimCharacter:FindFirstChild("HumanoidRootPart")
-                        if root then
-                                RootPosition = Vector3.new(root.Position.X, FallenPartsDestroyHeight, root.Position.Z)
-                        end
-                end
-                if not workspace.StreamingEnabled and false then
-                        local dir = CFrame.Angles(0, math.pi * 2 * math.random(), 0).LookVector * 300
-                        while true do
-                                local nearAPlayer = false
-                                for _,v in Players:GetPlayers() do
-                                        if v.Character and v.Character.PrimaryPart then
-                                                if (RootPosition - v.Character.PrimaryPart.CFrame.Position).Magnitude < 1000 then
-                                                        nearAPlayer = true
-                                                end
-                                        end
-                                end
-                                if nearAPlayer then
-                                        RootPosition += dir
-                                else
-                                        break
-                                end
-                        end
-                end
-                if not perma then
-                        RootPosition += Vector3.new(0, 12, 0)
-                        if ReanimCharacter then
-                                local root = ReanimCharacter:FindFirstChild("HumanoidRootPart")
-                                if root then
-                                        if HatReanimator.RespawnPosition == 1 then
-                                                RootPosition = root.CFrame * Vector3.new(0, 0, 6)
-                                        end
-                                        if HatReanimator.RespawnPosition == 2 then
-                                                local dir = Vector3.new(math.random() * 2 - 1, math.random() * 2 - 1, math.random() * 2 - 1).Unit
-                                                if dir ~= dir or dir.Magnitude == 0 then
-                                                        dir = Vector3.yAxis
-                                                end
-                                                RootPosition = root.Position + dir * math.random(8, 12)
-                                        end
-                                end
-                        end
-                        if HatReanimator.RespawnPosition == 3 then
-                                RootPosition = RootPart.Position
-                        end
-                end
-                if hatcols then
-                        RootPosition = Vector3.new(RootPosition.X, FallenPartsDestroyHeight, RootPosition.Z)
-                end
-                --pcall(function() Player.ReplicationFocus = character end)
-                if hatcols then
-                        HatReanimator.Status.HatCollide = "Waiting for Permadeath."
-                else
-                        HatReanimator.Status.HatCollide = "Disabled, nothing to do!"
-                end
-                local cdsbeffect = os.clock()
-                local cdsbtime = os.clock()
-                if perma then
-                        --replicatesignal(Player.ConnectDiedSignalBackend)
-                        HatReanimator.Status.Permadeath = "Fired CDSB Signal."
-                        cdsbeffect += Players.RespawnTime
-                end
-                HatReanimator.Status.RespawnFling = "Flinging targets..."
-                if LimbReanimator.UseNaNFling and HatReanimator.FlingTargets[1] then
-                        task.wait(0.2)
-                end
-                while character:IsDescendantOf(workspace) do
-                        local t = os.clock()
-                        local flingtarget = HatReanimator.FlingTargets[1]
-                        if HatReanimator.FlingMethod == -1 then
-                                table.remove(HatReanimator.FlingTargets, 1)
-                                flingtarget = nil
-                        end
-                        if flingtarget then
-                                if flingtarget.Time then
-                                        if t > flingtarget.Time then
-                                                table.remove(HatReanimator.FlingTargets, 1)
-                                                flingtarget = nil
-                                        end
-                                else
-                                        flingtarget.Time = t + (flingtarget.Duration or (Reanimate.UsePhysicsRepRootPart and 1 or 2))
-                                end
-                        end
-                        local flingcf, flinged = CFrame.identity, true
-                        if flingtarget then
-                                flingcf, flinged = Util.PredictionFling(flingtarget.Target)
-                                if flinged then
-                                        table.remove(HatReanimator.FlingTargets, 1)
-                                        flingtarget = nil
-                                end
-                        end
-                        if flingtarget then
-                                if not RootPart:IsGrounded() then
-                                        if LimbReanimator.UseNaNFling then
-                                                RootPart.CFrame = CFrame.new(flingcf.Position + Vector3.new(0, 0, math.random(0, 1) * 0.005)) * CFrame.Angles(0, os.clock() * 15, 0)
-                                                RootPart.Velocity, RootPart.RotVelocity = Vector3.zero, Vector3.zero
-                                        else
-                                                RootPart.CFrame = flingcf + Vector3.new(0, 0, math.random(0, 1) * 0.005)
-                                                RootPart.Velocity, RootPart.RotVelocity = Vector3.new(0, -16384, 0), Vector3.one * 16384
-                                        end
-                                        pcall(sethiddenproperty, RootPart, "PhysicsRepRootPart", Reanimate.UsePhysicsRepRootPart and Util.PredictionFlingPart(flingtarget.Target) or nil)
-                                end
-                                Humanoid:ChangeState(Enum.HumanoidStateType.Freefall)
-                                if LimbReanimator.UseNaNFling then
-                                        pcall(sethiddenproperty, Humanoid, "MoveDirectionInternal", Vector3.new(0/0, 0/0, 0/0))
-                                end
-                        elseif #HatReanimator.FlingTargets == 0 then
-                                break
-                        else
-                                RootPart.CFrame = CFrame.new(0, 1000, 0)
-                                RootPart.Velocity, RootPart.RotVelocity = Vector3.zero, Vector3.zero
-                                Humanoid:ChangeState(Enum.HumanoidStateType.Freefall)
-                        end
-                        task.wait()
-                end
-                if not character:IsDescendantOf(workspace) then
-                        return
-                end
-                pcall(sethiddenproperty, RootPart, "PhysicsRepRootPart", nil)
-                HatReanimator.Status.RespawnFling = "Done."
-                local lgloop = nil
-                local bringconns = {}
-                local readystate = 0
-                if perma then task.wait(1) end
-                local backpack = Player:FindFirstChildOfClass("Backpack")
-                local tools = GetTools()
-                if backpack then
-                        for _=1, 3 do
-                                for _,tool in tools do
-                                        tool.Parent = character
-                                end
-                                for _,tool in tools do
-                                        tool.Parent = backpack
-                                end
-                        end
-                end
-                lgloop = RunService.Heartbeat:Connect(function(dt)
-                        selhatcol.HRPTP(dt, character, Humanoid, RootPosition, RootPart, readystate)
-                end)
-                if hatcols then task.wait(0.2) end
-                HatReanimator.Status.ReanimState = "Loading Permadeath."
-                if perma then
-                        HatReanimator.Status.Permadeath = "no."
-                else
-                        HatReanimator.Status.Permadeath = "Disabled, nothing to do."
-                end
-                if not character:IsDescendantOf(workspace) then
-                        lgloop:Disconnect()
-                        return
-                end
-                readystate = 1
-                HatReanimator.Status.ReanimState = "Reanimate State: 1"
-                if not selhatcol.ColLimb then
-                        Humanoid:ChangeState(Enum.HumanoidStateType.Physics)
-                end
-                NumHats = #CharHats
-                selhatcol.State1(character, Humanoid, CharHats)
-                local claimarea = RootPart.CFrame.Position + RootPart.CFrame.LookVector * 8
-                claimarea = Vector3.new(claimarea.X, math.max(FallenPartsDestroyHeight + 16, claimarea.Y + 4), claimarea.Z)
-                task.wait(selhatcol.Wait1 or 0.1)
-                if not character:IsDescendantOf(workspace) then
-                        lgloop:Disconnect()
-                        return
-                end
-                readystate = 2
-                HatReanimator.Status.ReanimState = "Reanimate State: 2"
-                for _,hat in CharHats do
-                        local handle = hat:FindFirstChild("Handle")
-                        if handle and handle:IsA("BasePart") then
-                                table.insert(bringconns, RunService.Heartbeat:Connect(function(dt)
-                                        if handle:IsDescendantOf(workspace) and IsNetworkOwner(handle) then
-                                                handle.CFrame = CFrame.new(claimarea)
-                                                handle.Velocity = Vector3.new(0, 67, 0)
-                                                handle.RotVelocity = Vector3.new(0, 0, 0)
-                                        end
-                                end))
-                                local w = handle:FindFirstChild("AccessoryWeld")
-                                if w and w:IsA("Weld") then w:Destroy() end
-                                handle:SetAttribute("_Uhhhhhh_HasCollide", false)
-                        end
-                end
-                Humanoid:ChangeState(Enum.HumanoidStateType.FallingDown)
-                task.wait(selhatcol.Wait2 or 0.15)
-                if not character:IsDescendantOf(workspace) then
-                        lgloop:Disconnect()
-                        for _,c in bringconns do
-                                c:Disconnect()
-                        end
-                        return
-                end
-                pcall(replicatesignal, Humanoid.ServerBreakJoints)
-                Humanoid.EvaluateStateMachine = true
-                Humanoid.BreakJointsOnDeath = true
-                Humanoid.Health = 0
-                Humanoid:SetStateEnabled(Enum.HumanoidStateType.Dead, true)
-                Humanoid:ChangeState(Enum.HumanoidStateType.Dead)
-                readystate = 3
-                HatReanimator.Status.ReanimState = "Reanimate State: 3"
-                IsRespawning = false
-                if hatcols then
-                        local stateunlocked = false
-                        task.spawn(function()
-                                local collidable = selhatcol.State2(character, CharHats)
-                                stateunlocked = true
-                                local atleast = 0
-                                if SaveData.Reanimator.IWantHatCollide == 1 then
-                                        atleast = 1
-                                end
-                                if SaveData.Reanimator.IWantHatCollide == 2 then
-                                        atleast = #CharHats - 3
-                                end
-                                if SaveData.Reanimator.IWantHatCollide == 3 then
-                                        atleast = #CharHats - 2
-                                end
-                                if SaveData.Reanimator.IWantHatCollide == 4 then
-                                        atleast = #CharHats - 1
-                                end
-                                if hatcols and collidable <= atleast then
-                                        if perma then
-                                                HatReanimator.Status.Permadeath = "No hat collide. Respawning!"
-                                                Respawn()
-                                        end
-                                end
-                        end)
-                        repeat task.wait() until stateunlocked or not character:IsDescendantOf(workspace)
-                        --task.wait(0.25)
-                end
-                if backpack then
-                        for _,tool in tools do
-                                tool.Parent = Humanoid
-                                tool.Parent = character
-                                tool.Parent = backpack
-                        end
-                end
-                lgloop:Disconnect()
-                if perma then task.wait(1) end
-                for _,c in bringconns do
-                        c:Disconnect()
-                end
-                if not character:IsDescendantOf(workspace) then
-                        return
-                end
-                HatReanimator.Status.ReanimState = "Done."
-                if #CharHats == 0 then
-                        if perma then
-                                HatReanimator.Status.Permadeath = "All hats died. Respawning!"
-                                Respawn()
-                        end
-                end
-                if perma and hatcols then
-                        if HatReanimator.IWantAllHats and NumHats > #CharHats then
-                                if perma then
-                                        HatReanimator.Status.Permadeath = "Some hats died. Respawning!"
-                                        Respawn()
-                                end
-                        else
-                                NumHats = #CharHats
-                        end
-                end
-                --pcall(function() Player.ReplicationFocus = nil end)
-                CurrentCharacter = character
-                task.wait()
-                if backpack then
-                        for _,tool in tools do
-                                local i = table.find(toolnames, tool.Name)
-                                if i then
-                                        table.remove(toolnames, i)
-                                        tool.Parent = character
-                                end
-                        end
-                end
-        end
+	local CharOnDesc = function(v)
+		if v:IsA("BasePart") and not (v:FindFirstAncestorWhichIsA("Tool") or v:FindFirstAncestorWhichIsA("Accessory")) then
+			if not table.find(BaseParts, v) then
+				table.insert(BaseParts, v)
+			end
+		elseif v:IsA("Animator") then
+			task.defer(function()
+				v:Destroy()
+			end)
+		elseif v:IsA("LocalScript") and v.Parent == Player.Character then
+			v.Enabled = false
+			v:GetPropertyChangedSignal("Enabled"):Connect(function()
+				if v.Enabled then v.Enabled = false end
+			end)
+			v:GetPropertyChangedSignal("Disabled"):Connect(function()
+				if not v.Disabled then v.Disabled = true end
+			end)
+		elseif v:IsA("Accessory") and v.Parent == Player.Character then
+			local handle = v:WaitForChild("Handle", 10)
+			if handle then
+				if not table.find(CharHats, v) then
+					table.insert(CharHats, v)
+					local conn = nil
+					conn = v.AncestryChanged:Connect(function()
+						if v.Parent ~= Player.Character then
+							local i = table.find(CharHats, v)
+							if i then table.remove(CharHats, i) end
+						end
+					end)
+				end
+			end
+		elseif v:IsA("Tool") and v.Parent == Player.Character then
+			if not table.find(CharTools, v) then
+				table.insert(CharTools, v)
+				local conn = nil
+				conn = v.AncestryChanged:Connect(function()
+					if v.Parent ~= Player.Character then
+						local i = table.find(CharTools, v)
+						if i then table.remove(CharTools, i) end
+					end
+				end)
+			end
+		end
+	end
+	local currentping = 0
+	local function _counthats(hats)
+		local collidable = 0
+		local exists = 0
+		for _,hat in hats do
+			local handle = hat:FindFirstChild("Handle")
+			if handle and handle:IsA("BasePart") then
+				exists += 1
+				if handle.CanCollide then
+					collidable += 1
+					handle:SetAttribute("_Uhhhhhh_HasCollide", true)
+				end
+				handle.CanCollide = false
+			end
+		end
+		HatReanimator.Status.HatCollide = exists .. " hats, " .. collidable .. " has collide."
+		return collidable
+	end
+	local function calculatepartdestroytime(height, velocity, gravity)
+		return (velocity + math.sqrt(velocity * velocity + 2 * gravity * height)) / gravity
+	end
+	local HatCollideMethods = {}
+	HatCollideMethods[-2] = {
+		NoAnim = true,
+		HRPTP = function(dt, character, Humanoid, RootPosition, RootPart, readystate)
+			RootPart.CFrame = CFrame.new(RootPosition + Vector3.new(0, 141, 0))
+			RootPart.AssemblyLinearVelocity, RootPart.AssemblyAngularVelocity = Vector3.zero, Vector3.zero
+		end,
+		State1 = function(character, Humanoid, hats)
+			HatReanimator.Status.HatCollide = "RCDless Mode, applying reweld to head method"
+			for _,v in hats do
+				SetAccoutrementState(v, BackendAccoutrementState.None)
+				local att = v:FindFirstChildOfClass("Attachment")
+				if att then
+					att:Destroy()
+				end
+			end
+		end,
+		State2 = function(character, hats)
+			local torso = character:FindFirstChild("Torso")
+			if torso then torso:Destroy() end
+			local root = character:FindFirstChild("HumanoidRootPart")
+			if root then root:Destroy() end
+			for _,v in character:GetChildren() do
+				if v:IsA("BasePart") and v.Name ~= "Head" then
+					v:Destroy()
+				end
+			end
+			local head = character:FindFirstChild("Head")
+			if head then head:Destroy() end
+			task.wait(0.5)
+			return _counthats(hats)
+		end,
+	}
+	HatCollideMethods[-1] = {
+		NoAnim = true,
+		Wait1 = 0.25,
+		Wait2 = 0,
+		HRPTP = function(dt, character, Humanoid, RootPosition, RootPart, readystate)
+			RootPart.CFrame = CFrame.new(RootPosition) * CFrame.Angles(math.pi / 2, 0, 0)
+			RootPart.AssemblyLinearVelocity, RootPart.AssemblyAngularVelocity = Vector3.zero, Vector3.zero
+		end,
+		State1 = function() end,
+		State2 = function() return 0 end,
+	}
+	local shownapehatdrop_lock = {}
+	HatCollideMethods[0] = {
+		NoAnim = false,
+		HRPTP = function(dt, character, Humanoid, RootPosition, RootPart, readystate)
+			if Humanoid.RigType == Enum.HumanoidRigType.R15 then
+				RootPart.CFrame = CFrame.new(RootPosition + Vector3.new(0, -0.25, 0)) * CFrame.Angles(math.rad(20), 0, 0)
+			else
+				RootPart.CFrame = CFrame.new(RootPosition + Vector3.new(0, -0.25, 0))
+			end
+			RootPart.AssemblyLinearVelocity, RootPart.AssemblyAngularVelocity = Vector3.new(0, 25, 0), Vector3.zero
+		end,
+		State1 = function(character, Humanoid, hats)
+			local anim = Instance.new("Animation")
+			anim.AnimationId = "rbxassetid://180436148"
+			if Humanoid.RigType == Enum.HumanoidRigType.R15 then
+				anim.AnimationId = "rbxassetid://507767968"
+			end
+			local track = Humanoid:LoadAnimation(anim)
+			track.Priority = 5
+			track:Play(0)
+			track:AdjustSpeed(1)
+			track:AdjustWeight(1)
+			track.TimePosition = 0.1
+			table.clear(shownapehatdrop_lock)
+			for _,v in hats do
+				table.insert(shownapehatdrop_lock, v.Changed:Connect(function(p)
+					if p == "BackendAccoutrementState" then
+						SetAccoutrementState(v, BackendAccoutrementState.None)
+					end
+				end))
+				SetAccoutrementState(v, BackendAccoutrementState.InCharacter)
+			end
+			HatReanimator.Status.HatCollide = #hats .. " hats states ERADICATED!"
+		end,
+		State2 = function(character, hats)
+			local torso = character:FindFirstChild("Torso")
+			if torso then
+				torso.AncestryChanged:Wait()
+			end
+			HatReanimator.Status.HatCollide = "Torso removed, state unlocked."
+			for _,v in shownapehatdrop_lock do
+				v:Disconnect()
+			end
+			for _,v in hats do
+				SetAccoutrementState(v, BackendAccoutrementState.Equipped)
+			end
+			torso = character:FindFirstChild("Head")
+			if torso then
+				torso.AncestryChanged:Wait()
+			end
+			task.wait(0.5)
+			return _counthats(hats)
+		end,
+	}
+	local function hatcol_hrptpstab(torsooffset)
+		return function(dt, character, Humanoid, RootPosition, RootPart, readystate)
+			local rootcf = CFrame.new(RootPosition + Vector3.new(8, -8, 0)) * CFrame.Angles(math.pi * 0.5, 0, 0)
+			if readystate > 0 then
+				RootPart.CFrame = rootcf
+				RootPart.AssemblyLinearVelocity, RootPart.AssemblyAngularVelocity = Vector3.new(0, 26, 0), Vector3.zero
+			else
+				RootPart.CFrame = rootcf + Vector3.new(0, 141, 0) -- CFrame.new(RootPosition + Vector3.new(8, 141, 0))
+				RootPart.AssemblyLinearVelocity, RootPart.AssemblyAngularVelocity = Vector3.new(0, 26, 0), Vector3.zero
+			end
+			if Humanoid.RigType == Enum.HumanoidRigType.R15 then
+				for _,v in character:GetDescendants() do
+					if v:IsA("Motor6D") then
+						if v.Name == "Root" then
+							Util.SetMotor6DOffset(v, rootcf:ToObjectSpace(CFrame.new(RootPosition + Vector3.new(0, 0.75, 0)) * CFrame.Angles(math.pi * 0.5, 0, 0) * torsooffset))
+						elseif v.Name == "Neck" then
+							Util.SetMotor6DOffset(v, torsooffset.Rotation:Inverse() * CFrame.new(math.random() * 0.05, 1.5, -10))
+						elseif v.Name:FindFirstChild("Shoulder") or v.Name:FindFirstChild("Hip") then
+							Util.SetMotor6DOffset(v, torsooffset.Rotation:Inverse() * CFrame.new(v.C0.X - v.C1.X, v.C0.Y - v.C1.Y, -0.5 + math.random() * 0.05))
+						else
+							Util.SetMotor6DTransform(v, CFrame.identity)
+						end
+					end
+				end
+			else
+				local i = 1
+				for _,v in character:GetDescendants() do
+					if v:IsA("Motor6D") then
+						if v.Name == "RootJoint" then
+							Util.SetMotor6DOffset(v, rootcf:ToObjectSpace(CFrame.new(RootPosition + Vector3.new(0, -0.25, 0)) * CFrame.Angles(math.pi * 0.5, 0, 0) * torsooffset))
+						elseif v.Name == "Neck" then
+							Util.SetMotor6DOffset(v, torsooffset.Rotation:Inverse() * CFrame.new(math.random() * 0.05, 1.5, -20))
+						else
+							Util.SetMotor6DOffset(v, torsooffset.Rotation:Inverse() * CFrame.new(i * -3, math.random() * 0.05, -3))
+							i += 1
+						end
+					end
+				end
+			end
+		end
+	end
+	HatCollideMethods[1] = {
+		NoAnim = true,
+		HRPTP = hatcol_hrptpstab(CFrame.new(0, 0, 0)),
+		State1 = function(character, Humanoid, hats)
+			for _,v in hats do
+				SetAccoutrementState(v, BackendAccoutrementState.InWorkspace)
+				SetAccoutrementState(v, BackendAccoutrementState.None)
+			end
+			HatReanimator.Status.HatCollide = #hats .. " hats states ERADICATED!"
+		end,
+		State2 = function(character, hats)
+			local torso = character:FindFirstChild("Torso")
+			if torso then
+				torso.AncestryChanged:Wait()
+			end
+			HatReanimator.Status.HatCollide = "Torso removed, state unlocked."
+			for _,v in hats do
+				SetAccoutrementState(v, BackendAccoutrementState.Equipped)
+			end
+			torso = character:FindFirstChild("Head")
+			if torso then
+				torso.AncestryChanged:Wait()
+			end
+			task.wait(0.5)
+			return _counthats(hats)
+		end,
+	}
+	HatCollideMethods[2] = {
+		NoAnim = true,
+		HRPTP = hatcol_hrptpstab(CFrame.new(0, 0, 0) * CFrame.Angles(math.pi, 0, 0)),
+		State1 = HatCollideMethods[1].State1,
+		State2 = HatCollideMethods[1].State2,
+	}
+	HatCollideMethods[3] = {
+		NoAnim = true,
+		HRPTP = hatcol_hrptpstab(CFrame.new(0, 0, 0) * CFrame.Angles(math.pi * -0.5, 0, 0)),
+		State1 = HatCollideMethods[1].State1,
+		State2 = HatCollideMethods[1].State2,
+	}
+	HatCollideMethods[4] = {
+		NoAnim = true,
+		HRPTP = hatcol_hrptpstab(CFrame.new(0, 0, 0) * CFrame.Angles(math.pi * 0.5, 0, 0)),
+		State1 = HatCollideMethods[1].State1,
+		State2 = HatCollideMethods[1].State2,
+	}
+	HatCollideMethods[5] = {
+		NoAnim = true,
+		HRPTP = hatcol_hrptpstab(CFrame.new(0, 0, -8)),
+		State1 = HatCollideMethods[1].State1,
+		State2 = HatCollideMethods[1].State2,
+	}
+	HatCollideMethods[6] = {
+		NoAnim = true,
+		HRPTP = hatcol_hrptpstab(CFrame.new(0, 0, -60)),
+		State1 = HatCollideMethods[1].State1,
+		State2 = HatCollideMethods[1].State2,
+	}
+	HatCollideMethods[7] = {
+		ColLimb = true,
+		NoAnim = true,
+		Wait1 = 0.1,
+		Wait2 = 0.15,
+		HRPTP = function(dt, character, Humanoid, RootPosition, RootPart, readystate)
+			local rootcf = CFrame.new(RootPosition + Vector3.new(0, -4, 0))
+			RootPart.CFrame = rootcf
+			RootPart.AssemblyLinearVelocity, RootPart.AssemblyAngularVelocity = Vector3.new(0, 26, 0), Vector3.zero
+			if Humanoid.RigType == Enum.HumanoidRigType.R15 then
+				-- TODO
+			else
+				-- put the limbs in freefall, make sure they dont touch
+				local headheight = 3
+				for _,v in character:GetDescendants() do
+					if v:IsA("Motor6D") then
+						if v.Name == "RootJoint" then
+							Util.SetMotor6DOffset(v, CFrame.new(0, 6, 0))
+						elseif v.Name == "Neck" then
+							Util.SetMotor6DOffset(v, CFrame.new(0, headheight, -2))
+						elseif v.Name == "Right Shoulder" then
+							Util.SetMotor6DOffset(v, CFrame.new((v.C0.X - v.C1.X) * 2, headheight + 0.5, -2))
+						elseif v.Name == "Left Shoulder" then
+							Util.SetMotor6DOffset(v, CFrame.new((v.C0.X - v.C1.X) * 2, 0, -2))
+						elseif v.Name:find("Hip") then
+							Util.SetMotor6DOffset(v, CFrame.new((v.C0.X - v.C1.X) * 2, -2, -2))
+						else
+							Util.SetMotor6DTransform(v, CFrame.identity)
+						end
+					end
+				end
+			end
+		end,
+		State1 = function(character, Humanoid, hats)
+			HatReanimator.Status.HatCollide = "Hat states set."
+			local head = character:FindFirstChild("Head")
+			for _,v in hats do
+				local handle = v:FindFirstChild("Handle")
+				if handle then
+					local weld = handle:FindFirstChild("AccessoryWeld")
+					if weld then
+						if weld.Part0 == handle and weld.Part1 ~= head then
+							continue
+						end
+						if weld.Part1 == handle and weld.Part0 ~= head then
+							continue
+						end
+					end
+				end
+				SetAccoutrementState(v, BackendAccoutrementState.InWorkspace)
+			end
+		end,
+		State2 = function(character, hats)
+			local ping = Player:GetNetworkPing()
+			-- 3 of the most important instances (rootpart is destroyed after a frame anyway)
+			local torso = character:FindFirstChild("Torso")
+			local head = character:FindFirstChild("Head")
+			local rightarm = character:FindFirstChild("Right Arm") -- this will also reevaluate collisions upon removal (cuz tool)
+			if torso then
+				task.wait(calculatepartdestroytime(2, 26, workspace.Gravity) - 0.1)
+			end
+			HatReanimator.Status.HatCollide = "Torso removed, I speculate."
+			for _,v in hats do
+				SetAccoutrementState(v, BackendAccoutrementState.InWorkspace)
+			end
+			if torso and torso.Parent then
+				torso.AncestryChanged:Wait()
+			end
+			if head and head.Parent then
+				head.AncestryChanged:Wait()
+			end
+			task.wait(1.5)
+			return _counthats(hats)
+		end,
+	}
+	HatCollideMethods[8] = { -- VERY EXPERIMENTAL, do NOT use.
+		NoAnim = true,
+		Wait1 = 0.1,
+		Wait2 = 0.15,
+		HRPTP = function(dt, character, Humanoid, RootPosition, RootPart, readystate)
+			local rootcf = CFrame.new(RootPosition + Vector3.new(0, -4, 0)) * CFrame.Angles(math.pi * 0.5, 0, 0)
+			RootPart.CFrame = rootcf
+			RootPart.AssemblyLinearVelocity, RootPart.AssemblyAngularVelocity = Vector3.new(0, 0, 30), Vector3.zero
+			if Humanoid.RigType == Enum.HumanoidRigType.R15 then
+				for _,v in character:GetDescendants() do
+					if v:IsA("Motor6D") then
+						if v.Name == "Root" then
+							Util.SetMotor6DTransform(v, CFrame.new(0, -30, 0))
+						elseif v.Name == "Neck" then
+							Util.SetMotor6DOffset(v, CFrame.new(0, 67, 0))
+						else
+							Util.SetMotor6DTransform(v, CFrame.identity)
+						end
+					end
+				end
+			else
+				local i = 1
+				for _,v in character:GetDescendants() do
+					if v:IsA("Motor6D") then
+						if v.Name == "RootJoint" then
+							Util.SetMotor6DOffset(v, CFrame.new(0, 0, -20))
+						elseif v.Name == "Neck" then
+							Util.SetMotor6DOffset(v, CFrame.new(0, 0, -1))
+						elseif v.Name == "Right Shoulder" then
+							Util.SetMotor6DOffset(v, CFrame.new(0, 0, -20))
+						else
+							Util.SetMotor6DOffset(v, CFrame.new(i * -3, 0, 10))
+							i += 1
+						end
+					end
+				end
+			end
+		end,
+		State1 = function(character, Humanoid, hats)
+			HatReanimator.Status.HatCollide = "Hat states set."
+			local head = character:FindFirstChild("Head")
+			for _,v in hats do
+				local handle = v:FindFirstChild("Handle")
+				if handle then
+					local weld = handle:FindFirstChild("AccessoryWeld")
+					if weld then
+						if weld.Part1 ~= head then
+							continue
+						end
+					end
+				end
+				SetAccoutrementState(v, BackendAccoutrementState.InCharacter)
+			end
+		end,
+		State2 = function(character, hats)
+			local hum = character:FindFirstChild("Humanoid")
+			local head = character:FindFirstChild("Right Arm")
+			HatReanimator.Status.HatCollide = "We shall remain 1 part."
+			task.wait(0.41)
+			for _,v in hats do
+				SetAccoutrementState(v, BackendAccoutrementState.InWorkspace)
+				SetAccoutrementState(v, BackendAccoutrementState.InCharacter)
+			end
+			task.wait(0.19)
+			if head and head:IsDescendantOf(workspace) then
+				head.AncestryChanged:Wait()
+			end
+			for _,v in hats do
+				SetAccoutrementState(v, BackendAccoutrementState.Equipped)
+			end
+			task.wait(1.5)
+			return _counthats(hats)
+		end,
+	}
+	local NumHats = 0
+	local function OnCharacter(character)
+		if HatReanimator.DontFireCharAddOnThisChar == character then return end
+		currentping = Player:GetNetworkPing()
+		local toolnames = {}
+		for _,v in CharTools do table.insert(toolnames, v.Name) end
+		table.clear(BaseParts)
+		table.clear(CharHats)
+		table.clear(CharTools)
+		ResetHatRefs()
+		character.DescendantAdded:Connect(CharOnDesc)
+		for _,v in character:GetDescendants() do
+			CharOnDesc(v)
+		end
+		HatReanimator.Status.ReanimState = "Respawned."
+		HatReanimator.Status.Permadeath = "Respawn detected."
+		HatReanimator.Status.HatCollide = "Respawn detected."
+		HatReanimator.Status.RespawnFling = "Respawn detected."
+		local hatcols = HatReanimator.HatCollide
+		local perma = HatReanimator.Permadeath
+		HatReanimator.HasPermadeath, HatReanimator.HasHatCollide = perma, hatcols
+		local hatcolmeth = HatReanimator.HatCollideMethod
+		if not replicatesignal then perma = false end
+		if not hatcols then hatcolmeth = -1 end
+		if hatcols and RejectCharacterDeletionsDisabled then
+			hatcolmeth = -2
+		end
+		local selhatcol = HatCollideMethods[hatcolmeth]
+		CurrentCharacter = nil
+		local Humanoid = character:WaitForChild("Humanoid", 10)
+		if not Humanoid then return end
+		if not Reanimate.UseLoadAnimationHook then
+			local stupid = character:FindFirstChild("Animate")
+			if stupid then
+				stupid:Destroy()
+			end
+			character.ChildAdded:Connect(function(v)
+				if v:IsA("LocalScript") then
+					v.Disabled = true
+					task.defer(function()
+						v:Destroy()
+					end)
+				end
+			end)
+		end
+		if selhatcol.NoAnim then
+			local stupid = Humanoid:FindFirstChild("Animator")
+			if stupid then
+				stupid:Destroy()
+			end
+		end
+		if selhatcol.ColLimb then
+			Humanoid.EvaluateStateMachine = false
+			Humanoid:ChangeState(Enum.HumanoidStateType.Swimming)
+		end
+		local RootPart = character:WaitForChild("HumanoidRootPart", 10)
+		if not RootPart then return end
+		local RootPosition = Vector3.new(RootPart.Position.X, FallenPartsDestroyHeight, RootPart.Position.Z)
+		local ReanimCharacter = Reanimate.Character
+		if ReanimCharacter then
+			local root = ReanimCharacter:FindFirstChild("HumanoidRootPart")
+			if root then
+				RootPosition = Vector3.new(root.Position.X, FallenPartsDestroyHeight, root.Position.Z)
+			end
+		end
+		if not workspace.StreamingEnabled and false then
+			local dir = CFrame.Angles(0, math.pi * 2 * math.random(), 0).LookVector * 300
+			while true do
+				local nearAPlayer = false
+				for _,v in Players:GetPlayers() do
+					if v.Character and v.Character.PrimaryPart then
+						if (RootPosition - v.Character.PrimaryPart.CFrame.Position).Magnitude < 1000 then
+							nearAPlayer = true
+						end
+					end
+				end
+				if nearAPlayer then
+					RootPosition += dir
+				else
+					break
+				end
+			end
+		end
+		if not perma then
+			RootPosition += Vector3.new(0, 12, 0)
+			if ReanimCharacter then
+				local root = ReanimCharacter:FindFirstChild("HumanoidRootPart")
+				if root then
+					if HatReanimator.RespawnPosition == 1 then
+						RootPosition = root.CFrame * Vector3.new(0, 0, 6)
+					end
+					if HatReanimator.RespawnPosition == 2 then
+						local dir = Vector3.new(math.random() * 2 - 1, math.random() * 2 - 1, math.random() * 2 - 1).Unit
+						if dir ~= dir or dir.Magnitude == 0 then
+							dir = Vector3.yAxis
+						end
+						RootPosition = root.Position + dir * math.random(8, 12)
+					end
+				end
+			end
+			if HatReanimator.RespawnPosition == 3 then
+				RootPosition = RootPart.Position
+			end
+		end
+		if hatcols then
+			RootPosition = Vector3.new(RootPosition.X, FallenPartsDestroyHeight, RootPosition.Z)
+		end
+		--pcall(function() Player.ReplicationFocus = character end)
+		if hatcols then
+			HatReanimator.Status.HatCollide = "Waiting for Permadeath."
+		else
+			HatReanimator.Status.HatCollide = "Disabled, nothing to do!"
+		end
+		local cdsbeffect = os.clock()
+		local cdsbtime = os.clock()
+		if perma then
+			--replicatesignal(Player.ConnectDiedSignalBackend)
+			HatReanimator.Status.Permadeath = "Fired CDSB Signal."
+			cdsbeffect += Players.RespawnTime
+		end
+		HatReanimator.Status.RespawnFling = "Flinging targets..."
+		if LimbReanimator.UseNaNFling and HatReanimator.FlingTargets[1] then
+			task.wait(0.2)
+		end
+		while character:IsDescendantOf(workspace) do
+			local t = os.clock()
+			local flingtarget = HatReanimator.FlingTargets[1]
+			if HatReanimator.FlingMethod == -1 then
+				table.remove(HatReanimator.FlingTargets, 1)
+				flingtarget = nil
+			end
+			if flingtarget then
+				if flingtarget.Time then
+					if t > flingtarget.Time then
+						table.remove(HatReanimator.FlingTargets, 1)
+						flingtarget = nil
+					end
+				else
+					flingtarget.Time = t + (flingtarget.Duration or (Reanimate.UsePhysicsRepRootPart and 1 or 2))
+				end
+			end
+			local flingcf, flinged = CFrame.identity, true
+			if flingtarget then
+				flingcf, flinged = Util.PredictionFling(flingtarget.Target)
+				if flinged then
+					table.remove(HatReanimator.FlingTargets, 1)
+					flingtarget = nil
+				end
+			end
+			if flingtarget then
+				if not RootPart:IsGrounded() then
+					if LimbReanimator.UseNaNFling then
+						RootPart.CFrame = CFrame.new(flingcf.Position + Vector3.new(0, 0, math.random(0, 1) * 0.005)) * CFrame.Angles(0, os.clock() * 15, 0)
+						RootPart.Velocity, RootPart.RotVelocity = Vector3.zero, Vector3.zero
+					else
+						RootPart.CFrame = flingcf + Vector3.new(0, 0, math.random(0, 1) * 0.005)
+						RootPart.Velocity, RootPart.RotVelocity = Vector3.new(0, -16384, 0), Vector3.one * 16384
+					end
+					pcall(sethiddenproperty, RootPart, "PhysicsRepRootPart", Reanimate.UsePhysicsRepRootPart and Util.PredictionFlingPart(flingtarget.Target) or nil)
+				end
+				Humanoid:ChangeState(Enum.HumanoidStateType.Freefall)
+				if LimbReanimator.UseNaNFling then
+					pcall(sethiddenproperty, Humanoid, "MoveDirectionInternal", Vector3.new(0/0, 0/0, 0/0))
+				end
+			elseif #HatReanimator.FlingTargets == 0 then
+				break
+			else
+				RootPart.CFrame = CFrame.new(0, 1000, 0)
+				RootPart.Velocity, RootPart.RotVelocity = Vector3.zero, Vector3.zero
+				Humanoid:ChangeState(Enum.HumanoidStateType.Freefall)
+			end
+			task.wait()
+		end
+		if not character:IsDescendantOf(workspace) then
+			return
+		end
+		pcall(sethiddenproperty, RootPart, "PhysicsRepRootPart", nil)
+		HatReanimator.Status.RespawnFling = "Done."
+		local lgloop = nil
+		local bringconns = {}
+		local readystate = 0
+		if perma then task.wait(1) end
+		local backpack = Player:FindFirstChildOfClass("Backpack")
+		local tools = GetTools()
+		if backpack then
+			for _=1, 3 do
+				for _,tool in tools do
+					tool.Parent = character
+				end
+				for _,tool in tools do
+					tool.Parent = backpack
+				end
+			end
+		end
+		lgloop = RunService.Heartbeat:Connect(function(dt)
+			selhatcol.HRPTP(dt, character, Humanoid, RootPosition, RootPart, readystate)
+		end)
+		if hatcols then task.wait(0.2) end
+		HatReanimator.Status.ReanimState = "Loading Permadeath."
+		if perma then
+			HatReanimator.Status.Permadeath = "no."
+		else
+			HatReanimator.Status.Permadeath = "Disabled, nothing to do."
+		end
+		if not character:IsDescendantOf(workspace) then
+			lgloop:Disconnect()
+			return
+		end
+		readystate = 1
+		HatReanimator.Status.ReanimState = "Reanimate State: 1"
+		if not selhatcol.ColLimb then
+			Humanoid:ChangeState(Enum.HumanoidStateType.Physics)
+		end
+		NumHats = #CharHats
+		selhatcol.State1(character, Humanoid, CharHats)
+		local claimarea = RootPart.CFrame.Position + RootPart.CFrame.LookVector * 8
+		claimarea = Vector3.new(claimarea.X, math.max(FallenPartsDestroyHeight + 16, claimarea.Y + 4), claimarea.Z)
+		task.wait(selhatcol.Wait1 or 0.1)
+		if not character:IsDescendantOf(workspace) then
+			lgloop:Disconnect()
+			return
+		end
+		readystate = 2
+		HatReanimator.Status.ReanimState = "Reanimate State: 2"
+		for _,hat in CharHats do
+			local handle = hat:FindFirstChild("Handle")
+			if handle and handle:IsA("BasePart") then
+				table.insert(bringconns, RunService.Heartbeat:Connect(function(dt)
+					if handle:IsDescendantOf(workspace) and IsNetworkOwner(handle) then
+						handle.CFrame = CFrame.new(claimarea)
+						handle.Velocity = Vector3.new(0, 67, 0)
+						handle.RotVelocity = Vector3.new(0, 0, 0)
+					end
+				end))
+				local w = handle:FindFirstChild("AccessoryWeld")
+				if w and w:IsA("Weld") then w:Destroy() end
+				handle:SetAttribute("_Uhhhhhh_HasCollide", false)
+			end
+		end
+		Humanoid:ChangeState(Enum.HumanoidStateType.FallingDown)
+		task.wait(selhatcol.Wait2 or 0.15)
+		if not character:IsDescendantOf(workspace) then
+			lgloop:Disconnect()
+			for _,c in bringconns do
+				c:Disconnect()
+			end
+			return
+		end
+		pcall(replicatesignal, Humanoid.ServerBreakJoints)
+		Humanoid.EvaluateStateMachine = true
+		Humanoid.BreakJointsOnDeath = true
+		Humanoid.Health = 0
+		Humanoid:SetStateEnabled(Enum.HumanoidStateType.Dead, true)
+		Humanoid:ChangeState(Enum.HumanoidStateType.Dead)
+		readystate = 3
+		HatReanimator.Status.ReanimState = "Reanimate State: 3"
+		IsRespawning = false
+		if hatcols then
+			local stateunlocked = false
+			task.spawn(function()
+				local collidable = selhatcol.State2(character, CharHats)
+				stateunlocked = true
+				local atleast = 0
+				if SaveData.Reanimator.IWantHatCollide == 1 then
+					atleast = 1
+				end
+				if SaveData.Reanimator.IWantHatCollide == 2 then
+					atleast = #CharHats - 3
+				end
+				if SaveData.Reanimator.IWantHatCollide == 3 then
+					atleast = #CharHats - 2
+				end
+				if SaveData.Reanimator.IWantHatCollide == 4 then
+					atleast = #CharHats - 1
+				end
+				if hatcols and collidable <= atleast then
+					if perma then
+						HatReanimator.Status.Permadeath = "No hat collide. Respawning!"
+						Respawn()
+					end
+				end
+			end)
+			repeat task.wait() until stateunlocked or not character:IsDescendantOf(workspace)
+			--task.wait(0.25)
+		end
+		if backpack then
+			for _,tool in tools do
+				tool.Parent = Humanoid
+				tool.Parent = character
+				tool.Parent = backpack
+			end
+		end
+		lgloop:Disconnect()
+		if perma then task.wait(1) end
+		for _,c in bringconns do
+			c:Disconnect()
+		end
+		if not character:IsDescendantOf(workspace) then
+			return
+		end
+		HatReanimator.Status.ReanimState = "Done."
+		if #CharHats == 0 then
+			if perma then
+				HatReanimator.Status.Permadeath = "All hats died. Respawning!"
+				Respawn()
+			end
+		end
+		if perma and hatcols then
+			if HatReanimator.IWantAllHats and NumHats > #CharHats then
+				if perma then
+					HatReanimator.Status.Permadeath = "Some hats died. Respawning!"
+					Respawn()
+				end
+			else
+				NumHats = #CharHats
+			end
+		end
+		--pcall(function() Player.ReplicationFocus = nil end)
+		CurrentCharacter = character
+		task.wait()
+		if backpack then
+			for _,tool in tools do
+				local i = table.find(toolnames, tool.Name)
+				if i then
+					table.remove(toolnames, i)
+					tool.Parent = character
+				end
+			end
+		end
+	end
 
-        local CharConn = Player.CharacterAdded:Connect(OnCharacter)
+	local CharConn = Player.CharacterAdded:Connect(OnCharacter)
 
-        if Player.Character then
-                local h = Player.Character:FindFirstChildOfClass("Humanoid")
-                if h and h.RootPart then
-                        InitCFrame = h.RootPart.CFrame
-                        pcall(function() Player.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Dead) end)
-                        pcall(function() Player.Character.Humanoid.Health = 0 end)
-                        pcall(replicatesignal, Player.Character.Humanoid.ServerBreakJoints)
-                        --pcall(replicatesignal, Player.ConnectDiedSignalBackend)
-                        Player.Character.DescendantAdded:Connect(CharOnDesc)
-                        for _,v in Player.Character:GetDescendants() do
-                                CharOnDesc(v)
-                        end
-                        CurrentCharacter = Player.Character
-                end
-        end
+	if Player.Character then
+		local h = Player.Character:FindFirstChildOfClass("Humanoid")
+		if h and h.RootPart then
+			InitCFrame = h.RootPart.CFrame
+			pcall(function() Player.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Dead) end)
+			pcall(function() Player.Character.Humanoid.Health = 0 end)
+			pcall(replicatesignal, Player.Character.Humanoid.ServerBreakJoints)
+			--pcall(replicatesignal, Player.ConnectDiedSignalBackend)
+			Player.Character.DescendantAdded:Connect(CharOnDesc)
+			for _,v in Player.Character:GetDescendants() do
+				CharOnDesc(v)
+			end
+			CurrentCharacter = Player.Character
+		end
+	end
 
-        Reanimate.CreateCharacter(InitCFrame)
+	Reanimate.CreateCharacter(InitCFrame)
 
-        Reanimate.Starting = false
-        local letitgo = 0
-        while not Reanimate.Stopping do
-                RunService.PreSimulation:Wait()
-                workspace.FallenPartsDestroyHeight = 0/0
-                SetSimulationRadius()
-                local ReanimOkay = false
-                local Character = Player.Character
-                local ReanimCharacter = Reanimate.Character
-                if Character and Character:IsDescendantOf(workspace) then
-                        if CurrentCharacter == Character then
-                                if #CharHats > 0 then
-                                        ReanimOkay = true
-                                end
-                                if HatReanimator.HasPermadeath and not IsRespawning and HatReanimator.IWantAllHats then
-                                        if NumHats > #CharHats then
-                                                HatReanimator.Status.Permadeath = "Some hats died. Respawning!"
-                                                Respawn()
-                                        else
-                                                local midpoint = Vector3.zero
-                                                local hatsowned = 0
-                                                local hatsnotowned = {}
-                                                for _,v in CharHats do
-                                                        local h = v:FindFirstChild("Handle")
-                                                        if h and h:IsA("BasePart") then
-                                                                if IsNetworkOwner(h) then
-                                                                        midpoint += h.Position
-                                                                        hatsowned += 1
-                                                                else
-                                                                        table.insert(hatsnotowned, h)
-                                                                end
-                                                        end
-                                                end
-                                                midpoint /= hatsowned
-                                                for _,v in hatsnotowned do
-                                                        if (v.Position - midpoint).Magnitude > 2000 then
-                                                                HatReanimator.Status.Permadeath = "Some hats unclaimable. Respawning!"
-                                                                Respawn()
-                                                                break
-                                                        end
-                                                end
-                                                hatsnotowned = nil
-                                        end
-                                end
-                        end
-                        local Humanoid = Character:FindFirstChildOfClass("Humanoid")
-                        if Humanoid then
-                                if Humanoid.WalkSpeed < 1 then
-                                        Humanoid.WalkSpeed = 16
-                                end
-                                if Humanoid.JumpPower < 1 then
-                                        Humanoid.JumpPower = 50
-                                end
-                                if Camera then
-                                        if (ReanimOkay and ReanimCharacter) or not HatReanimator.Permadeath then
-                                                Camera.CameraSubject = ReanimCharacter:FindFirstChildOfClass("Humanoid")
-                                        else
-                                                Camera.CameraSubject = Humanoid
-                                        end
-                                end
-                        end
-                end
-                local RCRootPart = ReanimCharacter and ReanimCharacter:FindFirstChild("HumanoidRootPart")
-                local ltm = Reanimate.LocalTransparencyModifier
-                for _,v in BaseParts do
-                        v.CanCollide = false
-                        v.LocalTransparencyModifier = ltm
-                end
-                local t = os.clock()
-                local slocked = {}
-                if ReanimOkay then
-                        local dt = RunService.Heartbeat:Wait()
-                        if HatReanimator.RebuildRequired then
-                                RefreshHatMap(Character)
-                        end
-                        if RCRootPart then
-                                local rightarm = ReanimCharacter:FindFirstChild("Right Arm") or RCRootPart
-                                local rightgrip = Util.ScaleCFrame(RIGHTGRIP_C0, Reanimate.CharacterScale)
-                                local claimoverride = nil
-                                local toolequipped = false
-                                local toolactivate = false
-                                local toolactivated = nil
-                                local handlethese = {}
-                                for _,v in CharTools do
-                                        local handle = v:FindFirstChild("Handle")
-                                        if handle and handle:IsA("BasePart") then
-                                                handle.CanCollide = false
-                                                handle.LocalTransparencyModifier = ltm
-                                                if HatReanimator.ToolHolding then
-                                                        handlethese[handle] = rightarm.CFrame * rightgrip * v.Grip:Inverse()
-                                                else
-                                                        handlethese[handle] = RCRootPart.CFrame + Vector3.new(0, -12, 0)
-                                                end
-                                                if not IsNetworkOwner(handle) then
-                                                        local a = Player:GetNetworkPing() + 0.2 + math.sin(t * 30) * 0.2
-                                                        claimoverride = handle.CFrame
-                                                        claimoverride += handle.Velocity * a
-                                                        claimoverride += Vector3.new(0, -workspace.Gravity, 0) * 0.5 * a * a
-                                                end
-                                        end
-                                        if not v:GetAttribute("_Uhhhhhh_ActivateConn") then
-                                                v:SetAttribute("_Uhhhhhh_ActivateConn", true)
-                                                v.Activated:Connect(function()
-                                                        v:SetAttribute("_Uhhhhhh_Activate", true)
-                                                end)
-                                        end
-                                        if v:GetAttribute("_Uhhhhhh_Activate") then
-                                                v:SetAttribute("_Uhhhhhh_Activate", nil)
-                                                toolactivate = true
-                                                toolactivated = v
-                                        end
-                                        v.Enabled = true
-                                        v.RequiresHandle = false
-                                        v.ManualActivationOnly = false
-                                end
-                                if #CharTools > 0 and HatReanimator.ToolHolding then
-                                        local FakeTool = ReanimCharacter:FindFirstChildOfClass("Tool")
-                                        if not FakeTool then
-                                                toolequipped = true
-                                                FakeTool = Instance.new("Tool")
-                                                FakeTool.Name = "faketool"
-                                                local FakeToolHandle = Instance.new("Part")
-                                                FakeToolHandle.Name = "Handle"
-                                                FakeToolHandle.Transparency = 1
-                                                FakeToolHandle.Color = Color3.new(0, 0, 1)
-                                                FakeToolHandle.CanCollide = false
-                                                FakeToolHandle.Massless = true
-                                                FakeToolHandle.Parent = FakeTool
-                                                FakeTool.Parent = ReanimCharacter
-                                                local RightGrip = Instance.new("Weld")
-                                                RightGrip.Name = "RightGrip"
-                                                RightGrip.Parent = FakeToolHandle
-                                                RightGrip.Part0 = rightarm
-                                                RightGrip.Part1 = FakeToolHandle
-                                                RightGrip.C0 = RIGHTGRIP_C0
-                                                Util.LinkDestroyI2C(FakeTool, FakeTool:GetPropertyChangedSignal("Grip"):Connect(function()
-                                                        RightGrip.C1 = FakeTool.Grip
-                                                end))
-                                                RightGrip.C1 = FakeTool.Grip
-                                        end
-                                        if HatReanimator.ToolAnimMethod == 1 then
-                                                if toolequipped then
-                                                        local sound = Instance.new("Sound")
-                                                        sound.Name = "snd"
-                                                        sound.SoundId = "rbxasset://sounds/unsheath.wav"
-                                                        sound.Volume = 1
-                                                        sound.Parent = FakeTool:FindFirstChild("Handle")
-                                                        sound:Play()
-                                                        Debris:AddItem(sound, 1)
-                                                end
-                                                if toolactivate then
-                                                        local newuse = FakeTool:GetAttribute("_Uhhhhhh_Sword_CD") or 0
-                                                        local lastuse = FakeTool:GetAttribute("_Uhhhhhh_Sword_LU") or 0
-                                                        if t > newuse then
-                                                                if t - lastuse < 0.2 then
-                                                                        newuse = t + 1
-                                                                        local toolanim = Instance.new("StringValue")
-                                                                        toolanim.Name = "toolanim"
-                                                                        toolanim.Value = "Lunge"
-                                                                        toolanim.Parent = FakeTool
-                                                                        local sound = Instance.new("Sound")
-                                                                        sound.Name = "snd"
-                                                                        sound.SoundId = "rbxasset://sounds/swordlunge.wav"
-                                                                        sound.Volume = 1
-                                                                        sound.Parent = FakeTool:FindFirstChild("Handle")
-                                                                        sound:Play()
-                                                                        Debris:AddItem(toolanim, 1)
-                                                                        Debris:AddItem(sound, 1)
-                                                                        task.spawn(function(v)
-                                                                                v.GripForward = Vector3.new(0, 0, 1)
-                                                                                v.GripRight = Vector3.new(0, -1, 0)
-                                                                                v.GripUp = Vector3.new(-1, 0, 0)
-                                                                                task.wait(1)
-                                                                                v.GripForward = Vector3.new(-1, 0, 0)
-                                                                                v.GripRight = Vector3.new(0, 1, 0)
-                                                                                v.GripUp = Vector3.new(0, 0, 1)
-                                                                        end, toolactivated)
-                                                                else
-                                                                        newuse = t + 0.05
-                                                                        local toolanim = Instance.new("StringValue")
-                                                                        toolanim.Name = "toolanim"
-                                                                        toolanim.Value = "Slash"
-                                                                        toolanim.Parent = FakeTool
-                                                                        local sound = Instance.new("Sound")
-                                                                        sound.Name = "snd"
-                                                                        sound.SoundId = "rbxasset://sounds/swordslash.wav"
-                                                                        sound.Volume = 1
-                                                                        sound.Parent = FakeTool:FindFirstChild("Handle")
-                                                                        sound:Play()
-                                                                        Debris:AddItem(toolanim, 1)
-                                                                        Debris:AddItem(sound, 1)
-                                                                end
-                                                                lastuse = t
-                                                        end
-                                                        FakeTool:SetAttribute("_Uhhhhhh_Sword_CD", newuse)
-                                                        FakeTool:SetAttribute("_Uhhhhhh_Sword_LU", lastuse)
-                                                end
-                                        end
-                                else
-                                        local FakeTool = ReanimCharacter:FindFirstChildOfClass("Tool")
-                                        if FakeTool then FakeTool:Destroy() end
-                                end
-                                local flingtarget = nil
-                                local flingcf, flinged = CFrame.identity, true
-                                if t > letitgo then
-                                        flingtarget = HatReanimator.FlingTargets[1]
-                                        if flingtarget then
-                                                if - HatReanimator.FlingMethod == 0 then
-                                                        Respawn()
-                                                        flingtarget.Time = nil
-                                                        flingtarget = nil
-                                                else
-                                                        if flingtarget.Time then
-                                                                if t > flingtarget.Time then
-                                                                        table.remove(HatReanimator.FlingTargets, 1)
-                                                                        flingtarget = nil
-                                                                end
-                                                        else
-                                                                flingtarget.Time = t + (flingtarget.Duration or (Reanimate.UsePhysicsRepRootPart and Reanimate.PhysicsRepRootPartFling or 2))
-                                                        end
-                                                end
-                                        end
-                                        if flingtarget then
-                                                flingcf, flinged = Util.PredictionFling(flingtarget.Target)
-                                                if flinged then
-                                                        table.remove(HatReanimator.FlingTargets, 1)
-                                                        flingtarget = nil
-                                                        letitgo = t + 0.1
-                                                end
-                                        end
-                                end
-                                local blacklist = {}
-                                if flingtarget then
-                                        local flingpart = Reanimate.UsePhysicsRepRootPart and Util.PredictionFlingPart(flingtarget.Target) or nil
-                                        if HatReanimator.FlingMethod == 1 then
-                                                local biggest = nil
-                                                local biggesthat = nil
-                                                local biggestarea = 0
-                                                for _,hat in CharHats do
-                                                        local handle = hat:FindFirstChild("Handle")
-                                                        if handle and handle:IsA("BasePart") and handle:GetAttribute("_Uhhhhhh_HasCollide") and IsNetworkOwner(handle) then
-                                                                local area = handle.Size.X * handle.Size.Y * handle.Size.Z
-                                                                if biggestarea < area then
-                                                                        biggest = handle
-                                                                        biggesthat = hat
-                                                                        biggestarea = area
-                                                                end
-                                                        end
-                                                end
-                                                if biggesthat then
-                                                        blacklist[biggesthat] = true
-                                                        SetUACFrameNetless(biggest, dt, flingcf, Vector3.zero, false, true)
-                                                        pcall(sethiddenproperty, biggest, "PhysicsRepRootPart", Reanimate.UsePhysicsRepRootPart and flingpart or nil)
-                                                end
-                                        end
-                                        if HatReanimator.FlingMethod == 2 then
-                                                local collide = false
-                                                for _,hat in CharHats do
-                                                        local handle = hat:FindFirstChild("Handle")
-                                                        if handle and handle:IsA("BasePart") then
-                                                                if handle:GetAttribute("_Uhhhhhh_HasCollide") then
-                                                                        collide = true
-                                                                end
-                                                        end
-                                                end
-                                                if collide then
-                                                        for _,hat in CharHats do
-                                                                local handle = hat:FindFirstChild("Handle")
-                                                                if handle and handle:IsA("BasePart") then
-                                                                        blacklist[hat] = true
-                                                                        SetUACFrameNetless(handle, dt, flingcf, Vector3.zero, false, true)
-                                                                        pcall(sethiddenproperty, handle, "PhysicsRepRootPart", Reanimate.UsePhysicsRepRootPart and flingpart or nil)
-                                                                end
-                                                        end
-                                                end
-                                        end
-                                        if HatReanimator.FlingMethod == 3 then
-                                                for handle, cf in handlethese do
-                                                        blacklist[handle] = true
-                                                        SetUACFrameNetless(handle, dt, flingcf, Vector3.zero, false, true)
-                                                        pcall(sethiddenproperty, handle, "PhysicsRepRootPart", Reanimate.UsePhysicsRepRootPart and flingpart or nil)
-                                                end
-                                        end
-                                end
-                                for _,hat in CharHats do
-                                        local handle = hat:FindFirstChild("Handle")
-                                        if handle and handle:IsA("BasePart") then
-                                                handle.CanCollide = false
-                                                local lltm = ltm
-                                                if Reanimate.FirstPersonBody then
-                                                        if not handle:GetAttribute("AttachHead") then
-                                                                lltm = 0
-                                                        end
-                                                end
-                                                handle.LocalTransparencyModifier = lltm
-                                                local ref = Hat2HatRefs[hat]
-                                                if blacklist[hat] then
-                                                        if ref then ref.Aligned = false end
-                                                else
-                                                        if claimoverride then
-                                                                SetUACFrameNetless(handle, dt, claimoverride, Vector3.zero, false, false)
-                                                                pcall(sethiddenproperty, handle, "PhysicsRepRootPart", nil)
-                                                                if ref then ref.Aligned = false end
-                                                        else
-                                                                local mapped = nil
-                                                                if ref then
-                                                                        mapped = GetHatMappedOverride(ref.Map)
-                                                                else
-                                                                        RefHatToHatRefs(hat)
-                                                                end
-                                                                local tcf, tvel = GetHatMappedCFrame(mapped)
-                                                                tcf = tcf or RCRootPart.CFrame * CFrame.new(0, 5, 0)
-                                                                tvel = tvel or Vector3.zero
-                                                                local aligned = SetUACFrameNetless(handle, dt, tcf, tvel, HatReanimator.HatFling, HatReanimator.HatSpin)
-                                                                if aligned then
-                                                                        table.insert(slocked, handle)
-                                                                end
-                                                                if ref then ref.Aligned = aligned end
-                                                                pcall(sethiddenproperty, handle, "PhysicsRepRootPart", mapped and mapped.RepRootPart)
-                                                        end
-                                                end
-                                        end
-                                end
-                                for handle, cf in handlethese do
-                                        if not blacklist[handle] then
-                                                if SetUACFrameNetless(handle, dt, cf, rightarm.Velocity, HatReanimator.HatFling, HatReanimator.HatSpin) then
-                                                        table.insert(slocked, handle)
-                                                end
-                                        end
-                                end
-                        end
-                else
-                        if CurrentCharacter then
-                                CurrentCharacter = nil
-                                --replicatesignal(Player.ConnectDiedSignalBackend)
-                        end
-                end
-                for _,ref in HatRefs do
-                        local ph = ref.PH
-                        if ph then
-                                if ReanimOkay and ref.Hat and ref.Aligned then
-                                        ph.Transparency = 1
-                                else
-                                        local tcf, _ = GetHatMappedCFrame(GetHatMappedOverride(ref.Map))
-                                        if tcf then
-                                                local lltm = ltm
-                                                if Reanimate.FirstPersonBody then
-                                                        if not ph:GetAttribute("AttachHead") then
-                                                                lltm = 0
-                                                        end
-                                                end
-                                                ph.CFrame = tcf
-                                                ph.Transparency = 1 - (1 - Reanimate.PlaceholderTransparency) * (1 - lltm)
-                                                table.insert(slocked, ph)
-                                        end
-                                end
-                        end
-                end
-                RunService.PreRender:Wait()
-                if RCRootPart and Reanimate:ShouldRotationType() then
-                        Reanimate:CameraLockCharacter()
-                end
-                for _,ref in HatRefs do
-                        local ph = ref.PH
-                        if ph then
-                                if ReanimOkay and ref.Hat and ref.Aligned then else
-                                        local tcf, _ = GetHatMappedCFrame(GetHatMappedOverride(ref.Map))
-                                        if tcf then
-                                                ph.CFrame = tcf
-                                        end
-                                end
-                        end
-                end
-                if HatReanimator.HatSpin then
-                        for _,handle in slocked do
-                                if math.random() < 0.5 then
-                                        handle.CFrame = handle.CFrame * CFrame.Angles(math.random() * 2 * math.pi, math.random() * 2 * math.pi, math.random() * 2 * math.pi)
-                                end
-                        end
-                end
-        end
-        ResetHatRefs()
-        for _,v in HatRefs do if v.PH then v.PH:Destroy() end end
-        CharConn:Disconnect()
-        --replicatesignal(Player.ConnectDiedSignalBackend)
-        Reanimate.Stopping = false
-        Reanimate.DestroyCharacter()
+	Reanimate.Starting = false
+	local letitgo = 0
+	while not Reanimate.Stopping do
+		RunService.PreSimulation:Wait()
+		workspace.FallenPartsDestroyHeight = 0/0
+		SetSimulationRadius()
+		local ReanimOkay = false
+		local Character = Player.Character
+		local ReanimCharacter = Reanimate.Character
+		if Character and Character:IsDescendantOf(workspace) then
+			if CurrentCharacter == Character then
+				if #CharHats > 0 then
+					ReanimOkay = true
+				end
+				if HatReanimator.HasPermadeath and not IsRespawning and HatReanimator.IWantAllHats then
+					if NumHats > #CharHats then
+						HatReanimator.Status.Permadeath = "Some hats died. Respawning!"
+						Respawn()
+					else
+						local midpoint = Vector3.zero
+						local hatsowned = 0
+						local hatsnotowned = {}
+						for _,v in CharHats do
+							local h = v:FindFirstChild("Handle")
+							if h and h:IsA("BasePart") then
+								if IsNetworkOwner(h) then
+									midpoint += h.Position
+									hatsowned += 1
+								else
+									table.insert(hatsnotowned, h)
+								end
+							end
+						end
+						midpoint /= hatsowned
+						for _,v in hatsnotowned do
+							if (v.Position - midpoint).Magnitude > 2000 then
+								HatReanimator.Status.Permadeath = "Some hats unclaimable. Respawning!"
+								Respawn()
+								break
+							end
+						end
+						hatsnotowned = nil
+					end
+				end
+			end
+			local Humanoid = Character:FindFirstChildOfClass("Humanoid")
+			if Humanoid then
+				if Humanoid.WalkSpeed < 1 then
+					Humanoid.WalkSpeed = 16
+				end
+				if Humanoid.JumpPower < 1 then
+					Humanoid.JumpPower = 50
+				end
+				if Camera then
+					if (ReanimOkay and ReanimCharacter) or not HatReanimator.Permadeath then
+						Camera.CameraSubject = ReanimCharacter:FindFirstChildOfClass("Humanoid")
+					else
+						Camera.CameraSubject = Humanoid
+					end
+				end
+			end
+		end
+		local RCRootPart = ReanimCharacter and ReanimCharacter:FindFirstChild("HumanoidRootPart")
+		local ltm = Reanimate.LocalTransparencyModifier
+		for _,v in BaseParts do
+			v.CanCollide = false
+			v.LocalTransparencyModifier = ltm
+		end
+		local t = os.clock()
+		local slocked = {}
+		if ReanimOkay then
+			local dt = RunService.Heartbeat:Wait()
+			if HatReanimator.RebuildRequired then
+				RefreshHatMap(Character)
+			end
+			if RCRootPart then
+				local rightarm = ReanimCharacter:FindFirstChild("Right Arm") or RCRootPart
+				local rightgrip = Util.ScaleCFrame(RIGHTGRIP_C0, Reanimate.CharacterScale)
+				local claimoverride = nil
+				local toolequipped = false
+				local toolactivate = false
+				local toolactivated = nil
+				local handlethese = {}
+				for _,v in CharTools do
+					local handle = v:FindFirstChild("Handle")
+					if handle and handle:IsA("BasePart") then
+						handle.CanCollide = false
+						handle.LocalTransparencyModifier = ltm
+						if HatReanimator.ToolHolding then
+							handlethese[handle] = rightarm.CFrame * rightgrip * v.Grip:Inverse()
+						else
+							handlethese[handle] = RCRootPart.CFrame + Vector3.new(0, -12, 0)
+						end
+						if not IsNetworkOwner(handle) then
+							local a = Player:GetNetworkPing() + 0.2 + math.sin(t * 30) * 0.2
+							claimoverride = handle.CFrame
+							claimoverride += handle.Velocity * a
+							claimoverride += Vector3.new(0, -workspace.Gravity, 0) * 0.5 * a * a
+						end
+					end
+					if not v:GetAttribute("_Uhhhhhh_ActivateConn") then
+						v:SetAttribute("_Uhhhhhh_ActivateConn", true)
+						v.Activated:Connect(function()
+							v:SetAttribute("_Uhhhhhh_Activate", true)
+						end)
+					end
+					if v:GetAttribute("_Uhhhhhh_Activate") then
+						v:SetAttribute("_Uhhhhhh_Activate", nil)
+						toolactivate = true
+						toolactivated = v
+					end
+					v.Enabled = true
+					v.RequiresHandle = false
+					v.ManualActivationOnly = false
+				end
+				if #CharTools > 0 and HatReanimator.ToolHolding then
+					local FakeTool = ReanimCharacter:FindFirstChildOfClass("Tool")
+					if not FakeTool then
+						toolequipped = true
+						FakeTool = Instance.new("Tool")
+						FakeTool.Name = "faketool"
+						local FakeToolHandle = Instance.new("Part")
+						FakeToolHandle.Name = "Handle"
+						FakeToolHandle.Transparency = 1
+						FakeToolHandle.Color = Color3.new(0, 0, 1)
+						FakeToolHandle.CanCollide = false
+						FakeToolHandle.Massless = true
+						FakeToolHandle.Parent = FakeTool
+						FakeTool.Parent = ReanimCharacter
+						local RightGrip = Instance.new("Weld")
+						RightGrip.Name = "RightGrip"
+						RightGrip.Parent = FakeToolHandle
+						RightGrip.Part0 = rightarm
+						RightGrip.Part1 = FakeToolHandle
+						RightGrip.C0 = RIGHTGRIP_C0
+						Util.LinkDestroyI2C(FakeTool, FakeTool:GetPropertyChangedSignal("Grip"):Connect(function()
+							RightGrip.C1 = FakeTool.Grip
+						end))
+						RightGrip.C1 = FakeTool.Grip
+					end
+					if HatReanimator.ToolAnimMethod == 1 then
+						if toolequipped then
+							local sound = Instance.new("Sound")
+							sound.Name = "snd"
+							sound.SoundId = "rbxasset://sounds/unsheath.wav"
+							sound.Volume = 1
+							sound.Parent = FakeTool:FindFirstChild("Handle")
+							sound:Play()
+							Debris:AddItem(sound, 1)
+						end
+						if toolactivate then
+							local newuse = FakeTool:GetAttribute("_Uhhhhhh_Sword_CD") or 0
+							local lastuse = FakeTool:GetAttribute("_Uhhhhhh_Sword_LU") or 0
+							if t > newuse then
+								if t - lastuse < 0.2 then
+									newuse = t + 1
+									local toolanim = Instance.new("StringValue")
+									toolanim.Name = "toolanim"
+									toolanim.Value = "Lunge"
+									toolanim.Parent = FakeTool
+									local sound = Instance.new("Sound")
+									sound.Name = "snd"
+									sound.SoundId = "rbxasset://sounds/swordlunge.wav"
+									sound.Volume = 1
+									sound.Parent = FakeTool:FindFirstChild("Handle")
+									sound:Play()
+									Debris:AddItem(toolanim, 1)
+									Debris:AddItem(sound, 1)
+									task.spawn(function(v)
+										v.GripForward = Vector3.new(0, 0, 1)
+										v.GripRight = Vector3.new(0, -1, 0)
+										v.GripUp = Vector3.new(-1, 0, 0)
+										task.wait(1)
+										v.GripForward = Vector3.new(-1, 0, 0)
+										v.GripRight = Vector3.new(0, 1, 0)
+										v.GripUp = Vector3.new(0, 0, 1)
+									end, toolactivated)
+								else
+									newuse = t + 0.05
+									local toolanim = Instance.new("StringValue")
+									toolanim.Name = "toolanim"
+									toolanim.Value = "Slash"
+									toolanim.Parent = FakeTool
+									local sound = Instance.new("Sound")
+									sound.Name = "snd"
+									sound.SoundId = "rbxasset://sounds/swordslash.wav"
+									sound.Volume = 1
+									sound.Parent = FakeTool:FindFirstChild("Handle")
+									sound:Play()
+									Debris:AddItem(toolanim, 1)
+									Debris:AddItem(sound, 1)
+								end
+								lastuse = t
+							end
+							FakeTool:SetAttribute("_Uhhhhhh_Sword_CD", newuse)
+							FakeTool:SetAttribute("_Uhhhhhh_Sword_LU", lastuse)
+						end
+					end
+				else
+					local FakeTool = ReanimCharacter:FindFirstChildOfClass("Tool")
+					if FakeTool then FakeTool:Destroy() end
+				end
+				local flingtarget = nil
+				local flingcf, flinged = CFrame.identity, true
+				if t > letitgo then
+					flingtarget = HatReanimator.FlingTargets[1]
+					if flingtarget then
+						if - HatReanimator.FlingMethod == 0 then
+							Respawn()
+							flingtarget.Time = nil
+							flingtarget = nil
+						else
+							if flingtarget.Time then
+								if t > flingtarget.Time then
+									table.remove(HatReanimator.FlingTargets, 1)
+									flingtarget = nil
+								end
+							else
+								flingtarget.Time = t + (flingtarget.Duration or (Reanimate.UsePhysicsRepRootPart and Reanimate.PhysicsRepRootPartFling or 2))
+							end
+						end
+					end
+					if flingtarget then
+						flingcf, flinged = Util.PredictionFling(flingtarget.Target)
+						if flinged then
+							table.remove(HatReanimator.FlingTargets, 1)
+							flingtarget = nil
+							letitgo = t + 0.1
+						end
+					end
+				end
+				local blacklist = {}
+				if flingtarget then
+					local flingpart = Reanimate.UsePhysicsRepRootPart and Util.PredictionFlingPart(flingtarget.Target) or nil
+					if HatReanimator.FlingMethod == 1 then
+						local biggest = nil
+						local biggesthat = nil
+						local biggestarea = 0
+						for _,hat in CharHats do
+							local handle = hat:FindFirstChild("Handle")
+							if handle and handle:IsA("BasePart") and handle:GetAttribute("_Uhhhhhh_HasCollide") and IsNetworkOwner(handle) then
+								local area = handle.Size.X * handle.Size.Y * handle.Size.Z
+								if biggestarea < area then
+									biggest = handle
+									biggesthat = hat
+									biggestarea = area
+								end
+							end
+						end
+						if biggesthat then
+							blacklist[biggesthat] = true
+							SetUACFrameNetless(biggest, dt, flingcf, Vector3.zero, false, true)
+							pcall(sethiddenproperty, biggest, "PhysicsRepRootPart", Reanimate.UsePhysicsRepRootPart and flingpart or nil)
+						end
+					end
+					if HatReanimator.FlingMethod == 2 then
+						local collide = false
+						for _,hat in CharHats do
+							local handle = hat:FindFirstChild("Handle")
+							if handle and handle:IsA("BasePart") then
+								if handle:GetAttribute("_Uhhhhhh_HasCollide") then
+									collide = true
+								end
+							end
+						end
+						if collide then
+							for _,hat in CharHats do
+								local handle = hat:FindFirstChild("Handle")
+								if handle and handle:IsA("BasePart") then
+									blacklist[hat] = true
+									SetUACFrameNetless(handle, dt, flingcf, Vector3.zero, false, true)
+									pcall(sethiddenproperty, handle, "PhysicsRepRootPart", Reanimate.UsePhysicsRepRootPart and flingpart or nil)
+								end
+							end
+						end
+					end
+					if HatReanimator.FlingMethod == 3 then
+						for handle, cf in handlethese do
+							blacklist[handle] = true
+							SetUACFrameNetless(handle, dt, flingcf, Vector3.zero, false, true)
+							pcall(sethiddenproperty, handle, "PhysicsRepRootPart", Reanimate.UsePhysicsRepRootPart and flingpart or nil)
+						end
+					end
+				end
+				for _,hat in CharHats do
+					local handle = hat:FindFirstChild("Handle")
+					if handle and handle:IsA("BasePart") then
+						handle.CanCollide = false
+						local lltm = ltm
+						if Reanimate.FirstPersonBody then
+							if not handle:GetAttribute("AttachHead") then
+								lltm = 0
+							end
+						end
+						handle.LocalTransparencyModifier = lltm
+						local ref = Hat2HatRefs[hat]
+						if blacklist[hat] then
+							if ref then ref.Aligned = false end
+						else
+							if claimoverride then
+								SetUACFrameNetless(handle, dt, claimoverride, Vector3.zero, false, false)
+								pcall(sethiddenproperty, handle, "PhysicsRepRootPart", nil)
+								if ref then ref.Aligned = false end
+							else
+								local mapped = nil
+								if ref then
+									mapped = GetHatMappedOverride(ref.Map)
+								else
+									RefHatToHatRefs(hat)
+								end
+								local tcf, tvel = GetHatMappedCFrame(mapped)
+								tcf = tcf or RCRootPart.CFrame * CFrame.new(0, 5, 0)
+								tvel = tvel or Vector3.zero
+								local aligned = SetUACFrameNetless(handle, dt, tcf, tvel, HatReanimator.HatFling, HatReanimator.HatSpin)
+								if aligned then
+									table.insert(slocked, handle)
+								end
+								if ref then ref.Aligned = aligned end
+								pcall(sethiddenproperty, handle, "PhysicsRepRootPart", mapped and mapped.RepRootPart)
+							end
+						end
+					end
+				end
+				for handle, cf in handlethese do
+					if not blacklist[handle] then
+						if SetUACFrameNetless(handle, dt, cf, rightarm.Velocity, HatReanimator.HatFling, HatReanimator.HatSpin) then
+							table.insert(slocked, handle)
+						end
+					end
+				end
+			end
+		else
+			if CurrentCharacter then
+				CurrentCharacter = nil
+				--replicatesignal(Player.ConnectDiedSignalBackend)
+			end
+		end
+		for _,ref in HatRefs do
+			local ph = ref.PH
+			if ph then
+				if ReanimOkay and ref.Hat and ref.Aligned then
+					ph.Transparency = 1
+				else
+					local tcf, _ = GetHatMappedCFrame(GetHatMappedOverride(ref.Map))
+					if tcf then
+						local lltm = ltm
+						if Reanimate.FirstPersonBody then
+							if not ph:GetAttribute("AttachHead") then
+								lltm = 0
+							end
+						end
+						ph.CFrame = tcf
+						ph.Transparency = 1 - (1 - Reanimate.PlaceholderTransparency) * (1 - lltm)
+						table.insert(slocked, ph)
+					end
+				end
+			end
+		end
+		RunService.PreRender:Wait()
+		if RCRootPart and Reanimate:ShouldRotationType() then
+			Reanimate:CameraLockCharacter()
+		end
+		for _,ref in HatRefs do
+			local ph = ref.PH
+			if ph then
+				if ReanimOkay and ref.Hat and ref.Aligned then else
+					local tcf, _ = GetHatMappedCFrame(GetHatMappedOverride(ref.Map))
+					if tcf then
+						ph.CFrame = tcf
+					end
+				end
+			end
+		end
+		if HatReanimator.HatSpin then
+			for _,handle in slocked do
+				if math.random() < 0.5 then
+					handle.CFrame = handle.CFrame * CFrame.Angles(math.random() * 2 * math.pi, math.random() * 2 * math.pi, math.random() * 2 * math.pi)
+				end
+			end
+		end
+	end
+	ResetHatRefs()
+	for _,v in HatRefs do if v.PH then v.PH:Destroy() end end
+	CharConn:Disconnect()
+	--replicatesignal(Player.ConnectDiedSignalBackend)
+	Reanimate.Stopping = false
+	Reanimate.DestroyCharacter()
 end
 
 task.wait()
