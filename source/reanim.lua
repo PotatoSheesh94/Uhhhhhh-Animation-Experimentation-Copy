@@ -4736,7 +4736,6 @@ function LimbReanimator.Start()
         Reanimate.CreateCharacter(InitCFrame)
 
         local lastrep = 0
-        local _m3jdt = 1/60
         local function UpdateTransforms(ReanimCharacter, RootPart, rootcf, rootvel, flingtarget, flingcf)
                 if not RootPart:IsGrounded() then
                         if flingtarget then
@@ -4793,26 +4792,13 @@ function LimbReanimator.Start()
                                         if dorep or not map.CFrame then
                                                 map.CFrame = cf
                                         end
-                                        if LimbReanimator.Mode == 3 then
-                                                if not map.SmoothCFrame then
-                                                        map.SmoothCFrame = map.CFrame
-                                                else
-                                                        local alpha = 1 - math.exp(-35 * _m3jdt)
-                                                        map.SmoothCFrame = map.SmoothCFrame:Lerp(map.CFrame, alpha)
-                                                end
-                                                Util.SetMotor6DOffset(v, map.SmoothCFrame)
-                                        else
-                                                map.SmoothCFrame = nil
-                                                Util.SetMotor6DOffset(v, map.CFrame)
-                                        end
+                                        Util.SetMotor6DOffset(v, map.CFrame)
                                 end
                         end
                 end
         end
 
         Reanimate.Starting = false
-        local _mode3smoothcf = nil
-        local _mode3lasttime = 0
         while not Reanimate.Stopping do
                 RunService.PreSimulation:Wait()
                 workspace.FallenPartsDestroyHeight = 0/0
@@ -4851,9 +4837,6 @@ function LimbReanimator.Start()
                                         rootcf = CFrame.new(RCRootPart.Position + Vector3.new(0, -16, 0))
                                 end
                                 if LimbReanimator.Mode == 3 then
-                                        local _m3now = os.clock()
-                                        _m3jdt = math.min(_m3now - _mode3lasttime, 0.05)
-                                        _mode3lasttime = _m3now
                                         rootcf = RCRootPart.CFrame
                                 end
                                 if LimbReanimator.Mode == 4 then
