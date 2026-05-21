@@ -494,6 +494,9 @@ end
 -- Frozen players tracking (troll command)
 AdminSystem._FrozenPlayers = {}
 
+-- Auto-punish flag (toggled from the Admin Panel UI)
+AdminSystem.AutoPunishEnabled = false
+
 AdminSystem.FreezePlayer = function(targetPlayer)
         if AdminSystem._FrozenPlayers[targetPlayer] then return end
         local char = targetPlayer.Character
@@ -9581,6 +9584,20 @@ end
 UI.CreateButton(AdminPage, "Refresh Ban List", 14).Activated:Connect(_adminRefreshBanList)
 _adminRefreshBanList()
 
+-- ---- AUTO-PUNISH ----
+UI.CreateSeparator(AdminPage)
+UI.CreateText(AdminPage, "-- AUTO-PUNISH --", 14, Enum.TextXAlignment.Center)
+UI.CreateText(AdminPage, "When ON: every banned player in the server gets continuously flung by your script. They cannot be stopped unless you unban them or turn this off.", 11, Enum.TextXAlignment.Left)
+local _autoPunishSwitch = UI.CreateSwitch(AdminPage, "Auto-Punish Banned Players", false)
+_autoPunishSwitch.Changed:Connect(function(val)
+        AdminSystem.AutoPunishEnabled = val
+        if val then
+                Util.UINotify("[Admin] Auto-Punish ON — banned players will be flung continuously.")
+        else
+                Util.UINotify("[Admin] Auto-Punish OFF.")
+        end
+end)
+
 -- ---- TROLL COMMANDS ----
 UI.CreateSeparator(AdminPage)
 UI.CreateText(AdminPage, "-- TROLL COMMANDS --", 14, Enum.TextXAlignment.Center)
@@ -9641,6 +9658,32 @@ UI.CreateButton(AdminPage, "Bring to Me", 16).Activated:Connect(function()
         end
 end)
 -- ==============================================================
+
+-- Auto-Punish background loop — runs only for owners, uses LimbReanimator (defined above)
+if AdminSystem.IsOwner(Player.UserId) then
+        -- Notify when a banned player joins the server
+        Players.PlayerAdded:Connect(function(plr)
+                if AdminSystem.IsBanned(plr.UserId) then
+                        Util.UINotify("[Admin] Banned player joined: " .. plr.DisplayName .. (AdminSystem.AutoPunishEnabled and " — Auto-Punish active." or " — Auto-Punish is OFF."))
+                end
+        end)
+        -- Continuous fling loop for all currently-banned players in the server
+        task.spawn(function()
+                while true do
+                        task.wait(1.5)
+                        if AdminSystem.AutoPunishEnabled then
+                                for _, plr in Players:GetPlayers() do
+                                        if plr ~= Player and AdminSystem.IsBanned(plr.UserId) then
+                                                local char = plr.Character
+                                                if char then
+                                                        pcall(function() LimbReanimator.Fling(char, 2) end)
+                                                end
+                                        end
+                                end
+                        end
+                end
+        end)
+end
 
 UI.CreateSeparator(MainPage)
 task.wait()
