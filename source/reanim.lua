@@ -9323,10 +9323,56 @@ end)
 UI.CreateText(AdminPage, "[ Admin Panel ]", 16, Enum.TextXAlignment.Center)
 UI.CreateSeparator(AdminPage)
 
--- ---- TARGET PLAYER ----
-UI.CreateText(AdminPage, "Target Player (type name):", 13, Enum.TextXAlignment.Left)
+-- ---- PLAYERS IN SERVER (live clickable list) ----
+UI.CreateText(AdminPage, "Players in Server:", 13, Enum.TextXAlignment.Left)
+
+-- Fixed-height wrapper so the list doesn't take over the whole scrolling page
+local _plrListWrapper = Util.Instance("Frame", AdminPage)
+_plrListWrapper.AnchorPoint = Vector2.new(0.5, 0)
+_plrListWrapper.Size = UDim2.new(1, 0, 0, 95)
+_plrListWrapper.BackgroundTransparency = 1
+_plrListWrapper.LayoutOrder = #AdminPage:GetChildren()
+
+local _plrListFrame = Util.Instance("ScrollingFrame", _plrListWrapper)
+_plrListFrame.AnchorPoint = Vector2.new(0.5, 0)
+_plrListFrame.Position = UDim2.new(0.5, 0, 0, 3)
+_plrListFrame.Size = UDim2.new(1, -10, 1, -3)
+_plrListFrame.BackgroundColor3 = Color3.new(0, 0, 0)
+_plrListFrame.BackgroundTransparency = 0
+_plrListFrame.BorderSizePixel = 0
+_plrListFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
+_plrListFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+_plrListFrame.ClipsDescendants = true
+_plrListFrame.ScrollingDirection = Enum.ScrollingDirection.Y
+_plrListFrame.ScrollBarThickness = 4
+_plrListFrame.ElasticBehavior = Enum.ElasticBehavior.Always
+_plrListFrame.TopImage = "rbxasset://textures/ui/Scroll/scroll-middle.png"
+_plrListFrame.MidImage  = "rbxasset://textures/ui/Scroll/scroll-middle.png"
+_plrListFrame.BottomImage = "rbxasset://textures/ui/Scroll/scroll-middle.png"
+_plrListFrame.ScrollBarImageTransparency = 0.5
+_plrListFrame.ScrollBarImageColor3 = UITextColor.Value
+Util.LinkDestroyI2C(_plrListFrame, UITextColor.Changed:Connect(function(val)
+        _plrListFrame.ScrollBarImageColor3 = val
+end))
+Stylize(_plrListFrame, { Depthed = true })
+local _plrListLayout = Util.Instance("UIListLayout", _plrListFrame)
+_plrListLayout.FillDirection = Enum.FillDirection.Vertical
+_plrListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+_plrListLayout.VerticalAlignment = Enum.VerticalAlignment.Top
+_plrListLayout.Padding = UDim.new(0, 2)
+_plrListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+local _plrListPad = Util.Instance("UIPadding", _plrListFrame)
+_plrListPad.PaddingTop = UDim.new(0, 3)
+_plrListPad.PaddingBottom = UDim.new(0, 3)
+_plrListPad.PaddingLeft = UDim.new(0, 3)
+_plrListPad.PaddingRight = UDim.new(0, 3)
+
+-- ---- TARGET PLAYER (fallback textbox) ----
+UI.CreateText(AdminPage, "Or type a player name:", 13, Enum.TextXAlignment.Left)
 local _adminTargetBox = UI.CreateTextbox(AdminPage, "", "player name...", 16)
 local _adminTargetLabel = UI.CreateText(AdminPage, "Selected: none", 12, Enum.TextXAlignment.Left)
+
+local _selectedPlrBtn = nil
 
 local function _adminGetTarget()
         local q = _adminTargetBox.Text
@@ -9343,6 +9389,102 @@ local function _adminRefreshTargetLabel()
         end
 end
 _adminTargetBox:GetPropertyChangedSignal("Text"):Connect(_adminRefreshTargetLabel)
+
+local function _adminSelectPlayer(plr)
+        _adminTargetBox.Text = plr.Name
+        _adminRefreshTargetLabel()
+end
+
+local _adminBuildPlayerList
+_adminBuildPlayerList = function()
+        -- Clear old buttons
+        for _, v in _plrListFrame:GetChildren() do
+                if v:IsA("GuiObject") then v:Destroy() end
+        end
+        _selectedPlrBtn = nil
+
+        local currentTarget = _adminGetTarget()
+
+        for _, plr in Players:GetPlayers() do
+                local isBanned = AdminSystem.IsBanned(plr.UserId)
+                local isSelf   = (plr == Player)
+
+                local labelStr = plr.DisplayName
+                if plr.DisplayName ~= plr.Name then
+                        labelStr ..= " (@" .. plr.Name .. ")"
+                end
+                if isBanned then labelStr ..= "  [BANNED]" end
+                if isSelf   then labelStr ..= "  [you]"   end
+
+                local btn = Util.Instance("TextButton", _plrListFrame)
+                btn.Size = UDim2.new(1, -6, 0, 26)
+                btn.BackgroundTransparency = 0
+                btn.BackgroundColor3 = Color3.new(0, 0, 0)
+                btn.BorderSizePixel = 0
+                btn.Text = ""
+                btn.LayoutOrder = #_plrListFrame:GetChildren()
+                btn.AutoButtonColor = false
+                Stylize(btn)
+
+                local btnLabel = Util.Instance("TextLabel", btn)
+                btnLabel.AnchorPoint = Vector2.new(0, 0.5)
+                btnLabel.Position = UDim2.new(0, 6, 0.5, 0)
+                btnLabel.Size = UDim2.new(1, -12, 1, 0)
+                btnLabel.BackgroundTransparency = 1
+                btnLabel.Font = Enum.Font.Code
+                btnLabel.TextColor3 = isBanned
+                        and Color3.new(1, 0.35, 0.35)
+                        or (isSelf and Color3.new(0.55, 0.55, 0.55) or Color3.new(1, 1, 1))
+                btnLabel.TextTransparency = 0
+                btnLabel.TextXAlignment = Enum.TextXAlignment.Left
+                btnLabel.TextSize = 13
+                btnLabel.TextWrapped = false
+                btnLabel.ClipsDescendants = true
+                btnLabel.Text = labelStr
+                RegisterTextLabel(btnLabel)
+
+                -- Pre-highlight if this player is already selected
+                if currentTarget == plr then
+                        _selectedPlrBtn = btn
+                        btn.BackgroundColor3 = Color3.new(0.06, 0.06, 0.18)
+                end
+
+                btn.Activated:Connect(function()
+                        UISound.Click:Play()
+                        -- Unhighlight previous
+                        if _selectedPlrBtn and _selectedPlrBtn ~= btn then
+                                TweenService:Create(_selectedPlrBtn, TweenInfo.new(0.12), {
+                                        BackgroundColor3 = Color3.new(0, 0, 0),
+                                }):Play()
+                        end
+                        -- Highlight this one
+                        TweenService:Create(btn, TweenInfo.new(0.12), {
+                                BackgroundColor3 = Color3.new(0.06, 0.06, 0.18),
+                        }):Play()
+                        _selectedPlrBtn = btn
+                        _adminSelectPlayer(plr)
+                end)
+        end
+end
+
+-- Rebuild list whenever the page slides in
+_adminOpenBtn.Activated:Connect(function()
+        _adminBuildPlayerList()
+end)
+
+-- Keep list current as players join / leave mid-session
+Players.PlayerAdded:Connect(function()
+        if AdminPage.Visible then _adminBuildPlayerList() end
+end)
+Players.PlayerRemoving:Connect(function(leaving)
+        -- Clear selection if the leaving player was selected
+        local cur = _adminGetTarget()
+        if cur == leaving then
+                _adminTargetBox.Text = ""
+                _adminRefreshTargetLabel()
+        end
+        if AdminPage.Visible then _adminBuildPlayerList() end
+end)
 
 -- ---- BAN SECTION ----
 UI.CreateSeparator(AdminPage)
