@@ -7073,6 +7073,486 @@ function HatReanimator.Start()
         Reanimate.DestroyCharacter()
 end
 
+-- ==============================================================
+--  HYBRID REANIMATOR
+--  Combines three approaches:
+--    Oxide        — writes motor.Transform directly for immediate local visual
+--    CurrentAngle — places RootPart at fake char (shortest angle delta) +
+--                   ReplicateCurrentAngle6D / ReplicateCurrentOffset6D
+--    Uhhhhhh      — fake character + full limb mapping as the pose source
+-- ==============================================================
+local HybridReanimator = {}
+HybridReanimator.Name = "Hybrid"
+SaveData.Reanimator.HybridMode     = SaveData.Reanimator.HybridMode     or 0
+SaveData.Reanimator.HybridVelocity = SaveData.Reanimator.HybridVelocity or 0
+SaveData.Reanimator.HybridReplicateFPS10 = not not SaveData.Reanimator.HybridReplicateFPS10
+SaveData.Reanimator.HybridRoleplay       = not not SaveData.Reanimator.HybridRoleplay
+SaveData.Reanimator.HybridUseNaNFling    = not not SaveData.Reanimator.HybridUseNaNFling
+HybridReanimator.Mode        = SaveData.Reanimator.HybridMode
+-- 0 = CurrentAngle style (RootPart at fake char — default, best for this hybrid)
+-- 1 = RootPart in very void
+-- 2 = RootPart in void
+-- 3 = Keep RootPart streamed (below char)
+-- 4 = RootPart is Torso
+HybridReanimator.Velocity        = SaveData.Reanimator.HybridVelocity
+HybridReanimator.ReplicateFPS10  = SaveData.Reanimator.HybridReplicateFPS10
+HybridReanimator.FlingEnabled    = not SaveData.Reanimator.HybridRoleplay
+HybridReanimator.UseNaNFling     = SaveData.Reanimator.HybridUseNaNFling
+HybridReanimator.FlingTargets    = {}
+HybridReanimator._TempNotFling   = {}
+
+function HybridReanimator.ShowHitboxes()
+        pcall(function()
+                Util.ShowPartHitbox(Player.Character.HumanoidRootPart)
+        end)
+end
+
+function HybridReanimator.Fling(target, duration)
+        if not HybridReanimator.FlingEnabled then return end
+        if not target then return false end
+        for _, v in HybridReanimator.FlingTargets do
+                if v.Target == target then return false end
+        end
+        if target == Reanimate.Character then return false end
+        if target == Player.Character then return false end
+        if typeof(target) == "Instance" then
+                if HybridReanimator._TempNotFling[target] then return end
+                HybridReanimator._TempNotFling[target] = true
+                task.delay(1, function() HybridReanimator._TempNotFling[target] = nil end)
+        end
+        table.insert(HybridReanimator.FlingTargets, {Target = target, Duration = duration})
+        if typeof(target) == "Instance" and target:IsA("Model") then
+                local h = Util.Instance("Highlight")
+                h.Adornee = target
+                h.FillColor = Color3.new(1, 0, 0)
+                h.OutlineColor = Color3.new(1, 0, 0)
+                h.FillTransparency = 0.5
+                h.OutlineTransparency = 0
+                h.Parent = target
+                TweenService:Create(h, TweenInfo.new(5), {FillTransparency = 1, OutlineTransparency = 1}):Play()
+                game.Debris:AddItem(h, 5)
+        end
+        return true
+end
+
+function HybridReanimator.Config(parent)
+        UI.CreateText(parent, "Hybrid = Oxide (direct Transform write) + CurrentAngle (RootPart at fake char + angle replication) + Uhhhhhh (fake character + limb mapping). Strongest combined replication.", 10, Enum.TextXAlignment.Center)
+        local dmode = UI.CreateDropdown(parent, "RootPart Mode", {
+                "CurrentAngle Style (default)",
+                "Very Void",
+                "Void",
+                "Streamed (below char)",
+                "Torso",
+        }, HybridReanimator.Mode + 1)
+        local dvel = UI.CreateDropdown(parent, "RootPart Velocity", {"No Velocity", "Follow Character", "Fling-like"}, HybridReanimator.Velocity + 1)
+        dmode.Changed:Connect(function(val)
+                HybridReanimator.Mode = val - 1
+                SaveData.Reanimator.HybridMode = val - 1
+        end)
+        dvel.Changed:Connect(function(val)
+                HybridReanimator.Velocity = val - 1
+                SaveData.Reanimator.HybridVelocity = val - 1
+        end)
+        UI.CreateSwitch(parent, "Show me how I look!", HybridReanimator.ReplicateFPS10).Changed:Connect(function(val)
+                HybridReanimator.ReplicateFPS10 = val
+                SaveData.Reanimator.HybridReplicateFPS10 = val
+        end)
+        UI.CreateSwitch(parent, "Target Fling Enabled", HybridReanimator.FlingEnabled).Changed:Connect(function(val)
+                HybridReanimator.FlingEnabled = val
+                SaveData.Reanimator.HybridRoleplay = not val
+        end)
+        UI.CreateSwitch(parent, "Use NaN State Fling", HybridReanimator.UseNaNFling).Changed:Connect(function(val)
+                HybridReanimator.UseNaNFling = val
+                SaveData.Reanimator.HybridUseNaNFling = val
+        end)
+        Util.LinkDestroyI2C(dmode, RunService.Heartbeat:Connect(function()
+                dmode.Value = HybridReanimator.Mode + 1
+                dvel.Value = HybridReanimator.Velocity + 1
+        end))
+end
+
+function HybridReanimator.Start()
+        -- ----------------------------------------------------------------
+        -- Triple-method motor write:
+        --   1. motor.Transform = transform      (Oxide  — local visual)
+        --   2. SetDesiredAngle                  (legacy physics compat)
+        --   3. ReplicateCurrentOffset6D/        (CurrentAngle — network)
+        --      ReplicateCurrentAngle6D
+        -- ----------------------------------------------------------------
+        local function HybridSetMotor6D(motor, transform)
+                motor.MaxVelocity = 9e9
+                pcall(function() motor.Transform = transform end)
+                local _, _, ang = transform:ToEulerAngles(Enum.RotationOrder.ZYX)
+                motor:SetDesiredAngle(ang)
+                local axis, axisAngle = transform:ToAxisAngle()
+                local newangle = axis * axisAngle
+                pcall(sethiddenproperty, motor, "ReplicateCurrentOffset6D", transform.Position)
+                pcall(sethiddenproperty, motor, "ReplicateCurrentAngle6D", newangle)
+        end
+        local function HybridSetMotor6DOffset(motor, offset)
+                HybridSetMotor6D(motor, motor.C0:Inverse() * offset * motor.C1)
+        end
+
+        local LimbNames = {"Head", "Torso", "Left Arm", "Right Arm", "Left Leg", "Right Leg"}
+        local rootposition = Vector3.new(
+                math.random(-65536, 65536),
+                math.random(-70000, -60000),
+                math.random(-65536, 65536)
+        )
+        local rootposition2 = Vector3.new(
+                math.random(-2048, 2048),
+                math.random(-500, -100) + FallenPartsDestroyHeight,
+                math.random(-2048, 2048)
+        )
+        local InitCFrame = nil
+        if Player.Character then
+                local h = Player.Character:FindFirstChildOfClass("Humanoid")
+                if h and h.RootPart then
+                        local r = h.RootPart
+                        InitCFrame = r.CFrame
+                        if h:GetState() ~= Enum.HumanoidStateType.Dead then
+                                h:SetStateEnabled(Enum.HumanoidStateType.Dead, true)
+                                h:ChangeState(Enum.HumanoidStateType.Dead)
+                        end
+                end
+        end
+
+        local LimbMapping = loadstring(readfile("UhhhhhhReanim/BuiltinModules/d_limbmap.lua"))()
+
+        local FakeTools = {}
+        local function CreateFakeTool()
+                local FakeTool = Instance.new("Tool")
+                FakeTool.Name = "faketool"
+                local FakeToolHandle = Instance.new("Part")
+                FakeToolHandle.Name = "Handle"
+                FakeToolHandle.Transparency = 1
+                FakeToolHandle.Color = Color3.new(0, 0, 1)
+                FakeToolHandle.CanCollide = false
+                FakeToolHandle.Massless = true
+                FakeToolHandle.Parent = FakeTool
+                FakeTool.Parent = Reanimate.Character
+                local RightGrip = Instance.new("Weld")
+                RightGrip.Name = "RightGrip"
+                RightGrip.Parent = FakeToolHandle
+                RightGrip.Part0 = Reanimate.Character and Reanimate.Character:FindFirstChild("Right Arm")
+                RightGrip.Part1 = FakeToolHandle
+                RightGrip.C0 = RIGHTGRIP_C0
+                Util.LinkDestroyI2C(FakeTool, FakeTool:GetPropertyChangedSignal("Grip"):Connect(function()
+                        RightGrip.C1 = FakeTool.Grip
+                end))
+                RightGrip.C1 = FakeTool.Grip
+                return FakeTool
+        end
+
+        local BaseParts = {}
+        local UnknownMotor6Ds = {}
+        local CharOnDesc = function(v)
+                if v:IsA("BasePart") then
+                        if not table.find(BaseParts, v) then
+                                table.insert(BaseParts, v)
+                                v.CanCollide = false
+                                v:GetPropertyChangedSignal("CanCollide"):Connect(function()
+                                        if v.CanCollide then v.CanCollide = false end
+                                end)
+                        end
+                elseif v:IsA("Motor6D") then
+                        repeat task.wait() until (not v:IsDescendantOf(workspace)) or (v.Part0 and v.Part1)
+                        if not v:IsDescendantOf(workspace) then return end
+                        local p0, p1 = v.Part0, v.Part1
+                        if p0 and p1 then
+                                p0, p1 = p0.Name, p1.Name
+                                for _, map in LimbMapping do
+                                        if map.Part0 == p0 and map.Part1 == p1 then
+                                                map.Reference = v
+                                                return
+                                        end
+                                end
+                        end
+                        table.insert(UnknownMotor6Ds, v)
+                elseif v:IsA("Animator") then
+                        task.defer(v.Destroy, v)
+                elseif v:IsA("LocalScript") and v.Parent == Player.Character then
+                        v.Enabled = false
+                        v:GetPropertyChangedSignal("Enabled"):Connect(function()
+                                if v.Enabled then v.Enabled = false end
+                        end)
+                        v:GetPropertyChangedSignal("Disabled"):Connect(function()
+                                if not v.Disabled then v.Disabled = true end
+                        end)
+                elseif v:IsA("Tool") and v.Parent == Player.Character then
+                        if not FakeTools[v] then
+                                FakeTools[v] = true
+                                local fake = CreateFakeTool()
+                                fake.Grip = v.Grip
+                                local hh = v:FindFirstChild("Handle")
+                                if hh ~= nil then fake.Handle.Size = hh.Size end
+                                Util.LinkDestroyI2C(fake, RunService.PreSimulation:Connect(function()
+                                        if v.Parent == Player.Character then
+                                                fake.Grip = v.Grip
+                                                local hh2 = v:FindFirstChild("Handle")
+                                                if hh2 ~= nil then fake.Handle.Size = hh2.Size end
+                                        else
+                                                fake:Destroy()
+                                                FakeTools[v] = nil
+                                        end
+                                end))
+                                Util.LinkDestroyI2C(fake, v.ChildAdded:Connect(function(cv)
+                                        if cv.ClassName == "StringValue" and cv.Name == "toolanim" then
+                                                local w = Instance.new("StringValue")
+                                                w.Name = "toolanim"
+                                                w.Value = cv.Value
+                                                w.Parent = fake
+                                                Debris:AddItem(cv, 1)
+                                                Debris:AddItem(w, 1)
+                                        end
+                                end))
+                                fake.Handle.Touched:Connect(function(t)
+                                        local hhandle = v:FindFirstChild("Handle")
+                                        if hhandle and t and hhandle:IsDescendantOf(workspace) and t:IsDescendantOf(workspace) then
+                                                hhandle.CanTouch = true
+                                                pcall(firetouchinterest, hhandle, t, 0)
+                                        end
+                                end)
+                                fake.Handle.TouchEnded:Connect(function(t)
+                                        local hhandle = v:FindFirstChild("Handle")
+                                        if hhandle and t and hhandle:IsDescendantOf(workspace) and t:IsDescendantOf(workspace) then
+                                                hhandle.CanTouch = true
+                                                pcall(firetouchinterest, hhandle, t, 1)
+                                        end
+                                end)
+                        end
+                end
+        end
+
+        local lastspawn = 0
+        local CharConn = Player.CharacterAdded:Connect(function(character)
+                local camcfr = Camera.CFrame
+                RunService.PreRender:Once(function()
+                        RunService.PreAnimation:Wait()
+                        Camera.CFrame = camcfr
+                end)
+                lastspawn = os.clock()
+                table.clear(BaseParts)
+                table.clear(UnknownMotor6Ds)
+                for _, map in LimbMapping do
+                        map.Reference = nil
+                end
+                character.DescendantAdded:Connect(CharOnDesc)
+                for _, v in character:GetDescendants() do
+                        task.spawn(CharOnDesc, v)
+                end
+                local humanoid = character:WaitForChild("Humanoid", 5)
+                local stupid = humanoid:FindFirstChildWhichIsA("Animator")
+                if stupid then stupid:Destroy() end
+                if not Reanimate.UseLoadAnimationHook then
+                        stupid = character:FindFirstChild("Animate")
+                        while not stupid do
+                                character.ChildAdded:Wait()
+                                stupid = character:FindFirstChild("Animate")
+                        end
+                        stupid:Destroy()
+                end
+        end)
+        Player.CharacterAdded:Wait()
+        Reanimate.CreateCharacter(InitCFrame)
+
+        local lastrep = 0
+        local function UpdateTransforms(ReanimCharacter, RootPart, rootcf, rootvel, flingtarget, flingcf)
+                -- RootPart placement
+                if not RootPart:IsGrounded() then
+                        if flingtarget then
+                                if HybridReanimator.UseNaNFling then
+                                        RootPart.CFrame = CFrame.new(flingcf.Position + Vector3.new(0, 0, math.random(0, 1) * 0.005)) * CFrame.Angles(0, os.clock() * 15, 0)
+                                        RootPart.Velocity, RootPart.RotVelocity = Vector3.zero, Vector3.zero
+                                else
+                                        RootPart.CFrame = flingcf + Vector3.new(0, 0, math.random(0, 1) * 0.005)
+                                        RootPart.Velocity, RootPart.RotVelocity = Vector3.new(0, -16384, 0), Vector3.one * 16384
+                                end
+                                pcall(sethiddenproperty, RootPart, "PhysicsRepRootPart", Reanimate.UsePhysicsRepRootPart and Util.PredictionFlingPart(flingtarget.Target) or nil)
+                        else
+                                RootPart.CFrame = rootcf + Vector3.new(0, 0, math.random(0, 1) * 0.005)
+                                RootPart.Velocity, RootPart.RotVelocity = rootvel, Vector3.zero
+                                pcall(sethiddenproperty, RootPart, "PhysicsRepRootPart", nil)
+                        end
+                end
+                -- FPS throttle
+                local dorep = true
+                if HybridReanimator.ReplicateFPS10 then
+                        dorep = false
+                        local b = os.clock()
+                        local a = b - lastrep
+                        if a >= 1 / 10 then
+                                dorep = true
+                                a %= 1 / 10
+                                lastrep = b - a
+                        end
+                end
+                -- Motor writes (Oxide direct + CurrentAngle network + Uhhhhhh limb map)
+                for _, v in UnknownMotor6Ds do
+                        HybridSetMotor6D(v, CFrame.identity)
+                end
+                for _, map in LimbMapping do
+                        local v = map.Reference
+                        if v then
+                                if flingtarget then
+                                        HybridSetMotor6D(v, CFrame.identity)
+                                else
+                                        local cf = CFrame.identity
+                                        local p0 = ReanimCharacter:FindFirstChild(map.RPart0)
+                                        local p1 = ReanimCharacter:FindFirstChild(map.RPart1)
+                                        if map.RPart0 == "ROOT" then p0 = RootPart end
+                                        if p0 and p1 then
+                                                if map.Type == 1 then
+                                                        cf = p0.CFrame:ToObjectSpace(p1.CFrame)
+                                                end
+                                                if map.Type == 2 then
+                                                        local offset = map.Offset or CFrame.identity
+                                                        local c0, c1 = CFrame.new(map.C0), CFrame.new(map.C1)
+                                                        local transform = offset * (p0.CFrame * c0):ToObjectSpace(p1.CFrame * c1) * offset:Inverse()
+                                                        cf = v.C0 * transform * v.C1:Inverse()
+                                                end
+                                        end
+                                        if dorep or not map.CFrame then
+                                                map.CFrame = cf
+                                        end
+                                        HybridSetMotor6DOffset(v, map.CFrame)
+                                end
+                        end
+                end
+        end
+
+        Reanimate.Starting = false
+        while not Reanimate.Stopping do
+                RunService.PreSimulation:Wait()
+                workspace.FallenPartsDestroyHeight = 0/0
+                local ReanimOkay = false
+                local Character, Humanoid, RootPart = Player.Character, nil, nil
+                if Character then
+                        Humanoid = Character:FindFirstChildOfClass("Humanoid")
+                        if Humanoid then
+                                Humanoid.AutoRotate = false
+                                if Humanoid.WalkSpeed < 1 then Humanoid.WalkSpeed = 16 end
+                                if Humanoid.JumpPower < 1 then Humanoid.JumpPower = 50 end
+                                RootPart = Humanoid.RootPart
+                                if RootPart and Humanoid:GetState() ~= Enum.HumanoidStateType.Dead then
+                                        Humanoid:ChangeState(Enum.HumanoidStateType.Freefall)
+                                        ReanimOkay = HybridReanimator.FlingTargets[1] == nil
+                                end
+                        end
+                end
+                -- CurrentAngle style is mode 0 (default) — RootPart sits at fake char position
+                local rootcf = CFrame.new(rootposition)
+                local rootvel = Vector3.zero
+                local ltm = Reanimate.LocalTransparencyModifier
+                local ReanimCharacter = Reanimate.Character
+                if ReanimCharacter then
+                        local RCHumanoid = ReanimCharacter:FindFirstChildOfClass("Humanoid")
+                        local RCRootPart = ReanimCharacter:FindFirstChild("HumanoidRootPart")
+                        local RCTorso    = ReanimCharacter:FindFirstChild("Torso")
+                        if RCRootPart and RCTorso then
+                                if HybridReanimator.Mode == 0 then
+                                        -- CurrentAngle style: RootPart at fake char (shortest angle delta, best replication)
+                                        rootcf = RCRootPart.CFrame
+                                elseif HybridReanimator.Mode == 1 then
+                                        rootcf = CFrame.new(rootposition)
+                                elseif HybridReanimator.Mode == 2 then
+                                        rootcf = CFrame.new(rootposition2)
+                                elseif HybridReanimator.Mode == 3 or workspace.StreamingEnabled then
+                                        rootcf = CFrame.new(RCRootPart.Position + Vector3.new(0, -16, 0))
+                                elseif HybridReanimator.Mode == 4 then
+                                        rootcf = RCTorso.CFrame
+                                end
+                                if HybridReanimator.Velocity == 1 then
+                                        rootvel = RCRootPart.Velocity
+                                elseif HybridReanimator.Velocity == 2 then
+                                        rootvel = Vector3.new(0, 16384, 0)
+                                end
+                                if Camera then
+                                        Camera.CameraSubject = RCHumanoid
+                                end
+                        end
+                        for _, v in BaseParts do
+                                v.CanCollide = false
+                                v.Velocity = Vector3.zero
+                                v.RotVelocity = Vector3.zero
+                                if not v:FindFirstAncestorWhichIsA("Tool") then
+                                        local lltm = ltm
+                                        if Reanimate.FirstPersonBody then
+                                                lltm = 0
+                                                if v.Name == "Head" then
+                                                        lltm = ltm
+                                                else
+                                                        local lol = v:FindFirstChild("AccessoryWeld")
+                                                        if lol and lol:IsA("Weld") and lol.Part1 and lol.Part1.Name == "Head" then
+                                                                lltm = ltm
+                                                        end
+                                                end
+                                        end
+                                        v.LocalTransparencyModifier = lltm
+                                end
+                        end
+                        for _, v in ReanimCharacter:GetChildren() do
+                                if v:IsA("BasePart") then
+                                        if table.find(LimbNames, v.Name) then
+                                                v.Transparency = ReanimOkay and 1 or Reanimate.PlaceholderTransparency
+                                        end
+                                end
+                        end
+                        if Character and Humanoid and RootPart then
+                                RunService.Heartbeat:Wait()
+                                local t = os.clock()
+                                local flingtarget = HybridReanimator.FlingTargets[1]
+                                if flingtarget then
+                                        if flingtarget.Time then
+                                                if t > flingtarget.Time then
+                                                        table.remove(HybridReanimator.FlingTargets, 1)
+                                                        flingtarget = nil
+                                                end
+                                        else
+                                                flingtarget.Time = t + (flingtarget.Duration or (Reanimate.UsePhysicsRepRootPart and (HybridReanimator.UseNaNFling and 1 or 0.5) or 2))
+                                        end
+                                end
+                                local flingcf, flinged = CFrame.identity, true
+                                if flingtarget then
+                                        flingcf, flinged = Util.PredictionFling(flingtarget.Target)
+                                        if flinged then
+                                                table.remove(HybridReanimator.FlingTargets, 1)
+                                                flingtarget = nil
+                                        end
+                                end
+                                -- First write at Heartbeat (Oxide direct Transform — fastest local apply)
+                                UpdateTransforms(ReanimCharacter, RootPart, rootcf, rootvel, flingtarget, flingcf)
+                                if HybridReanimator.UseNaNFling then
+                                        if os.clock() - lastspawn > 0.1 then
+                                                pcall(sethiddenproperty, Humanoid, "MoveDirectionInternal", Vector3.new(0/0, 0/0, 0/0))
+                                        else
+                                                pcall(sethiddenproperty, Humanoid, "MoveDirectionInternal", Vector3.zero)
+                                        end
+                                        pcall(sethiddenproperty, Humanoid, "NetworkHumanoidState", Enum.HumanoidStateType.Freefall)
+                                else
+                                        pcall(sethiddenproperty, Humanoid, "NetworkHumanoidState", Enum.HumanoidStateType[({"Running", "PlatformStanding", "Jumping", "Ragdoll", "Seated", "Physics"})[math.random(1, 6)]])
+                                end
+                                RunService.PreRender:Wait()
+                                if Reanimate:ShouldRotationType() then
+                                        Reanimate:CameraLockCharacter()
+                                end
+                                -- Second write at PreRender (CurrentAngle final correction before render)
+                                UpdateTransforms(ReanimCharacter, RootPart, rootcf, rootvel, flingtarget, flingcf)
+                        end
+                end
+        end
+        CharConn:Disconnect()
+        if Player.Character then
+                local h = Player.Character:FindFirstChild("Humanoid")
+                if h then
+                        h:SetStateEnabled(Enum.HumanoidStateType.Dead, true)
+                        h:ChangeState(Enum.HumanoidStateType.Dead)
+                end
+        end
+        Reanimate.Stopping = false
+        Reanimate.DestroyCharacter()
+end
+
 task.wait()
 local function ReanimateShowHitboxes()
         local Reanimator = Reanimate.Current
@@ -7105,12 +7585,16 @@ end
 
 do
         SaveData.SelectedReanimator = SaveData.SelectedReanimator or 1
-        local ReanimateMethodSelect = UI.CreateDropdown(MainPage, "Reanimator", {"Limb Reanimator", "Hats Reanimator"}, SaveData.SelectedReanimator)
+        local ReanimateMethodSelect = UI.CreateDropdown(MainPage, "Reanimator", {"Limb Reanimator", "Hats Reanimator", "Hybrid Reanimator"}, SaveData.SelectedReanimator)
         local ReanimatorConfigTitle = UI.CreateText(MainPage, "-=+ Limb Reanimator Config +=-", 15, Enum.TextXAlignment.Center)
         local SelectedReanimator = LimbReanimator
         if SaveData.SelectedReanimator == 2 then
                 SelectedReanimator = HatReanimator
                 ReanimatorConfigTitle.Text = "-=+ Hats Reanimator Config +=-"
+        end
+        if SaveData.SelectedReanimator == 3 then
+                SelectedReanimator = HybridReanimator
+                ReanimatorConfigTitle.Text = "-=+ Hybrid Reanimator Config +=-"
         end
         local ReanimatorConfigCanvas = UI.CreateCanvas(MainPage)
         ReanimateMethodSelect.Changed:Connect(function(value)
@@ -7122,6 +7606,10 @@ do
                 if value == 2 then
                         SelectedReanimator = HatReanimator
                         ReanimatorConfigTitle.Text = "-=+ Hats Reanimator Config +=-"
+                end
+                if value == 3 then
+                        SelectedReanimator = HybridReanimator
+                        ReanimatorConfigTitle.Text = "-=+ Hybrid Reanimator Config +=-"
                 end
                 Util.ClearAllChildrenGui(ReanimatorConfigCanvas)
                 SelectedReanimator.Config(ReanimatorConfigCanvas)
