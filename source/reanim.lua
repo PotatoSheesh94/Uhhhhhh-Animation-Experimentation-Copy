@@ -398,11 +398,22 @@ end
 -- ==============================================================
 local AdminSystem = {}
 
-AdminSystem.Owners = {
-        -- Put your Roblox UserId numbers here, e.g.:
-        -- 123456789,
-        -- 987654321,
-}
+-- Owner UserIds are loaded from a private local file at runtime.
+-- See admin.example.json for the format. Never put real IDs here.
+AdminSystem.Owners = {}
+do
+        local ok, raw = pcall(readfile, "UhhhhhhReanim/admin.json")
+        if ok and raw and raw ~= "" then
+                local s, cfg = pcall(HttpService.JSONDecode, HttpService, raw)
+                if s and cfg and type(cfg.owners) == "table" then
+                        for _, id in cfg.owners do
+                                if type(id) == "number" then
+                                        table.insert(AdminSystem.Owners, id)
+                                end
+                        end
+                end
+        end
+end
 
 local _BanDurationUnits = {
         s = 1,          sec = 1,        second = 1,     seconds = 1,
