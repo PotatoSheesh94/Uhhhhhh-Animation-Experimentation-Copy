@@ -8024,194 +8024,6 @@ TextChatService.MessageReceived:Connect(function(message)
                         if msg == "1.1.0" then
                                 Util.UINotify("the overhaul update is real?")
                         end
-
-                        -- ======================================
-                        --  ADMIN COMMAND PROCESSING
-                        --  Only runs when an owner sends a ;cmd
-                        -- ======================================
-                        if plr == Player and AdminSystem.IsOwner(Player.UserId) then
-                                local cmdline = msg:match("^;(.+)$")
-                                if cmdline then
-                                        local args = {}
-                                        for part in cmdline:gmatch("%S+") do
-                                                table.insert(args, part)
-                                        end
-                                        local cmd = (args[1] or ""):lower()
-
-                                        -- ;ban [player] [amount] [unit]
-                                        -- ;ban [player] perm
-                                        if cmd == "ban" then
-                                                local targetName = args[2]
-                                                local target = targetName and Util.QueryPlayerSelector(targetName, false)
-                                                if not target then
-                                                        Util.UINotify("[Admin] Player not found: " .. (targetName or "?"))
-                                                elseif AdminSystem.IsOwner(target.UserId) then
-                                                        Util.UINotify("[Admin] Cannot ban another owner.")
-                                                else
-                                                        local durationSec
-                                                        -- ;ban player perm  OR  ;ban player 5 minutes
-                                                        if args[3] and _BanDurationUnits[(args[3]):lower()] == -1 then
-                                                                durationSec = -1
-                                                        elseif args[3] and args[4] then
-                                                                durationSec = AdminSystem.ParseDuration(args[3], args[4])
-                                                        end
-                                                        if not durationSec then
-                                                                Util.UINotify("[Admin] Usage: ;ban [player] [amount] [unit]  OR  ;ban [player] perm")
-                                                        else
-                                                                AdminSystem.BanPlayer(target.UserId, durationSec)
-                                                                local durStr = durationSec == -1 and "permanently" or ("for " .. AdminSystem.FormatTimeLeft(os.time() + durationSec))
-                                                                Util.UINotify("[Admin] Banned " .. target.DisplayName .. " (" .. target.UserId .. ") " .. durStr .. ".")
-                                                        end
-                                                end
-
-                                        -- ;unban [player]
-                                        elseif cmd == "unban" then
-                                                local targetName = args[2]
-                                                local target = targetName and Util.QueryPlayerSelector(targetName, false)
-                                                if not target then
-                                                        -- Try matching by partial name in the ban list itself
-                                                        Util.UINotify("[Admin] Player not found in the current session. Use their UserId if they are not in the game.")
-                                                else
-                                                        if AdminSystem.IsBanned(target.UserId) then
-                                                                AdminSystem.UnbanPlayer(target.UserId)
-                                                                Util.UINotify("[Admin] Unbanned " .. target.DisplayName .. " (" .. target.UserId .. ").")
-                                                        else
-                                                                Util.UINotify("[Admin] " .. target.DisplayName .. " is not banned.")
-                                                        end
-                                                end
-
-                                        -- ;unbanid [userId]
-                                        elseif cmd == "unbanid" then
-                                                local uid = tonumber(args[2])
-                                                if not uid then
-                                                        Util.UINotify("[Admin] Usage: ;unbanid [userId]")
-                                                elseif AdminSystem.IsBanned(uid) then
-                                                        AdminSystem.UnbanPlayer(uid)
-                                                        Util.UINotify("[Admin] Unbanned UserId " .. uid .. ".")
-                                                else
-                                                        Util.UINotify("[Admin] UserId " .. uid .. " is not banned.")
-                                                end
-
-                                        -- ;banlist
-                                        elseif cmd == "banlist" then
-                                                local bans = SaveData.AdminBans or {}
-                                                local count = 0
-                                                local lines = {"[Admin] Ban list:"}
-                                                for uid, expiry in bans do
-                                                        count += 1
-                                                        local timeStr = AdminSystem.FormatTimeLeft(expiry)
-                                                        local plrObj = Players:GetPlayerByUserId(tonumber(uid))
-                                                        local name = plrObj and plrObj.DisplayName or ("UserId:" .. uid)
-                                                        if expiry == -1 then
-                                                                table.insert(lines, "  " .. name .. " — permanent")
-                                                        else
-                                                                table.insert(lines, "  " .. name .. " — " .. timeStr .. " left")
-                                                        end
-                                                end
-                                                if count == 0 then
-                                                        Util.UINotify("[Admin] Ban list is empty.")
-                                                else
-                                                        Util.UINotify(table.concat(lines, "\n"))
-                                                end
-
-                                        -- ;fling [player]
-                                        elseif cmd == "fling" then
-                                                local targetName = args[2]
-                                                local target = targetName and Util.QueryPlayerSelector(targetName, true)
-                                                if not target then
-                                                        Util.UINotify("[Admin] Player not found: " .. (targetName or "?"))
-                                                else
-                                                        local char = target.Character
-                                                        if char then
-                                                                pcall(function() LimbReanimator.Fling(char, 3) end)
-                                                                Util.UINotify("[Admin] Flung " .. target.DisplayName .. "!")
-                                                        else
-                                                                Util.UINotify("[Admin] " .. target.DisplayName .. " has no character.")
-                                                        end
-                                                end
-
-                                        -- ;loopfling [player]  (flings repeatedly for ~30 seconds)
-                                        elseif cmd == "loopfling" then
-                                                local targetName = args[2]
-                                                local target = targetName and Util.QueryPlayerSelector(targetName, true)
-                                                if not target then
-                                                        Util.UINotify("[Admin] Player not found: " .. (targetName or "?"))
-                                                else
-                                                        Util.UINotify("[Admin] Loop-flinging " .. target.DisplayName .. " for 30 seconds!")
-                                                        task.spawn(function()
-                                                                local deadline = os.clock() + 30
-                                                                while os.clock() < deadline do
-                                                                        local char = target.Character
-                                                                        if char then
-                                                                                pcall(function() LimbReanimator.Fling(char, 1) end)
-                                                                        end
-                                                                        task.wait(1.5)
-                                                                end
-                                                        end)
-                                                end
-
-                                        -- ;freeze [player]
-                                        elseif cmd == "freeze" then
-                                                local targetName = args[2]
-                                                local target = targetName and Util.QueryPlayerSelector(targetName, true)
-                                                if not target then
-                                                        Util.UINotify("[Admin] Player not found: " .. (targetName or "?"))
-                                                else
-                                                        AdminSystem.FreezePlayer(target)
-                                                        Util.UINotify("[Admin] Froze " .. target.DisplayName .. "!")
-                                                end
-
-                                        -- ;unfreeze [player]
-                                        elseif cmd == "unfreeze" then
-                                                local targetName = args[2]
-                                                local target = targetName and Util.QueryPlayerSelector(targetName, true)
-                                                if not target then
-                                                        Util.UINotify("[Admin] Player not found: " .. (targetName or "?"))
-                                                else
-                                                        AdminSystem.UnfreezePlayer(target)
-                                                        Util.UINotify("[Admin] Unfroze " .. target.DisplayName .. "!")
-                                                end
-
-                                        -- ;bring [player]  (teleports target char to your position)
-                                        elseif cmd == "bring" then
-                                                local targetName = args[2]
-                                                local target = targetName and Util.QueryPlayerSelector(targetName, true)
-                                                if not target then
-                                                        Util.UINotify("[Admin] Player not found: " .. (targetName or "?"))
-                                                else
-                                                        local myChar = Player.Character
-                                                        local tChar = target.Character
-                                                        if myChar and tChar then
-                                                                local root = tChar:FindFirstChild("HumanoidRootPart")
-                                                                local myRoot = myChar:FindFirstChild("HumanoidRootPart")
-                                                                if root and myRoot then
-                                                                        pcall(function()
-                                                                                root.CFrame = myRoot.CFrame + myRoot.CFrame.LookVector * 3
-                                                                        end)
-                                                                        Util.UINotify("[Admin] Brought " .. target.DisplayName .. " to you!")
-                                                                end
-                                                        end
-                                                end
-
-                                        -- ;adminhelp  — list all commands
-                                        elseif cmd == "adminhelp" then
-                                                Util.UINotify(
-                                                        "[Admin] Commands:\n"
-                                                        .. "  ;ban [player] [n] [unit]  — ban (s/m/h/d/w/mo/y/perm)\n"
-                                                        .. "  ;unban [player]\n"
-                                                        .. "  ;unbanid [userId]\n"
-                                                        .. "  ;banlist\n"
-                                                        .. "  ;fling [player]\n"
-                                                        .. "  ;loopfling [player]  (30s loop)\n"
-                                                        .. "  ;freeze [player]\n"
-                                                        .. "  ;unfreeze [player]\n"
-                                                        .. "  ;bring [player]\n"
-                                                        .. "  ;adminhelp"
-                                                )
-                                        end
-                                end
-                        end
-                        -- ======================================
                 end
         end
 end)
@@ -9459,6 +9271,224 @@ task.spawn(function()
                 end
         end, dt) end
 end)
+-- ==============================================================
+--  ADMIN PANEL UI
+-- ==============================================================
+local AdminPage = UI.CreatePage()
+AdminPage.ZIndex = 1
+AdminPage.Position = UDim2.new(0.5, 420, 0.5, 0)
+AdminPage.Interactable = false
+AdminPage.Visible = false
+
+local _adminOpenBtn = UI.CreateButton(MainPage, "Admin Panel &gt;", 20)
+_adminOpenBtn.Parent.Visible = AdminSystem.IsOwner(Player.UserId)
+_adminOpenBtn.Activated:Connect(function()
+        AdminPage.Interactable = false
+        AdminPage.Visible = true
+        MainPage.Interactable = false
+        local tween = TweenService:Create(AdminPage, TweenInfo.new(0.5, Enum.EasingStyle.Cubic, Enum.EasingDirection.In), {
+                Position = UDim2.new(0.5, 0, 0.5, 0),
+        })
+        tween:Play()
+        tween.Completed:Connect(function()
+                AdminPage.Interactable = true
+        end)
+end)
+
+-- Back button
+UI.CreateButton(AdminPage, "&lt; Back", 20).Activated:Connect(function()
+        AdminPage.Interactable = false
+        MainPage.Interactable = false
+        local tween = TweenService:Create(AdminPage, TweenInfo.new(0.5, Enum.EasingStyle.Cubic, Enum.EasingDirection.Out), {
+                Position = UDim2.new(0.5, 420, 0.5, 0),
+        })
+        tween:Play()
+        tween.Completed:Connect(function()
+                MainPage.Interactable = true
+                AdminPage.Visible = false
+        end)
+end)
+
+UI.CreateText(AdminPage, "[ Admin Panel ]", 16, Enum.TextXAlignment.Center)
+UI.CreateSeparator(AdminPage)
+
+-- ---- TARGET PLAYER ----
+UI.CreateText(AdminPage, "Target Player (type name):", 13, Enum.TextXAlignment.Left)
+local _adminTargetBox = UI.CreateTextbox(AdminPage, "", "player name...", 16)
+local _adminTargetLabel = UI.CreateText(AdminPage, "Selected: none", 12, Enum.TextXAlignment.Left)
+
+local function _adminGetTarget()
+        local q = _adminTargetBox.Text
+        if q == "" then return nil end
+        return Util.QueryPlayerSelector(q, false)
+end
+
+local function _adminRefreshTargetLabel()
+        local target = _adminGetTarget()
+        if target then
+                _adminTargetLabel.Text = "Selected: " .. target.DisplayName .. "  (ID: " .. target.UserId .. ")"
+        else
+                _adminTargetLabel.Text = "Selected: none (not found)"
+        end
+end
+_adminTargetBox:GetPropertyChangedSignal("Text"):Connect(_adminRefreshTargetLabel)
+
+-- ---- BAN SECTION ----
+UI.CreateSeparator(AdminPage)
+UI.CreateText(AdminPage, "-- BAN --", 14, Enum.TextXAlignment.Center)
+
+local _banUnitKeys = {"seconds", "minutes", "hours", "days", "weeks", "months", "years", "perm"}
+local _banUnitDropdown = UI.CreateDropdown(AdminPage, "Duration Unit", {
+        "Seconds", "Minutes", "Hours", "Days", "Weeks", "Months", "Years", "Permanent"
+}, 3)
+
+local _banAmountBox = UI.CreateTextbox(AdminPage, "1", "amount (number)...", 16)
+
+local function _adminUpdateBanVis()
+        _banAmountBox.Parent.Visible = (_banUnitDropdown.Value ~= 8)
+end
+_banUnitDropdown.Changed:Connect(_adminUpdateBanVis)
+_adminUpdateBanVis()
+
+local _adminRefreshBanList
+
+UI.CreateButton(AdminPage, "Ban Player", 16).Activated:Connect(function()
+        local target = _adminGetTarget()
+        if not target then
+                Util.UINotify("[Admin] No valid target player.")
+                return
+        end
+        if AdminSystem.IsOwner(target.UserId) then
+                Util.UINotify("[Admin] Cannot ban another owner.")
+                return
+        end
+        local unitKey = _banUnitKeys[_banUnitDropdown.Value]
+        local durationSec
+        if unitKey == "perm" then
+                durationSec = -1
+        else
+                local amount = tonumber(_banAmountBox.Text) or 1
+                durationSec = AdminSystem.ParseDuration(tostring(amount), unitKey)
+        end
+        if not durationSec then
+                Util.UINotify("[Admin] Invalid duration.")
+                return
+        end
+        AdminSystem.BanPlayer(target.UserId, durationSec)
+        local durStr = durationSec == -1 and "permanently" or ("for " .. AdminSystem.FormatTimeLeft(os.time() + durationSec))
+        Util.UINotify("[Admin] Banned " .. target.DisplayName .. " " .. durStr .. ".")
+        _adminRefreshBanList()
+end)
+
+UI.CreateButton(AdminPage, "Unban Player", 16).Activated:Connect(function()
+        local target = _adminGetTarget()
+        if not target then
+                local uid = tonumber(_adminTargetBox.Text)
+                if uid and AdminSystem.IsBanned(uid) then
+                        AdminSystem.UnbanPlayer(uid)
+                        Util.UINotify("[Admin] Unbanned UserId " .. uid .. ".")
+                        _adminRefreshBanList()
+                else
+                        Util.UINotify("[Admin] No valid target. (Tip: type their UserId to unban offline players)")
+                end
+                return
+        end
+        if AdminSystem.IsBanned(target.UserId) then
+                AdminSystem.UnbanPlayer(target.UserId)
+                Util.UINotify("[Admin] Unbanned " .. target.DisplayName .. ".")
+                _adminRefreshBanList()
+        else
+                Util.UINotify("[Admin] " .. target.DisplayName .. " is not banned.")
+        end
+end)
+
+-- ---- BAN LIST ----
+UI.CreateSeparator(AdminPage)
+UI.CreateText(AdminPage, "-- BAN LIST --", 14, Enum.TextXAlignment.Center)
+local _adminBanListText = UI.CreateText(AdminPage, "(empty)", 12, Enum.TextXAlignment.Left)
+
+_adminRefreshBanList = function()
+        local bans = SaveData.AdminBans or {}
+        local lines = {}
+        for uid, expiry in bans do
+                local plrObj = Players:GetPlayerByUserId(tonumber(uid))
+                local name = plrObj and plrObj.DisplayName or ("ID:" .. uid)
+                if expiry == -1 then
+                        table.insert(lines, name .. "  |  permanent")
+                else
+                        table.insert(lines, name .. "  |  " .. AdminSystem.FormatTimeLeft(expiry) .. " left")
+                end
+        end
+        if #lines == 0 then
+                _adminBanListText.Text = "(empty)"
+        else
+                _adminBanListText.Text = table.concat(lines, "\n")
+        end
+end
+UI.CreateButton(AdminPage, "Refresh Ban List", 14).Activated:Connect(_adminRefreshBanList)
+_adminRefreshBanList()
+
+-- ---- TROLL COMMANDS ----
+UI.CreateSeparator(AdminPage)
+UI.CreateText(AdminPage, "-- TROLL COMMANDS --", 14, Enum.TextXAlignment.Center)
+
+UI.CreateButton(AdminPage, "Fling", 16).Activated:Connect(function()
+        local target = _adminGetTarget()
+        if not target then Util.UINotify("[Admin] No valid target.") return end
+        local char = target.Character
+        if not char then Util.UINotify("[Admin] " .. target.DisplayName .. " has no character.") return end
+        pcall(function() LimbReanimator.Fling(char, 3) end)
+        Util.UINotify("[Admin] Flung " .. target.DisplayName .. "!")
+end)
+
+UI.CreateButton(AdminPage, "Loop Fling (30s)", 16).Activated:Connect(function()
+        local target = _adminGetTarget()
+        if not target then Util.UINotify("[Admin] No valid target.") return end
+        Util.UINotify("[Admin] Loop-flinging " .. target.DisplayName .. " for 30s!")
+        task.spawn(function()
+                local deadline = os.clock() + 30
+                while os.clock() < deadline do
+                        local char = target.Character
+                        if char then
+                                pcall(function() LimbReanimator.Fling(char, 1) end)
+                        end
+                        task.wait(1.5)
+                end
+        end)
+end)
+
+UI.CreateButton(AdminPage, "Freeze", 16).Activated:Connect(function()
+        local target = _adminGetTarget()
+        if not target then Util.UINotify("[Admin] No valid target.") return end
+        AdminSystem.FreezePlayer(target)
+        Util.UINotify("[Admin] Froze " .. target.DisplayName .. "!")
+end)
+
+UI.CreateButton(AdminPage, "Unfreeze", 16).Activated:Connect(function()
+        local target = _adminGetTarget()
+        if not target then Util.UINotify("[Admin] No valid target.") return end
+        AdminSystem.UnfreezePlayer(target)
+        Util.UINotify("[Admin] Unfroze " .. target.DisplayName .. "!")
+end)
+
+UI.CreateButton(AdminPage, "Bring to Me", 16).Activated:Connect(function()
+        local target = _adminGetTarget()
+        if not target then Util.UINotify("[Admin] No valid target.") return end
+        local myChar = Player.Character
+        local tChar = target.Character
+        if myChar and tChar then
+                local root = tChar:FindFirstChild("HumanoidRootPart")
+                local myRoot = myChar:FindFirstChild("HumanoidRootPart")
+                if root and myRoot then
+                        pcall(function()
+                                root.CFrame = myRoot.CFrame + myRoot.CFrame.LookVector * 3
+                        end)
+                        Util.UINotify("[Admin] Brought " .. target.DisplayName .. " to you!")
+                end
+        end
+end)
+-- ==============================================================
+
 UI.CreateSeparator(MainPage)
 task.wait()
 local CreditsPage = UI.CreatePage()
