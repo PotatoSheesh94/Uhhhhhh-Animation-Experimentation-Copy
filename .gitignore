@@ -1,5 +1,0 @@
-# Private admin configuration — never commit real UserIds
-admin.json
-
-# Local executor workspace data (generated at runtime, not part of the repo)
-UhhhhhhReanim/
